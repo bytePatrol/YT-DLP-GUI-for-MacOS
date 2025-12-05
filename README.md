@@ -1,6 +1,12 @@
-# yt-dlp GUI v14 (macOS)
+# yt-dlp GUI for macOS
 
 A macOS desktop GUI for [yt-dlp](https://github.com/yt-dlp/yt-dlp) and [ffmpeg](https://ffmpeg.org/), written in Python + Tkinter.
+
+I made this GUI because most "downloaders" can only download macOS & iOS compatible YouTube videos in 360P resolution. If you wanted 720P, 1080P or 4K these downloaders would still "work" but your video would not play on macOS & iOS without the use of a 3rd party tool such as Infuse Player.
+
+To resolve this limitation we must use YT-DLP to download the raw high resolution video & audio file directly from YouTube then use ffmpeg to combine & convert to a compatible format (H.264 + AAC MP4) so that it will play natively on macOS or iOS products.
+
+I simply made a GUI to make this entire process easier. The code is well documented for easy modification & tweaking and it ensures its uses the constantly latest updated YT-DLP.
 
 This app makes it easy to:
 
@@ -274,9 +280,9 @@ Selecting one and clicking **QuickTime (no conversion)**:
   - `acodec` is empty or `none` (video-only)
 - Displayed similarly:
 
-    2160P - 2.6GB - 13.3 Mbps  
-    1440P - 1.3GB - 6.6 Mbps  
-    ...
+  2160P - 2.6GB - 13.3 Mbps  
+  1440P - 1.3GB - 6.6 Mbps  
+  ...
 
 Selecting one and clicking **AV1 mp4 + convert**:
 
@@ -338,7 +344,7 @@ Behavior:
 - Clearing the override field tells the app to use the source bitrate instead.
 
 
-### Advanced Options
+## Advanced Options
 
 Visible when **Simple mode** is OFF.
 
@@ -441,6 +447,57 @@ The app uses `osascript` to trigger native macOS notifications:
 If notifications fail (e.g. `osascript` not available), the error is logged but the app continues to run.
 
 
+## Common Scenarios
+
+### Scenario 1 – “Just give me a good MP4”
+
+1. Leave **Simple mode ON**.
+2. Paste a YouTube URL.
+3. Make sure **Audio only (m4a)** is **unchecked**.
+4. Click **Download / Convert**.
+5. In the **Format Selection** dialog:
+   - If a decent 720p/1080p QuickTime format is visible in the **left** list:
+     - Select it → click **QuickTime (no conversion)**.
+   - Otherwise:
+     - Select a high-resolution AV1 format in the **right** list → click **AV1 mp4 + convert**.
+6. Wait for the job to complete, then click **Open Output Folder** to see the final MP4.
+
+### Scenario 2 – High-quality 4K AV1 → H.264
+
+1. Turn **Simple mode OFF**.
+2. In the per-resolution favorites (Advanced Options), set for example:
+   - `2160p` → `15` (for 15 Mbps).
+3. Paste a 4K YouTube URL.
+4. Click **Download / Convert**.
+5. In the **Format Selection** dialog:
+   - Choose a `2160P` AV1 entry from the **right** list.
+   - Verify the **Bitrate Override (Mbps)** box auto-filled to your favorite (e.g. `15`) and adjust if needed.
+6. Click **AV1 mp4 + convert**.
+7. The app downloads the AV1 video + bestaudio, re-encodes to H.264 at ~15 Mbps, and outputs a QuickTime-compatible MP4.
+
+### Scenario 3 – Audio-only (m4a) for podcasts or music
+
+1. Check **Audio only (m4a)**.
+2. Paste a YouTube URL.
+3. Click **Download / Convert**.
+4. The app:
+   - Downloads `bestaudio` with `yt-dlp`,
+   - Converts it to AAC `.m4a` (if `ffmpeg` is available),
+   - Shows the resulting file in the summary area.
+5. Click **Open Output Folder** to reveal the `.m4a` file in Finder.
+
+### Scenario 4 – Inspect formats without downloading
+
+1. Paste a YouTube URL.
+2. Click **Analyze Only**.
+3. In the **Format Selection** dialog:
+   - Review QuickTime-compatible formats in the **left** list.
+   - Review AV1 mp4 video-only formats in the **right** list.
+4. Optionally click a format to see how its resolution, file size and bitrate compare.
+5. Click **Cancel** to close the dialog when you’re done inspecting (no files are downloaded).
+
+
+
 ## Troubleshooting
 
 ### `yt-dlp` not found / version label is empty
@@ -475,3 +532,18 @@ If notifications fail (e.g. `osascript` not available), the error is logged but 
 - In Advanced Options:
   - Switch from **GPU (h264_videotoolbox)** to **CPU (libx264)**.
 - Try the job again; it will be slower but often more reliable.
+
+### Window doesn’t fit controls
+
+- v14 auto-sizes the window and enforces a minimum width so everything is visible.
+- You can still resize manually if needed.
+
+
+
+## Disclaimer
+
+
+- This project is a GUI wrapper around yt-dlp and ffmpeg.
+-   Respect YouTube’s Terms of Service.
+-   Only download content when you have the legal rights to do so.
+-   The author(s) are not responsible for misuse of this tool.
