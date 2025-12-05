@@ -1,4 +1,4 @@
-# yt-dlp GUI for macOS
+# 4K YouTube Video Downloader for MacOS & iOS
 
 A macOS desktop GUI for [yt-dlp](https://github.com/yt-dlp/yt-dlp) and [ffmpeg](https://ffmpeg.org/), written in Python + Tkinter.
 
