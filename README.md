@@ -2,7 +2,16 @@
 
 A modern, fully self-contained YouTube video downloader with a beautiful dark mode interface. No dependencies required - just download and run!
 
-![YouTube 4K Downloader Screenshot](screenshot.png)
+## Screenshots
+
+### Main Interface
+![YouTube 4K Downloader Main](screenshot.png)
+
+### Settings
+![Settings Window](screenshot-settings.png)
+
+### Download Progress
+![Download Progress](screenshot-download.png)
 
 ## Features
 
