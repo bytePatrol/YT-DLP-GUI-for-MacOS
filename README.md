@@ -5,13 +5,13 @@ A modern, fully self-contained YouTube video downloader with a beautiful dark mo
 ## Screenshots
 
 ### Main Interface
-<img src="screenshot.png" width="700" alt="YouTube 4K Downloader Main">
+<img src="assets/screenshot.png" width="700" alt="YouTube 4K Downloader Main">
 
 ### Settings
-<img src="screenshot-settings.png" width="500" alt="Settings Window">
+<img src="assets/screenshot-settings.png" width="500" alt="Settings Window">
 
 ### Download Progress
-<img src="screenshot-download.png" width="700" alt="Download Progress">
+<img src="assets/screenshot-download.png" width="700" alt="Download Progress">
 
 ## Features
 
