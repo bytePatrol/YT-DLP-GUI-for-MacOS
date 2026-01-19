@@ -2,11 +2,29 @@
 
 All notable changes to YouTube 4K Downloader will be documented in this file.
 
+## [17.7.4] - 2026-01-19
+
+### Fixed
+- **Tcl/Tk bundling** - App now bundles Tcl/Tk frameworks to fix "py2app launch issues" error
+- Users no longer need to run `brew install tcl-tk` to launch the app
+- Build script auto-detects and bundles Tcl/Tk from Python installation
+- **Settings window** - Save/Cancel buttons now visible; window is taller and scrollable
+
+### Changed
+- **Ad-hoc code signing** - App is now signed to prevent "app is damaged" errors
+- Improved dependency bundling for more reliable launches on all Macs
+- Build script now uses ASCII-safe output (no more garbled Unicode characters)
+- Better verification of bundled components during build
+
+### Added
+- Build script now checks for and bundles Tcl.framework and Tk.framework
+- Verification step confirms all required frameworks are present
+
 ## [17.7.3] - 2026-01-18
 
 ### Fixed
 - **File size display** - Format cards now correctly show file sizes (e.g., "668 MB") instead of "Unknown"
-- Improved parsing of yt-dlp's format table output to handle `│` separator characters
+- Improved parsing of yt-dlp's format table output to handle `â”‚` separator characters
 - Better regex matching for file sizes (MiB, GiB, KiB), bitrates, and resolutions
 - FPS values now correctly parsed from format table
 

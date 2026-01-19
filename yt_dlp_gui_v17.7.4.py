@@ -142,7 +142,7 @@ v17.0.4 Changes:
 - Use bundle_dependencies.sh to install ffmpeg + deno into app
 
 v17.0.3 Changes:
-- Fixed crash with emoji/unicode in video titles (Ã°Å¸â€¡ÂµÃ°Å¸â€¡Â±Ã°Å¸Ëœâ€¦ etc.)
+- Fixed crash with emoji/unicode in video titles (ÃƒÂ°Ã…Â¸Ã¢â‚¬Â¡Ã‚ÂµÃƒÂ°Ã…Â¸Ã¢â‚¬Â¡Ã‚Â±ÃƒÂ°Ã…Â¸Ã‹Å“Ã¢â‚¬Â¦ etc.)
 - Improved filename sanitization to ASCII-only for maximum compatibility
 - Fixed 'ascii codec can't decode' errors in ffmpeg subprocess
 - All subprocess calls now use UTF-8 encoding with error replacement
@@ -218,7 +218,7 @@ except ImportError:
 # ============================================================================
 
 APP_NAME = "YouTube 4K Downloader"
-APP_VERSION = "17.7.3"
+APP_VERSION = "17.7.4"
 
 # Configuration paths - using proper config directory
 CONFIG_DIR = Path.home() / ".config" / "yt-dlp-gui"
@@ -814,15 +814,15 @@ class YtDlpInterface:
         # Parse each format line
         for line in lines[table_start:]:
             line = line.strip()
-            if not line or line.startswith('[') or line.startswith('─'):
+            if not line or line.startswith('[') or line.startswith('â”€'):
                 continue
             
             # Skip audio-only lines (we want video formats)
             if 'audio only' in line.lower() and 'video' not in line.lower():
                 continue
             
-            # Split by │ separator to get sections
-            sections = line.split('│')
+            # Split by â”‚ separator to get sections
+            sections = line.split('â”‚')
             if len(sections) < 2:
                 # Try splitting by whitespace only
                 parts = line.split()
@@ -2687,13 +2687,17 @@ class SettingsWindow(ctk.CTkToplevel):
         self.settings_mgr = settings_mgr
         
         self.title("Settings")
-        self.geometry("700x600")
+        self.geometry("700x700")
         self.transient(parent)
         self.resizable(False, False)
         
-        # Tabs
-        self.tabview = ctk.CTkTabview(self, height=480)
-        self.tabview.pack(fill="both", expand=True, padx=20, pady=20)
+        # Main container
+        main_frame = ctk.CTkFrame(self, fg_color="transparent")
+        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+        
+        # Tabs - leave room for buttons at bottom
+        self.tabview = ctk.CTkTabview(main_frame, height=550)
+        self.tabview.pack(fill="both", expand=True)
         
         self.tabview.add("SponsorBlock")
         self.tabview.add("Subtitles")
@@ -2707,9 +2711,9 @@ class SettingsWindow(ctk.CTkToplevel):
         self._create_trim_tab()
         self._create_playlist_tab()
         
-        # Buttons
-        btn_frame = ctk.CTkFrame(self, fg_color="transparent")
-        btn_frame.pack(fill="x", padx=20, pady=(0, 20))
+        # Buttons frame - always visible at bottom
+        btn_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        btn_frame.pack(fill="x", pady=(15, 0))
         
         ModernButton(
             btn_frame, text="Save", style="primary", width=100, command=self._save
@@ -2723,9 +2727,13 @@ class SettingsWindow(ctk.CTkToplevel):
         """SponsorBlock settings."""
         tab = self.tabview.tab("SponsorBlock")
         
+        # Make tab content scrollable
+        scroll_frame = ctk.CTkScrollableFrame(tab, fg_color="transparent")
+        scroll_frame.pack(fill="both", expand=True)
+        
         # Info banner
-        info_frame = ctk.CTkFrame(tab, fg_color="#1c4d2e", corner_radius=8)
-        info_frame.pack(fill="x", padx=20, pady=(20, 15))
+        info_frame = ctk.CTkFrame(scroll_frame, fg_color="#1c4d2e", corner_radius=8)
+        info_frame.pack(fill="x", padx=10, pady=(10, 15))
         
         ctk.CTkLabel(
             info_frame,
@@ -2744,15 +2752,15 @@ class SettingsWindow(ctk.CTkToplevel):
             justify="left"
         ).pack(anchor="w", padx=15, pady=(0, 10))
         
-        self.sb_enabled = ctk.CTkSwitch(tab, text="Enable SponsorBlock Post-Processing")
-        self.sb_enabled.pack(anchor="w", padx=20, pady=(15, 10))
+        self.sb_enabled = ctk.CTkSwitch(scroll_frame, text="Enable SponsorBlock Post-Processing")
+        self.sb_enabled.pack(anchor="w", padx=10, pady=(15, 10))
         if self.settings_mgr.get("sponsorblock_enabled"):
             self.sb_enabled.select()
         
-        ctk.CTkLabel(tab, text="Action:", font=ctk.CTkFont(weight="bold")).pack(anchor="w", padx=20, pady=(10, 5))
+        ctk.CTkLabel(scroll_frame, text="Action:", font=ctk.CTkFont(weight="bold")).pack(anchor="w", padx=10, pady=(10, 5))
         
-        action_frame = ctk.CTkFrame(tab, fg_color="transparent")
-        action_frame.pack(anchor="w", padx=20)
+        action_frame = ctk.CTkFrame(scroll_frame, fg_color="transparent")
+        action_frame.pack(anchor="w", padx=10)
         
         self.sb_action = ctk.CTkSegmentedButton(action_frame, values=["Remove", "Mark"])
         self.sb_action.pack(side="left")
@@ -2765,13 +2773,13 @@ class SettingsWindow(ctk.CTkToplevel):
             text_color=COLORS["text_tertiary"]
         ).pack(side="left", padx=(10, 0))
         
-        ctk.CTkLabel(tab, text="Categories to Remove:", font=ctk.CTkFont(weight="bold")).pack(anchor="w", padx=20, pady=(15, 5))
+        ctk.CTkLabel(scroll_frame, text="Categories to Remove:", font=ctk.CTkFont(weight="bold")).pack(anchor="w", padx=10, pady=(15, 5))
         
         self.sb_categories = {}
         enabled = self.settings_mgr.get("sponsorblock_categories", ["sponsor"])
         for cat_id, cat_name in SPONSORBLOCK_CATEGORIES.items():
-            cb = ctk.CTkCheckBox(tab, text=cat_name)
-            cb.pack(anchor="w", padx=40, pady=2)
+            cb = ctk.CTkCheckBox(scroll_frame, text=cat_name)
+            cb.pack(anchor="w", padx=30, pady=2)
             if cat_id in enabled:
                 cb.select()
             self.sb_categories[cat_id] = cb
@@ -3157,7 +3165,7 @@ FFmpeg for media processing
 Author: bytePatrol
 License: MIT
 
-Ã‚(c) 2025 All Rights Reserved"""
+Ãƒâ€š(c) 2025 All Rights Reserved"""
         
         ctk.CTkLabel(content, text=info, font=ctk.CTkFont(size=12), 
                     text_color=COLORS["text_secondary"], justify="center").pack(pady=(0, 20))
@@ -3947,7 +3955,7 @@ NEW IN V17
 - SponsorBlock, Encoding, Subtitles settings are saved
 
 FEATURES
-- Settings window (âŒ˜,) - Configure SponsorBlock, subtitles, encoding
+- Settings window (Ã¢Å’Ëœ,) - Configure SponsorBlock, subtitles, encoding
 - SponsorBlock post-processing - Removes sponsor segments after download
 - History browser - Search and manage download history
 - Playlist support - Download entire playlists with selection
@@ -3955,7 +3963,7 @@ FEATURES
 - Drag & drop URLs - Just drop a YouTube link onto the window
 
 KEYBOARD SHORTCUTS
-- âŒ˜V - Paste URL from clipboard
+- Ã¢Å’ËœV - Paste URL from clipboard
 - Cmd+Return - Start download
 - Enter - Analyze URL
 
