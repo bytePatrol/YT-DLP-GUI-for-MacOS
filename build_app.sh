@@ -54,19 +54,19 @@ print_header() {
 }
 
 print_success() {
-    echo -e "${GREEN}✅ $1${NC}"
+    echo -e "${GREEN}[OK] $1${NC}"
 }
 
 print_error() {
-    echo -e "${RED}❌ $1${NC}"
+    echo -e "${RED}[ERROR] $1${NC}"
 }
 
 print_warning() {
-    echo -e "${YELLOW}⚠️  $1${NC}"
+    echo -e "${YELLOW}[WARN] $1${NC}"
 }
 
 print_info() {
-    echo -e "${BLUE}ℹ️  $1${NC}"
+    echo -e "${BLUE}[INFO] $1${NC}"
 }
 
 show_help() {
@@ -106,7 +106,7 @@ activate_venv() {
         
         print_info "Installing required packages..."
         pip install --upgrade pip
-        pip install py2app customtkinter pillow requests yt-dlp
+        pip install py2app customtkinter pillow requests yt-dlp darkdetect idna urllib3 charset-normalizer certifi
         
         if [ $? -ne 0 ]; then
             print_error "Failed to install dependencies"
@@ -151,9 +151,9 @@ ICON_PATH = os.path.join(SCRIPT_DIR, 'assets', 'icon.icns')
 
 # Verify icon exists
 if os.path.isfile(ICON_PATH):
-    print(f"✅ Found icon at: {ICON_PATH}")
+    print(f"[OK] Found icon at: {ICON_PATH}")
 else:
-    print(f"⚠️  Icon not found at: {ICON_PATH}")
+    print(f"[WARN] Icon not found at: {ICON_PATH}")
     ICON_PATH = None
 
 APP = ['$PY_FILE']
@@ -169,7 +169,7 @@ OPTIONS = {
         'CFBundleIdentifier': "$BUNDLE_ID",
         'CFBundleVersion': "$VERSION",
         'CFBundleShortVersionString': "$VERSION",
-        'NSHumanReadableCopyright': "Copyright © 2025 bytePatrol. All rights reserved.",
+        'NSHumanReadableCopyright': "Copyright 2025 bytePatrol. All rights reserved.",
         'NSHighResolutionCapable': True,
         'LSMinimumSystemVersion': '10.13',
     },
@@ -181,6 +181,9 @@ OPTIONS = {
         'certifi',
         'charset_normalizer',
         'yt_dlp',
+        'idna',
+        'urllib3',
+        'darkdetect',
     ],
     'includes': [
         'subprocess',
@@ -188,15 +191,33 @@ OPTIONS = {
         'threading',
         'queue',
         'pathlib',
+        'dataclasses',
+        'typing',
+        'enum',
+        'hashlib',
+        'tempfile',
+        'shlex',
+        'urllib.request',
+        '_tkinter',
+        'tkinter.filedialog',
+        'tkinter.messagebox',
+        'PIL.Image',
+        'PIL.ImageTk',
     ],
     'excludes': [
         'numpy',
         'scipy',
         'matplotlib',
         'pandas',
+        'IPython',
+        'jupyter',
+        'notebook',
+        'test',
+        'tests',
     ],
     'semi_standalone': False,
     'site_packages': True,
+    'strip': False,
 }
 
 setup(
@@ -239,7 +260,7 @@ check_ytdlp_updates() {
         print_success "yt-dlp is up to date!"
         return 1  # No update needed
     else
-        print_warning "Update available: $CURRENT_VERSION → $LATEST_VERSION"
+        print_warning "Update available: $CURRENT_VERSION -> $LATEST_VERSION"
         return 0  # Update available
     fi
 }
@@ -262,7 +283,7 @@ update_ytdlp() {
     if [ "$BEFORE_VERSION" = "$AFTER_VERSION" ]; then
         print_success "yt-dlp is already at the latest version: $AFTER_VERSION"
     else
-        print_success "yt-dlp updated: $BEFORE_VERSION → $AFTER_VERSION"
+        print_success "yt-dlp updated: $BEFORE_VERSION -> $AFTER_VERSION"
     fi
     
     deactivate_venv
@@ -324,7 +345,7 @@ bundle_dependencies() {
     
     # --- Install FFmpeg ---
     echo ""
-    echo "📥 Downloading static ffmpeg..."
+    echo "Downloading static ffmpeg..."
     if curl -L --progress-bar "https://evermeet.cx/ffmpeg/getrelease/ffmpeg/zip" -o ffmpeg.zip; then
         unzip -q ffmpeg.zip
         
@@ -354,7 +375,7 @@ bundle_dependencies() {
     fi
     
     echo ""
-    echo "📥 Downloading deno for $DENO_ARCH..."
+    echo "Downloading deno for $DENO_ARCH..."
     if curl -L --progress-bar "https://github.com/denoland/deno/releases/latest/download/deno-${DENO_ARCH}-apple-darwin.zip" -o deno.zip; then
         unzip -q -o deno.zip
         
@@ -381,6 +402,130 @@ bundle_dependencies() {
     
     echo ""
     print_success "All dependencies bundled successfully!"
+    return 0
+}
+
+# ============================================================================
+# VERIFY APP
+# ============================================================================
+
+verify_app() {
+    local APP_PATH="$1"
+    
+    print_header "Verifying Built App"
+    
+    if [ ! -d "$APP_PATH" ]; then
+        print_error "App not found at: $APP_PATH"
+        return 1
+    fi
+    
+    local RESOURCES_DIR="$APP_PATH/Contents/Resources"
+    local ERRORS=0
+    
+    # Check bundled executables
+    echo "Checking bundled executables..."
+    if [ -f "$RESOURCES_DIR/ffmpeg" ]; then
+        print_success "ffmpeg present"
+    else
+        print_error "ffmpeg missing!"
+        ERRORS=$((ERRORS + 1))
+    fi
+    
+    if [ -f "$RESOURCES_DIR/deno" ]; then
+        print_success "deno present"
+    else
+        print_error "deno missing!"
+        ERRORS=$((ERRORS + 1))
+    fi
+    
+    # Check for Python packages in site-packages
+    echo ""
+    echo "Checking Python packages..."
+    local SITE_PACKAGES=$(find "$APP_PATH/Contents/Resources/lib" -name "site-packages" -type d 2>/dev/null | head -1)
+    
+    if [ -n "$SITE_PACKAGES" ]; then
+        local PACKAGES=("customtkinter" "PIL" "requests" "yt_dlp" "certifi")
+        
+        for pkg in "${PACKAGES[@]}"; do
+            if [ -d "$SITE_PACKAGES/$pkg" ] || ls "$SITE_PACKAGES" | grep -qi "^${pkg}" 2>/dev/null; then
+                print_success "$pkg"
+            else
+                print_error "$pkg missing!"
+                ERRORS=$((ERRORS + 1))
+            fi
+        done
+    else
+        print_warning "Could not locate site-packages directory"
+    fi
+    
+    # Check main executable
+    echo ""
+    echo "Checking main executable..."
+    local EXECUTABLE="$APP_PATH/Contents/MacOS/$APP_NAME"
+    if [ -f "$EXECUTABLE" ]; then
+        local ARCH=$(file "$EXECUTABLE" | grep -o 'arm64\|x86_64' | head -1)
+        local CURRENT_ARCH=$(uname -m)
+        print_success "Executable found (architecture: $ARCH)"
+        
+        if [ "$ARCH" != "$CURRENT_ARCH" ]; then
+            print_warning "Built for $ARCH but running on $CURRENT_ARCH"
+        fi
+    else
+        print_error "Main executable not found!"
+        ERRORS=$((ERRORS + 1))
+    fi
+    
+    echo ""
+    if [ $ERRORS -eq 0 ]; then
+        print_success "All checks passed!"
+        return 0
+    else
+        print_error "$ERRORS error(s) found - app may not launch correctly"
+        return 1
+    fi
+}
+
+# ============================================================================
+# CODE SIGN APP (Ad-hoc signing to prevent "damaged" errors)
+# ============================================================================
+
+codesign_app() {
+    local APP_PATH="$1"
+    
+    print_header "Code Signing App (Ad-hoc)"
+    
+    if [ ! -d "$APP_PATH" ]; then
+        print_error "App not found: $APP_PATH"
+        return 1
+    fi
+    
+    echo "Signing with ad-hoc signature..."
+    echo "(This prevents 'app is damaged' errors on other Macs)"
+    echo ""
+    
+    # Remove any existing signatures and quarantine attributes
+    xattr -cr "$APP_PATH" 2>/dev/null || true
+    
+    # Sign all nested components first (frameworks, dylibs, etc.)
+    find "$APP_PATH" -type f \( -name "*.dylib" -o -name "*.so" -o -name "*.framework" \) -exec codesign --force --sign - {} \; 2>/dev/null || true
+    
+    # Sign the main executable
+    codesign --force --deep --sign - "$APP_PATH" 2>&1
+    
+    if [ $? -eq 0 ]; then
+        print_success "App signed successfully"
+        
+        # Verify signature
+        if codesign --verify --verbose "$APP_PATH" 2>&1 | grep -q "valid"; then
+            print_success "Signature verified"
+        fi
+    else
+        print_warning "Code signing had issues (app may still work)"
+    fi
+    
+    # Remove quarantine attribute (in case it got re-added)
+    xattr -dr com.apple.quarantine "$APP_PATH" 2>/dev/null || true
+    
     return 0
 }
 
@@ -458,6 +603,12 @@ build_app() {
         exit 1
     fi
     
+    # Verify the built app
+    verify_app "$BUILT_APP_PATH"
+    
+    # Code sign the app (prevents "damaged" errors)
+    codesign_app "$BUILT_APP_PATH"
+    
     # Show final app size
     echo ""
     APP_SIZE=$(du -sh "$BUILT_APP_PATH" | cut -f1)
@@ -498,13 +649,13 @@ install_app() {
         
         # Verify ffmpeg and deno are present
         if [ -f "$INSTALL_PATH/Contents/Resources/ffmpeg" ]; then
-            print_success "ffmpeg verified ✓"
+            print_success "ffmpeg verified"
         else
             print_warning "ffmpeg not found in installed app!"
         fi
         
         if [ -f "$INSTALL_PATH/Contents/Resources/deno" ]; then
-            print_success "deno verified ✓"
+            print_success "deno verified"
         else
             print_warning "deno not found in installed app!"
         fi
@@ -520,9 +671,9 @@ install_app() {
 
 main() {
     echo ""
-    echo -e "${CYAN}╔════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║   YouTube 4K Downloader Build System   ║${NC}"
-    echo -e "${CYAN}╚════════════════════════════════════════╝${NC}"
+    echo -e "${CYAN}+------------------------------------------+${NC}"
+    echo -e "${CYAN}|   YouTube 4K Downloader Build System     |${NC}"
+    echo -e "${CYAN}+------------------------------------------+${NC}"
     
     # Parse arguments
     case "${1:-}" in
@@ -600,14 +751,14 @@ main() {
     
     echo "Your app is ready:"
     echo ""
-    echo "  📁 Built app:  $BUILT_APP_PATH"
+    echo "  Built app:  $BUILT_APP_PATH"
     
     APP_BASENAME=$(basename "$BUILT_APP_PATH")
     if [ -d "$INSTALL_DIR/$APP_BASENAME" ]; then
-        echo "  📁 Installed:  $INSTALL_DIR/$APP_BASENAME"
+        echo "  Installed:  $INSTALL_DIR/$APP_BASENAME"
     fi
     echo ""
-    print_success "Done! 🎉"
+    print_success "Done!"
 }
 
 # Run main
