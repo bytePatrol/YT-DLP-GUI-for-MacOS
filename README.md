@@ -10,9 +10,6 @@ A modern, fully self-contained YouTube video downloader with a beautiful dark mo
 ### Chapter Downloads (NEW in v17.8)
 <img src="assets/chapters.png" width="700" alt="Chapter Downloads">
 
-### Chapter Selection Dialog
-<img src="assets/screenshot-chapters.png" width="700" alt="Chapter Selection Dialog">
-
 ### Settings
 <img src="assets/screenshot-settings.png" width="500" alt="Settings Window">
 
