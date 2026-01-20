@@ -2,6 +2,47 @@
 
 All notable changes to YouTube 4K Downloader will be documented in this file.
 
+## [17.9.0] - 2026-01-20
+
+### Security
+- **Fixed shell injection vulnerability** in macOS notifications - malicious video titles could no longer execute arbitrary AppleScript commands
+- Added input sanitization (escaping `\`, `"`, `'`) in `send_notification()` function
+- Added input truncation (100/200 char limits) to prevent buffer overflow attacks
+- Added subprocess timeouts to prevent hanging:
+  - `get_version()`: 10 second timeout
+  - `fetch_video_info()`: 30 second timeout
+  - `fetch_full_info()`: 30 second timeout
+  - `send_notification()`: 5 second timeout
+
+### Changed
+- **Complete documentation overhaul** - Added comprehensive Google-style docstrings to all 25+ classes and functions
+- Replaced 200+ lines of version history in file header with professional module documentation
+- Added architecture overview documenting UI Layer, Business Logic Layer, and Data Layer
+- Version history now references CHANGELOG.md instead of inline comments
+
+### Fixed
+- **Eliminated all bare `except:` clauses** - Now uses specific exception types:
+  - `except ValueError:` for parsing errors
+  - `except (ValueError, AttributeError):` for settings validation
+  - `except (ValueError, TypeError):` for numeric conversions
+  - `except (tk.TclError, RuntimeError):` for widget destruction
+  - `except (subprocess.TimeoutExpired, OSError, ValueError):` for subprocess calls
+  - `except OSError:` for file operations
+- Removed all debug print statements for cleaner production output
+- Improved type hints with explicit return types (`-> None`, `-> str`, etc.)
+- Consistent code formatting and whitespace cleanup
+
+### Documentation
+- `VideoFormat`: Full attribute descriptions for all 16 fields
+- `Chapter`: Chapter metadata and duration properties explained
+- `VideoInfo`: Complete video metadata documentation
+- `DownloadTask`: All 18 attributes documented with types and descriptions
+- `SponsorBlockAPI`: API usage and privacy-preserving hash mechanism
+- `YtDlpInterface`: Multiple execution modes documented with examples
+- `DownloadManager`: Thread-safety and callback system explained
+- All UI widgets: `EnhancedProgressBar`, `ModernButton`, `FormatCard`, etc.
+- All dialog windows: `SettingsWindow`, `HistoryBrowserWindow`, `ChapterSelectionWindow`
+
 ## [17.8.8] - 2026-01-19
 
 ### Fixed

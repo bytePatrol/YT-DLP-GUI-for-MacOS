@@ -39,7 +39,7 @@ Architecture:
 
 Usage:
     Run directly:
-        python3 yt_dlp_gui_v17.8.8.py
+        python3 yt_dlp_gui_v17.9.0.py
 
     Or build as macOS app:
         ./build_app.sh
@@ -58,7 +58,7 @@ For version history, see CHANGELOG.md
 
 Author: bytePatrol
 License: MIT
-Version: 17.8.8
+Version: 17.9.0
 """
 
 import customtkinter as ctk
@@ -110,7 +110,7 @@ except ImportError:
 # ============================================================================
 
 APP_NAME = "YouTube 4K Downloader"
-APP_VERSION = "17.8.8"
+APP_VERSION = "17.9.0"
 
 # Configuration paths - using proper config directory
 CONFIG_DIR = Path.home() / ".config" / "yt-dlp-gui"
