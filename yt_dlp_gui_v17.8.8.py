@@ -14,7 +14,61 @@ A complete rebuild with:
 - Self-contained app with bundled ffmpeg AND deno
 - And much more...
 
-v17.7.0 Changes:
+v17.8.8 Changes:
+- FIXED: History now saves correctly (was writing to wrong file path)
+- Updated Help menu with accurate information (no manual yt-dlp/ffmpeg install needed)
+- Fixed broken emoji characters throughout the app
+- Updated documentation and changelog
+
+v17.8.7 Changes:
+- SponsorBlock is now automatically disabled for chapter downloads
+- Added notice in SponsorBlock settings explaining chapter download limitation
+- Added notice in chapter selection window about SponsorBlock being disabled
+- This prevents potential issues with chapter extraction and SponsorBlock conflicts
+
+v17.8.6 Changes:
+- FIXED: Footer no longer disappears after clicking Analyze
+- Footer (Output path, Open Folder, Change buttons) now stays visible permanently
+- Fixed layout issue where dynamically showing video_frame pushed footer off screen
+- Log panel no longer expands infinitely, allowing footer to remain visible
+- Can now download multiple videos without restarting the app
+
+v17.8.5 Changes:
+- MAJOR PERFORMANCE FIX: Chapter downloads are now 10-50x faster!
+- New strategy: Download once -> Encode once -> Split into chapters
+- Old method downloaded and encoded the ENTIRE video for EACH chapter (insanely slow)
+- New method uses ffmpeg stream copy to split chapters (instant, no re-encoding)
+- Fixed bug where only 3 chapters were output despite selecting more
+- Added proper progress tracking through all stages (download/encode/split)
+- Temp files are now properly cleaned up after chapter extraction
+
+v17.8.4 Changes:
+- FIXED: Chapter downloads now work with bundled ffmpeg
+- Added --ffmpeg-location to chapter extraction commands
+- yt-dlp's --download-sections requires ffmpeg for partial video extraction
+- Error "ffmpeg is not installed" no longer occurs when downloading chapters
+
+v17.8.3 Changes:
+- CRITICAL FIX: All downloads now work with YouTube's SABR streaming restrictions
+- Added --extractor-args youtube:player_client=android_sdkless to ALL yt-dlp commands
+- Added --remote-components ejs:github for JavaScript challenge solving
+- Fixed chapter downloads failing with "Some web client https formats have been skipped"
+- Fixed main video/audio downloads that were also affected by SABR restrictions
+- android_sdkless client bypasses YouTube's SABR-only enforcement
+
+v17.8.2 Changes:
+- MAJOR FIX: App no longer appears frozen during long merge/conversion operations
+- NEW: Chapter downloads restored! Download videos split by chapters
+- Detects YouTube chapters automatically and shows "Download Chapters" button
+- Select individual chapters or download all at once
+- Supports both video and audio-only chapter extraction
+- Added file size monitoring during stalls - shows "Merging... 1.2 GB written (45s elapsed)"
+- Detects yt-dlp's internal merging phase and shows activity indicator
+- Fixed encoding issue in fetch_video_info/fetch_full_info that broke Analyze button
+- Fixed footer disappearing after Analyze - now stays visible
+- Background thread monitors output file growth when progress parsing fails
+
+v17.7.4 Changes:
 - MAJOR FIX: SponsorBlock now works via post-processing!
 - Queries SponsorBlock API after conversion to find segments
 - Re-encodes video with segments removed using ffmpeg filters
@@ -142,7 +196,7 @@ v17.0.4 Changes:
 - Use bundle_dependencies.sh to install ffmpeg + deno into app
 
 v17.0.3 Changes:
-- Fixed crash with emoji/unicode in video titles (ÃƒÂ°Ã…Â¸Ã¢â‚¬Â¡Ã‚ÂµÃƒÂ°Ã…Â¸Ã¢â‚¬Â¡Ã‚Â±ÃƒÂ°Ã…Â¸Ã‹Å“Ã¢â‚¬Â¦ etc.)
+- Fixed crash with emoji/unicode in video titles
 - Improved filename sanitization to ASCII-only for maximum compatibility
 - Fixed 'ascii codec can't decode' errors in ffmpeg subprocess
 - All subprocess calls now use UTF-8 encoding with error replacement
@@ -218,7 +272,7 @@ except ImportError:
 # ============================================================================
 
 APP_NAME = "YouTube 4K Downloader"
-APP_VERSION = "17.7.4"
+APP_VERSION = "17.8.8"
 
 # Configuration paths - using proper config directory
 CONFIG_DIR = Path.home() / ".config" / "yt-dlp-gui"
@@ -410,6 +464,45 @@ class VideoFormat:
 
 
 @dataclass
+class Chapter:
+    """Represents a chapter in a video."""
+    index: int
+    title: str
+    start_time: float  # in seconds
+    end_time: float    # in seconds
+    
+    @property
+    def duration(self) -> float:
+        """Duration of the chapter in seconds."""
+        return self.end_time - self.start_time
+    
+    @property
+    def duration_str(self) -> str:
+        """Human-readable duration."""
+        duration = int(self.duration)
+        hours, remainder = divmod(duration, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        if hours:
+            return f"{hours}:{minutes:02d}:{seconds:02d}"
+        return f"{minutes}:{seconds:02d}"
+    
+    @property
+    def start_time_str(self) -> str:
+        """Human-readable start time."""
+        start = int(self.start_time)
+        hours, remainder = divmod(start, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        if hours:
+            return f"{hours}:{minutes:02d}:{seconds:02d}"
+        return f"{minutes}:{seconds:02d}"
+    
+    @property
+    def safe_filename(self) -> str:
+        """Return a filesystem-safe version of the chapter title."""
+        return sanitize_filename(self.title, max_length=100)
+
+
+@dataclass
 class VideoInfo:
     """Represents video metadata."""
     id: str
@@ -422,6 +515,7 @@ class VideoInfo:
     upload_date: Optional[str] = None
     description: Optional[str] = None
     formats: List[VideoFormat] = field(default_factory=list)
+    chapters: List[Chapter] = field(default_factory=list)  # v17.8.0: Chapter support
     is_playlist: bool = False
     playlist_count: Optional[int] = None
     
@@ -446,6 +540,11 @@ class VideoInfo:
         if self.view_count >= 1_000:
             return f"{self.view_count / 1_000:.1f}K"
         return str(self.view_count)
+    
+    @property
+    def has_chapters(self) -> bool:
+        """Check if video has chapters."""
+        return len(self.chapters) > 0
 
 
 @dataclass
@@ -462,6 +561,8 @@ class DownloadTask:
     download_speed: Optional[str] = None  # NEW: Download speed in Mbps
     conversion_fps: Optional[str] = None  # NEW: Conversion FPS
     file_size: Optional[int] = None       # NEW: File size in bytes
+    status_detail: Optional[str] = None   # v17.7.5: Detailed status message (e.g., "Processing chapters...")
+    current_file_size: Optional[int] = None  # v17.7.5: Current size of output file being written
     error_message: Optional[str] = None
     created_at: datetime = field(default_factory=datetime.now)
     started_at: Optional[datetime] = None
@@ -728,19 +829,16 @@ class YtDlpInterface:
             return self._version
         try:
             cmd = self._build_command(["--version"])
-            print(f"DEBUG: Running command: {' '.join(cmd)}")  # Debug output
             result = subprocess.run(
                 cmd,
-                capture_output=True, text=True, check=False
+                capture_output=True, text=True, check=False,
+                encoding='utf-8', errors='replace'
             )
-            print(f"DEBUG: Return code: {result.returncode}")  # Debug output
-            print(f"DEBUG: stdout: {result.stdout[:100]}")  # Debug output
-            print(f"DEBUG: stderr: {result.stderr[:100]}")  # Debug output
             if result.returncode == 0:
                 self._version = result.stdout.strip().split('\n')[0]
                 return self._version
         except Exception as e:
-            print(f"DEBUG: Exception: {e}")  # Debug output
+            print(f"Warning: Could not get yt-dlp version: {e}")
         return "Not found"
     
     def fetch_video_info(self, url: str) -> VideoInfo:
@@ -748,7 +846,8 @@ class YtDlpInterface:
         try:
             result = subprocess.run(
                 self._build_command(["-J", "--flat-playlist", url]),
-                capture_output=True, text=True, check=False
+                capture_output=True, text=True, check=False,
+                encoding='utf-8', errors='replace'
             )
             
             if result.returncode != 0:
@@ -766,7 +865,8 @@ class YtDlpInterface:
             # First get basic metadata with -J (this works for basic info)
             result_info = subprocess.run(
                 self._build_command(["-J", "--flat-playlist", url]),
-                capture_output=True, text=True, check=False, timeout=30
+                capture_output=True, text=True, check=False, timeout=30,
+                encoding='utf-8', errors='replace'
             )
             
             if result_info.returncode != 0:
@@ -782,7 +882,8 @@ class YtDlpInterface:
                     "--remote-components", "ejs:github",
                     url
                 ]),
-                capture_output=True, text=True, check=False, timeout=30
+                capture_output=True, text=True, check=False, timeout=30,
+                encoding='utf-8', errors='replace'
             )
             
             if result_formats.returncode == 0:
@@ -814,15 +915,15 @@ class YtDlpInterface:
         # Parse each format line
         for line in lines[table_start:]:
             line = line.strip()
-            if not line or line.startswith('[') or line.startswith('â”€'):
+            if not line or line.startswith('[') or '---' in line:
                 continue
             
             # Skip audio-only lines (we want video formats)
             if 'audio only' in line.lower() and 'video' not in line.lower():
                 continue
             
-            # Split by â”‚ separator to get sections
-            sections = line.split('â”‚')
+            # Split by vertical bar separator to get sections
+            sections = line.split('|')
             if len(sections) < 2:
                 # Try splitting by whitespace only
                 parts = line.split()
@@ -987,6 +1088,19 @@ class YtDlpInterface:
         # Check if it's a playlist
         is_playlist = data.get("_type") == "playlist"
         
+        # Parse chapters if available
+        chapters = []
+        chapters_data = data.get("chapters", [])
+        if chapters_data:
+            for i, ch in enumerate(chapters_data):
+                chapter = Chapter(
+                    index=i,
+                    title=ch.get("title", f"Chapter {i + 1}"),
+                    start_time=ch.get("start_time", 0),
+                    end_time=ch.get("end_time", 0)
+                )
+                chapters.append(chapter)
+        
         info = VideoInfo(
             id=data.get("id", "unknown"),
             title=data.get("title", "Unknown Title"),
@@ -997,6 +1111,7 @@ class YtDlpInterface:
             view_count=data.get("view_count"),
             upload_date=data.get("upload_date"),
             description=data.get("description"),
+            chapters=chapters,
             is_playlist=is_playlist,
             playlist_count=data.get("playlist_count") if is_playlist else None,
         )
@@ -1198,6 +1313,15 @@ class ProgressTracker:
         self.current_stage = "idle"
         self.download_speed = None  # Mbps
         self.conversion_fps = None
+        # v17.7.5: Stall detection
+        self.last_progress_time = None
+        self.last_progress_value = 0
+        self.stall_threshold = 5  # Seconds before considering progress stalled
+        self.is_stalled = False
+        # v17.7.5: File monitoring
+        self.monitored_file = None
+        self.last_file_size = 0
+        self.file_growth_rate = 0  # bytes per second
         
     def start(self, stage="downloading"):
         """Start tracking a new stage."""
@@ -1206,6 +1330,12 @@ class ProgressTracker:
         self.current_stage = stage
         self.download_speed = None
         self.conversion_fps = None
+        self.last_progress_time = time.time()
+        self.last_progress_value = 0
+        self.is_stalled = False
+        self.monitored_file = None
+        self.last_file_size = 0
+        self.file_growth_rate = 0
         
     def update(self, percentage):
         """Update progress percentage."""
@@ -1218,6 +1348,58 @@ class ProgressTracker:
         # Keep only last window_size seconds
         cutoff_time = current_time - self.window_size
         self.history = [(t, p) for t, p in self.history if t >= cutoff_time]
+        
+        # v17.7.5: Update stall detection
+        if percentage > self.last_progress_value:
+            self.last_progress_time = current_time
+            self.last_progress_value = percentage
+            self.is_stalled = False
+    
+    def check_stall(self) -> bool:
+        """Check if progress appears stalled (no updates for threshold seconds)."""
+        if self.last_progress_time is None:
+            return False
+        time_since_progress = time.time() - self.last_progress_time
+        self.is_stalled = time_since_progress > self.stall_threshold
+        return self.is_stalled
+    
+    def get_stall_duration(self) -> float:
+        """Get how long progress has been stalled."""
+        if self.last_progress_time is None:
+            return 0
+        return time.time() - self.last_progress_time
+    
+    def set_monitored_file(self, filepath: str):
+        """Set a file to monitor for growth (used when progress parsing fails)."""
+        self.monitored_file = filepath
+        self.last_file_size = 0
+        
+    def check_file_growth(self) -> tuple[bool, int, float]:
+        """
+        Check if the monitored file is growing.
+        Returns: (is_growing, current_size, growth_rate_mbps)
+        """
+        if not self.monitored_file or not os.path.exists(self.monitored_file):
+            return False, 0, 0
+        
+        try:
+            current_size = os.path.getsize(self.monitored_file)
+            current_time = time.time()
+            
+            if self.last_file_size > 0 and hasattr(self, '_last_size_check_time'):
+                time_delta = current_time - self._last_size_check_time
+                if time_delta > 0:
+                    size_delta = current_size - self.last_file_size
+                    # Convert bytes/sec to Mbps (megabits per second)
+                    self.file_growth_rate = (size_delta * 8) / (time_delta * 1_000_000)
+            
+            self._last_size_check_time = current_time
+            is_growing = current_size > self.last_file_size
+            self.last_file_size = current_size
+            
+            return is_growing, current_size, self.file_growth_rate
+        except Exception:
+            return False, 0, 0
     
     def get_eta(self):
         """Calculate ETA in seconds using sliding window."""
@@ -1277,6 +1459,16 @@ class ProgressTracker:
         if self.conversion_fps is None:
             return ""
         return f"{self.conversion_fps:.0f} fps"
+    
+    def format_file_size(self, size_bytes: int) -> str:
+        """Format file size as human-readable string."""
+        if size_bytes >= 1024 ** 3:
+            return f"{size_bytes / (1024 ** 3):.2f} GB"
+        elif size_bytes >= 1024 ** 2:
+            return f"{size_bytes / (1024 ** 2):.1f} MB"
+        elif size_bytes >= 1024:
+            return f"{size_bytes / 1024:.1f} KB"
+        return f"{size_bytes} B"
 
 
 # ============================================================================
@@ -1423,6 +1615,7 @@ class DownloadManager:
             video_cmd_args = [
                 "--newline",
                 "--remote-components", "ejs:github",
+                "--extractor-args", "youtube:player_client=android_sdkless",
                 "-f", video_format,
                 "-o", temp_video,
                 video_info.url
@@ -1457,6 +1650,7 @@ class DownloadManager:
             audio_cmd = self.ytdlp._build_command([
                 "--newline",
                 "--remote-components", "ejs:github",
+                "--extractor-args", "youtube:player_client=android_sdkless",
                 "-f", "bestaudio[ext=m4a]/bestaudio/best",
                 "-o", temp_audio,
                 video_info.url
@@ -1647,7 +1841,6 @@ class DownloadManager:
                 
                 # BUGFIX v16.1: Save to history
                 try:
-                    from pathlib import Path as PathLib
                     history_entry = {
                         "id": video_info.id,
                         "title": video_info.title,
@@ -1659,7 +1852,7 @@ class DownloadManager:
                         "duration": video_info.duration,
                         "format": f"{fmt.height}p" if fmt and fmt.height else "best"
                     }
-                    hist_mgr = HistoryManager(PathLib.home() / ".yt_dlp_gui_v16_history.json")
+                    hist_mgr = HistoryManager(HISTORY_PATH)
                     hist_mgr.add(history_entry)
                 except Exception:
                     pass  # Don't fail download if history fails
@@ -1915,6 +2108,9 @@ class DownloadManager:
                                        expected_file_pattern: Optional[str] = None):
         """Run a subprocess and update progress with speed metrics.
         
+        v17.7.5: Enhanced to detect yt-dlp merging phases and show file activity
+        when progress appears stalled.
+        
         Args:
             expected_file_pattern: Optional pattern to check if file was downloaded despite errors
         """
@@ -1934,7 +2130,53 @@ class DownloadManager:
             
             progress_re = re.compile(r'\[download\]\s+(\d+(?:\.\d+)?)%')
             speed_re = re.compile(r'at\s+([\d.]+)(Ki|Mi|Gi)?B/s')
+            # v17.7.5: Detect merging/processing messages from yt-dlp
+            merge_re = re.compile(r'\[Merger\]|\[ffmpeg\]|\[ExtractAudio\]|\[FixupM3u8\]|\[Fixup\]|Merging formats|Destination:.*_temp')
+            chapter_re = re.compile(r'Chapter \d+|Writing chapter')
             error_lines = []  # Capture error messages
+            
+            # v17.7.5: Track when we last saw real progress
+            last_progress_update = time.time()
+            is_in_merge_phase = False
+            merge_start_time = None
+            
+            # v17.7.5: Start a background thread to monitor file growth during stalls
+            file_monitor_active = False
+            
+            def monitor_file_growth():
+                """Background thread to update UI during long operations."""
+                nonlocal file_monitor_active
+                while file_monitor_active and self.current_process and self.current_process.poll() is None:
+                    # Check for growing files in output directory
+                    try:
+                        for fname in os.listdir(self.output_dir):
+                            if expected_file_pattern and expected_file_pattern in fname:
+                                fpath = os.path.join(self.output_dir, fname)
+                                if os.path.isfile(fpath):
+                                    is_growing, size, rate = False, 0, 0
+                                    try:
+                                        size = os.path.getsize(fpath)
+                                        if hasattr(self, '_last_monitored_size'):
+                                            is_growing = size > self._last_monitored_size
+                                            if is_growing:
+                                                rate = (size - self._last_monitored_size) * 8 / 1_000_000  # Mbps
+                                        self._last_monitored_size = size
+                                    except:
+                                        pass
+                                    
+                                    if size > 0:
+                                        task.current_file_size = size
+                                        size_str = self.progress_tracker.format_file_size(size)
+                                        if is_in_merge_phase and merge_start_time:
+                                            elapsed = time.time() - merge_start_time
+                                            task.status_detail = f"Merging streams... ({size_str}, {elapsed:.0f}s elapsed)"
+                                        else:
+                                            task.status_detail = f"Processing... ({size_str})"
+                                        self._notify("task_updated", task)
+                                    break
+                    except Exception:
+                        pass
+                    time.sleep(1)  # Check every second
             
             for line in self.current_process.stdout:
                 if self._paused:
@@ -1945,12 +2187,36 @@ class DownloadManager:
                 if "error" in line.lower() and "warning" not in line.lower():
                     error_lines.append(line.strip())
                 
+                # v17.7.5: Detect merge/processing phases
+                if merge_re.search(line):
+                    if not is_in_merge_phase:
+                        is_in_merge_phase = True
+                        merge_start_time = time.time()
+                        task.status_detail = "Merging video and audio streams..."
+                        self._notify("log", ("info", "Merging streams (this may take several minutes for long videos)..."))
+                        self._notify("task_updated", task)
+                        
+                        # Start file monitoring thread
+                        if not file_monitor_active:
+                            file_monitor_active = True
+                            self._last_monitored_size = 0
+                            monitor_thread = threading.Thread(target=monitor_file_growth, daemon=True)
+                            monitor_thread.start()
+                
+                # v17.7.5: Detect chapter processing
+                if chapter_re.search(line):
+                    task.status_detail = f"Processing chapters..."
+                    self._notify("task_updated", task)
+                
                 # Parse progress percentage
                 match = progress_re.search(line)
                 if match:
                     pct = float(match.group(1))
                     # Scale to our progress range
                     task.progress = progress_start + (pct / 100) * (progress_end - progress_start)
+                    last_progress_update = time.time()
+                    is_in_merge_phase = False  # Real progress means we're past merge phase
+                    task.status_detail = None  # Clear special status
                     
                     # Update progress tracker
                     self.progress_tracker.update(task.progress)
@@ -1979,7 +2245,13 @@ class DownloadManager:
                     
                     self._notify("task_updated", task)
             
+            # Stop file monitor
+            file_monitor_active = False
+            
             self.current_process.wait()
+            
+            # Clear status detail after completion
+            task.status_detail = None
             
             # Check if download succeeded despite non-zero return code
             file_exists = False
@@ -2010,10 +2282,20 @@ class DownloadManager:
     def _run_ffmpeg_with_progress(self, cmd: List[str], task: DownloadTask,
                                    stage: str, progress_start: float, progress_end: float,
                                    duration: Optional[int]) -> bool:
-        """Run ffmpeg and update progress with FPS metrics."""
+        """Run ffmpeg and update progress with FPS metrics.
+        
+        v17.7.5: Enhanced with file size monitoring and stall detection to show
+        users that processing is still active during long conversions.
+        """
         try:
             # Start progress tracking for conversion stage
             self.progress_tracker.start("converting")
+            
+            # v17.7.5: Get the output file path from the command (last argument)
+            output_file = cmd[-1] if cmd else None
+            last_file_size = 0
+            last_progress_time = time.time()
+            stall_logged = False
             
             # Use encoding='utf-8' and errors='replace' to handle unicode in paths
             self.current_process = subprocess.Popen(
@@ -2027,9 +2309,55 @@ class DownloadManager:
             
             time_re = re.compile(r'time=(\d+):(\d+):(\d+(?:\.\d+)?)')
             fps_re = re.compile(r'fps=\s*([\d.]+)')
+            size_re = re.compile(r'size=\s*(\d+)(ki|Mi|Gi)?B')  # v17.7.5: Also parse size from ffmpeg output
             total_duration = float(duration) if duration else 0
             
             stderr_lines = []  # Capture stderr for error reporting
+            
+            # v17.7.5: Start a background thread to monitor file growth during apparent stalls
+            file_monitor_active = True
+            conversion_start = time.time()
+            
+            def monitor_conversion_file():
+                """Background thread to show file growth during conversion."""
+                nonlocal last_file_size, stall_logged
+                check_interval = 2  # Check every 2 seconds
+                
+                while file_monitor_active and self.current_process and self.current_process.poll() is None:
+                    time.sleep(check_interval)
+                    
+                    # Check if progress appears stalled
+                    time_since_progress = time.time() - last_progress_time
+                    
+                    if time_since_progress > 5 and output_file and os.path.exists(output_file):
+                        try:
+                            current_size = os.path.getsize(output_file)
+                            
+                            if current_size > last_file_size:
+                                # File is growing - show activity
+                                size_delta = current_size - last_file_size
+                                write_rate = (size_delta * 8) / (check_interval * 1_000_000)  # Mbps
+                                
+                                size_str = self.progress_tracker.format_file_size(current_size)
+                                elapsed = time.time() - conversion_start
+                                elapsed_str = f"{int(elapsed // 60)}m {int(elapsed % 60)}s" if elapsed >= 60 else f"{int(elapsed)}s"
+                                
+                                task.current_file_size = current_size
+                                task.status_detail = f"Converting... {size_str} written ({elapsed_str} elapsed, {write_rate:.1f} Mbps)"
+                                task.eta = "calculating..."  # Clear ETA since we don't have reliable progress
+                                self._notify("task_updated", task)
+                                
+                                if not stall_logged and time_since_progress > 10:
+                                    self._notify("log", ("info", f"Conversion in progress - {size_str} written so far"))
+                                    stall_logged = True
+                            
+                            last_file_size = current_size
+                        except Exception:
+                            pass
+            
+            # Start monitor thread
+            monitor_thread = threading.Thread(target=monitor_conversion_file, daemon=True)
+            monitor_thread.start()
             
             for line in self.current_process.stderr:
                 stderr_lines.append(line)  # Store for potential error reporting
@@ -2037,6 +2365,24 @@ class DownloadManager:
                 if self._paused:
                     while self._paused and self._running:
                         time.sleep(0.1)
+                
+                # v17.7.5: Parse size from ffmpeg output even if no time info
+                size_match = size_re.search(line)
+                if size_match:
+                    size_value = float(size_match.group(1))
+                    size_unit = size_match.group(2) or ""
+                    
+                    # Convert to bytes
+                    if size_unit == "ki":
+                        current_size = int(size_value * 1024)
+                    elif size_unit == "Mi":
+                        current_size = int(size_value * 1024 * 1024)
+                    elif size_unit == "Gi":
+                        current_size = int(size_value * 1024 * 1024 * 1024)
+                    else:
+                        current_size = int(size_value)
+                    
+                    task.current_file_size = current_size
                 
                 if total_duration > 0:
                     match = time_re.search(line)
@@ -2047,6 +2393,11 @@ class DownloadManager:
                         current_time = h * 3600 + m * 60 + s
                         pct = min(100, (current_time / total_duration) * 100)
                         task.progress = progress_start + (pct / 100) * (progress_end - progress_start)
+                        
+                        # v17.7.5: Update last progress time
+                        last_progress_time = time.time()
+                        task.status_detail = None  # Clear status detail when we have real progress
+                        stall_logged = False
                         
                         # Update progress tracker
                         self.progress_tracker.update(task.progress)
@@ -2063,7 +2414,13 @@ class DownloadManager:
                         
                         self._notify("task_updated", task)
             
+            # v17.7.5: Stop file monitor
+            file_monitor_active = False
+            
             self.current_process.wait()
+            
+            # Clear status detail after completion
+            task.status_detail = None
             
             # If failed, log the error
             if self.current_process.returncode != 0:
@@ -2752,6 +3109,27 @@ class SettingsWindow(ctk.CTkToplevel):
             justify="left"
         ).pack(anchor="w", padx=15, pady=(0, 10))
         
+        # Chapter download notice banner
+        chapter_notice_frame = ctk.CTkFrame(scroll_frame, fg_color="#4d3a1c", corner_radius=8)
+        chapter_notice_frame.pack(fill="x", padx=10, pady=(0, 15))
+        
+        ctk.CTkLabel(
+            chapter_notice_frame,
+            text="Note: Chapter Downloads",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color="#fbbf24",
+            anchor="w"
+        ).pack(anchor="w", padx=15, pady=(10, 5))
+        
+        ctk.CTkLabel(
+            chapter_notice_frame,
+            text="SponsorBlock is automatically disabled when downloading chapters.\nChapter extraction uses a different process that is incompatible with SponsorBlock.",
+            font=ctk.CTkFont(size=11),
+            text_color="#9ca3af",
+            anchor="w",
+            justify="left"
+        ).pack(anchor="w", padx=15, pady=(0, 10))
+        
         self.sb_enabled = ctk.CTkSwitch(scroll_frame, text="Enable SponsorBlock Post-Processing")
         self.sb_enabled.pack(anchor="w", padx=10, pady=(15, 10))
         if self.settings_mgr.get("sponsorblock_enabled"):
@@ -3165,7 +3543,7 @@ FFmpeg for media processing
 Author: bytePatrol
 License: MIT
 
-Ãƒâ€š(c) 2025 All Rights Reserved"""
+(c) 2025 All Rights Reserved"""
         
         ctk.CTkLabel(content, text=info, font=ctk.CTkFont(size=12), 
                     text_color=COLORS["text_secondary"], justify="center").pack(pady=(0, 20))
@@ -3173,6 +3551,198 @@ License: MIT
         ModernButton(content, text="Close", style="primary", width=100, command=self.destroy).pack()
 
 
+class ChapterSelectionWindow(ctk.CTkToplevel):
+    """Window for selecting chapters to download."""
+    
+    def __init__(self, parent, video_info: VideoInfo, on_download: Callable):
+        super().__init__(parent)
+        
+        self.video_info = video_info
+        self.on_download = on_download
+        self.chapter_vars = []  # List of BooleanVars for checkboxes
+        
+        self.title(f"Chapters - {video_info.title[:50]}...")
+        self.geometry("700x550")
+        self.transient(parent)
+        self.resizable(True, True)
+        self.minsize(500, 400)
+        
+        # Configure colors
+        self.configure(fg_color=COLORS["bg_primary"])
+        
+        # Main container
+        main_frame = ctk.CTkFrame(self, fg_color="transparent")
+        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+        
+        # Header
+        header = ctk.CTkFrame(main_frame, fg_color="transparent")
+        header.pack(fill="x", pady=(0, 15))
+        
+        ctk.CTkLabel(
+            header,
+            text=f"{len(video_info.chapters)} Chapters Available",
+            font=ctk.CTkFont(size=18, weight="bold"),
+            text_color=COLORS["text_primary"]
+        ).pack(side="left")
+        
+        # Select all / Deselect all buttons
+        btn_frame = ctk.CTkFrame(header, fg_color="transparent")
+        btn_frame.pack(side="right")
+        
+        ctk.CTkButton(
+            btn_frame,
+            text="Select All",
+            width=90,
+            height=30,
+            font=ctk.CTkFont(size=12),
+            fg_color=COLORS["bg_elevated"],
+            hover_color=COLORS["bg_hover"],
+            command=self._select_all
+        ).pack(side="left", padx=(0, 8))
+        
+        ctk.CTkButton(
+            btn_frame,
+            text="Deselect All",
+            width=90,
+            height=30,
+            font=ctk.CTkFont(size=12),
+            fg_color=COLORS["bg_elevated"],
+            hover_color=COLORS["bg_hover"],
+            command=self._deselect_all
+        ).pack(side="left")
+        
+        # SponsorBlock notice banner
+        sb_notice = ctk.CTkFrame(main_frame, fg_color="#3d3d1c", corner_radius=8)
+        sb_notice.pack(fill="x", pady=(0, 10))
+        
+        ctk.CTkLabel(
+            sb_notice,
+            text=" SponsorBlock is disabled for chapter downloads",
+            font=ctk.CTkFont(size=11),
+            text_color="#d4d4a0",
+            anchor="w"
+        ).pack(anchor="w", padx=12, pady=8)
+        
+        # Chapters list (scrollable)
+        self.chapters_frame = ctk.CTkScrollableFrame(
+            main_frame,
+            fg_color=COLORS["bg_secondary"],
+            corner_radius=10
+        )
+        self.chapters_frame.pack(fill="both", expand=True, pady=(0, 15))
+        
+        # Create chapter rows
+        for chapter in video_info.chapters:
+            self._create_chapter_row(chapter)
+        
+        # Footer with options and download button
+        footer = ctk.CTkFrame(main_frame, fg_color="transparent")
+        footer.pack(fill="x")
+        
+        # Audio only option
+        self.audio_only_var = ctk.BooleanVar(value=False)
+        ctk.CTkCheckBox(
+            footer,
+            text="Audio Only (M4A)",
+            variable=self.audio_only_var,
+            font=ctk.CTkFont(size=13),
+            text_color=COLORS["text_secondary"]
+        ).pack(side="left")
+        
+        # Download button
+        ModernButton(
+            footer,
+            text="Download Selected Chapters",
+            style="primary",
+            width=200,
+            command=self._download_chapters
+        ).pack(side="right")
+        
+        # Cancel button
+        ModernButton(
+            footer,
+            text="Cancel",
+            style="secondary",
+            width=80,
+            command=self.destroy
+        ).pack(side="right", padx=(0, 10))
+    
+    def _create_chapter_row(self, chapter: Chapter):
+        """Create a row for a single chapter."""
+        row = ctk.CTkFrame(self.chapters_frame, fg_color="transparent")
+        row.pack(fill="x", padx=10, pady=5)
+        
+        # Checkbox
+        var = ctk.BooleanVar(value=True)  # Selected by default
+        self.chapter_vars.append((chapter, var))
+        
+        cb = ctk.CTkCheckBox(
+            row,
+            text="",
+            variable=var,
+            width=24,
+            checkbox_width=20,
+            checkbox_height=20
+        )
+        cb.pack(side="left", padx=(0, 10))
+        
+        # Chapter number
+        ctk.CTkLabel(
+            row,
+            text=f"{chapter.index + 1:02d}",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color=COLORS["accent_purple"],
+            width=30
+        ).pack(side="left", padx=(0, 10))
+        
+        # Chapter title
+        ctk.CTkLabel(
+            row,
+            text=chapter.title[:60] + ("..." if len(chapter.title) > 60 else ""),
+            font=ctk.CTkFont(size=13),
+            text_color=COLORS["text_primary"],
+            anchor="w"
+        ).pack(side="left", fill="x", expand=True)
+        
+        # Duration
+        ctk.CTkLabel(
+            row,
+            text=chapter.duration_str,
+            font=ctk.CTkFont(size=12),
+            text_color=COLORS["text_secondary"],
+            width=60
+        ).pack(side="right", padx=(10, 0))
+        
+        # Start time
+        ctk.CTkLabel(
+            row,
+            text=chapter.start_time_str,
+            font=ctk.CTkFont(size=12),
+            text_color=COLORS["text_tertiary"],
+            width=60
+        ).pack(side="right")
+    
+    def _select_all(self):
+        """Select all chapters."""
+        for _, var in self.chapter_vars:
+            var.set(True)
+    
+    def _deselect_all(self):
+        """Deselect all chapters."""
+        for _, var in self.chapter_vars:
+            var.set(False)
+    
+    def _download_chapters(self):
+        """Start downloading selected chapters."""
+        selected_chapters = [ch for ch, var in self.chapter_vars if var.get()]
+        
+        if not selected_chapters:
+            messagebox.showwarning("No Selection", "Please select at least one chapter to download.")
+            return
+        
+        audio_only = self.audio_only_var.get()
+        self.on_download(selected_chapters, audio_only)
+        self.destroy()
 
 
 # ============================================================================
@@ -3248,6 +3818,10 @@ class YtDlpGUI(ctk.CTk):
         self.main_container = ctk.CTkFrame(self, fg_color="transparent")
         self.main_container.pack(fill="both", expand=True, padx=20, pady=20)
         
+        # Footer MUST be created first when using side="bottom" 
+        # This ensures it stays at the bottom regardless of other elements
+        self._create_footer()
+        
         # Header
         self._create_header()
         
@@ -3265,9 +3839,6 @@ class YtDlpGUI(ctk.CTk):
         
         # Log panel
         self._create_log_section()
-        
-        # Footer
-        self._create_footer()
     
     def _create_header(self):
         """Create the header with title and version."""
@@ -3445,11 +4016,11 @@ class YtDlpGUI(ctk.CTk):
         self.duration_badge.place(relx=0.95, rely=0.95, anchor="se")
         
         # Right side - info
-        info_frame = ctk.CTkFrame(self.preview_frame, fg_color="transparent")
-        info_frame.pack(side="left", fill="both", expand=True)
+        self.info_frame = ctk.CTkFrame(self.preview_frame, fg_color="transparent")
+        self.info_frame.pack(side="left", fill="both", expand=True)
         
         self.title_label = ctk.CTkLabel(
-            info_frame,
+            self.info_frame,
             text="Video Title",
             font=ctk.CTkFont(size=18, weight="bold"),
             text_color=COLORS["text_primary"],
@@ -3459,8 +4030,8 @@ class YtDlpGUI(ctk.CTk):
         self.title_label.pack(fill="x", pady=(0, 8))
         
         # Meta info
-        meta_frame = ctk.CTkFrame(info_frame, fg_color="transparent")
-        meta_frame.pack(fill="x", pady=(0, 16))
+        meta_frame = ctk.CTkFrame(self.info_frame, fg_color="transparent")
+        meta_frame.pack(fill="x", pady=(0, 10))
         
         self.channel_label = ctk.CTkLabel(
             meta_frame,
@@ -3478,9 +4049,28 @@ class YtDlpGUI(ctk.CTk):
         )
         self.views_label.pack(side="left", padx=(0, 16))
         
+        # Chapters label (hidden by default, shown when chapters detected)
+        self.chapters_label = ctk.CTkLabel(
+            meta_frame,
+            text="",
+            font=ctk.CTkFont(size=13),
+            text_color=COLORS["accent_purple"]
+        )
+        self.chapters_label.pack(side="left", padx=(0, 16))
+        
+        # Chapters button (hidden by default)
+        self.chapters_button = ModernButton(
+            meta_frame,
+            text="Download Chapters",
+            style="secondary",
+            width=160,
+            command=self._show_chapters_dialog
+        )
+        # Will be packed when chapters are detected
+        
         # Format selection label
         ctk.CTkLabel(
-            info_frame,
+            self.info_frame,
             text="SELECT QUALITY",
             font=ctk.CTkFont(size=11, weight="bold"),
             text_color=COLORS["text_tertiary"]
@@ -3488,7 +4078,7 @@ class YtDlpGUI(ctk.CTk):
         
         # Format cards container (scrollable)
         self.formats_scroll = ctk.CTkScrollableFrame(
-            info_frame,
+            self.info_frame,
             fg_color="transparent",
             height=100,
             orientation="horizontal"
@@ -3579,8 +4169,8 @@ class YtDlpGUI(ctk.CTk):
     
     def _create_log_section(self):
         """Create log panel."""
-        self.log_panel = LogPanel(self.main_container, height=150)
-        self.log_panel.pack(fill="both", expand=True, pady=(0, 16))
+        self.log_panel = LogPanel(self.main_container, height=120)
+        self.log_panel.pack(fill="x", pady=(0, 8))  # Changed from fill="both", expand=True
         
         # Welcome message
         self.log_panel.log(f"Welcome to {APP_NAME} v{APP_VERSION}", "info")
@@ -3588,11 +4178,12 @@ class YtDlpGUI(ctk.CTk):
     
     def _create_footer(self):
         """Create footer with output path and buttons."""
-        footer = ctk.CTkFrame(self.main_container, fg_color="transparent")
-        footer.pack(fill="x")
+        self.footer = ctk.CTkFrame(self.main_container, fg_color="transparent", height=40)
+        self.footer.pack(fill="x", side="bottom", pady=(0, 5))  # Pack at bottom to ensure visibility
+        self.footer.pack_propagate(False)  # Prevent footer from shrinking
         
         # Output path
-        path_frame = ctk.CTkFrame(footer, fg_color="transparent")
+        path_frame = ctk.CTkFrame(self.footer, fg_color="transparent")
         path_frame.pack(side="left")
         
         ctk.CTkLabel(
@@ -3611,7 +4202,7 @@ class YtDlpGUI(ctk.CTk):
         self.output_path_label.pack(side="left", padx=(8, 0))
         
         # Footer buttons
-        btn_frame = ctk.CTkFrame(footer, fg_color="transparent")
+        btn_frame = ctk.CTkFrame(self.footer, fg_color="transparent")
         btn_frame.pack(side="right")
         
         ModernButton(
@@ -3738,6 +4329,15 @@ class YtDlpGUI(ctk.CTk):
         self.views_label.configure(text=f"{info.views_str} views")
         self.duration_badge.configure(text=info.duration_str)
         
+        # Update chapters info
+        if info.has_chapters:
+            self.chapters_label.configure(text=f"{len(info.chapters)} chapters")
+            self.chapters_button.pack(side="left")
+            self.log_panel.log(f"Found {len(info.chapters)} chapters in video", "success")
+        else:
+            self.chapters_label.configure(text="")
+            self.chapters_button.pack_forget()
+        
         # Load thumbnail
         if info.thumbnail:
             def load_thumb():
@@ -3809,6 +4409,372 @@ class YtDlpGUI(ctk.CTk):
         
         self.log_panel.log(f"Selected: {fmt.height}p {fmt.bitrate_str}", "info")
     
+    def _show_chapters_dialog(self):
+        """Show the chapter selection dialog."""
+        if not self.current_video or not self.current_video.has_chapters:
+            messagebox.showwarning("No Chapters", "This video does not have chapters.")
+            return
+        
+        ChapterSelectionWindow(
+            self,
+            self.current_video,
+            on_download=self._download_chapters
+        )
+    
+    def _download_chapters(self, chapters: List[Chapter], audio_only: bool = False):
+        """Download selected chapters as separate files.
+        
+        v17.8.5: Complete rewrite for efficiency:
+        1. Download full video once (video + audio streams)
+        2. Merge/encode to QuickTime-compatible format once
+        3. Split into chapters using ffmpeg stream copy (fast, no re-encoding)
+        
+        This is MUCH faster than the old approach which downloaded and encoded
+        the entire video separately for each chapter.
+        
+        v17.8.7: SponsorBlock is automatically disabled for chapter downloads
+        to avoid compatibility issues with the chapter extraction process.
+        """
+        if not self.current_video:
+            return
+        
+        video_info = self.current_video
+        output_dir = self.config.get("output_dir", str(Path.home() / "Desktop"))
+        
+        # Create a folder for the chapters
+        safe_title = sanitize_filename(video_info.title, max_length=100)
+        chapter_folder = os.path.join(output_dir, safe_title)
+        os.makedirs(chapter_folder, exist_ok=True)
+        
+        self.log_panel.log(f"Downloading {len(chapters)} chapters to: {chapter_folder}", "info")
+        self.log_panel.log("Strategy: Download once â†’ Encode once â†’ Split into chapters (fast)", "info")
+        
+        # v17.8.7: Log that SponsorBlock is disabled for chapter downloads
+        if self.settings_mgr.get('sponsorblock_enabled', False):
+            self.log_panel.log("Note: SponsorBlock is disabled for chapter downloads", "warning")
+        
+        # Start chapter download in a thread
+        def download_chapters_thread():
+            video_id = video_info.id
+            temp_video = os.path.join(output_dir, f"{video_id}_temp_video.%(ext)s")
+            temp_audio = os.path.join(output_dir, f"{video_id}_temp_audio.%(ext)s")
+            merged_file = os.path.join(output_dir, f"{video_id}_merged.mp4")
+            
+            try:
+                # ========================================
+                # STAGE 1: Download video stream (0-30%)
+                # ========================================
+                self.after(0, lambda: self._update_chapter_stage("Downloading video stream...", 0))
+                
+                fmt = self.selected_format
+                if audio_only:
+                    # For audio-only, we just need the audio stream
+                    self.after(0, lambda: self.log_panel.log("Audio-only mode: downloading best audio", "info"))
+                else:
+                    if fmt and fmt.height:
+                        video_format = f"bestvideo[height<={fmt.height}][ext=mp4]/bestvideo[height<={fmt.height}]/bestvideo"
+                        self.after(0, lambda h=fmt.height: self.log_panel.log(f"Downloading best video at or below {h}p", "info"))
+                    else:
+                        video_format = "bestvideo[ext=mp4]/bestvideo/best"
+                        self.after(0, lambda: self.log_panel.log("Downloading best available video", "info"))
+                    
+                    video_cmd = self.ytdlp._build_command([
+                        "--newline",
+                        "--remote-components", "ejs:github",
+                        "--extractor-args", "youtube:player_client=android_sdkless",
+                        "-f", video_format,
+                        "-o", temp_video,
+                        video_info.url
+                    ])
+                    
+                    result = subprocess.run(
+                        video_cmd,
+                        capture_output=True,
+                        text=True,
+                        encoding='utf-8',
+                        errors='replace'
+                    )
+                    
+                    if result.returncode != 0:
+                        # Check if file exists anyway
+                        video_file = self._find_chapter_temp_file(output_dir, f"{video_id}_temp_video")
+                        if not video_file:
+                            self.after(0, lambda e=result.stderr[:300]: self.log_panel.log(f"Video download failed: {e}", "error"))
+                            return
+                
+                # ========================================
+                # STAGE 2: Download audio stream (30-50%)
+                # ========================================
+                self.after(0, lambda: self._update_chapter_stage("Downloading audio stream...", 30))
+                self.after(0, lambda: self.log_panel.log("Downloading best audio stream", "info"))
+                
+                audio_cmd = self.ytdlp._build_command([
+                    "--newline",
+                    "--remote-components", "ejs:github",
+                    "--extractor-args", "youtube:player_client=android_sdkless",
+                    "-f", "bestaudio[ext=m4a]/bestaudio/best",
+                    "-o", temp_audio,
+                    video_info.url
+                ])
+                
+                result = subprocess.run(
+                    audio_cmd,
+                    capture_output=True,
+                    text=True,
+                    encoding='utf-8',
+                    errors='replace'
+                )
+                
+                if result.returncode != 0:
+                    audio_file = self._find_chapter_temp_file(output_dir, f"{video_id}_temp_audio")
+                    if not audio_file:
+                        self.after(0, lambda e=result.stderr[:300]: self.log_panel.log(f"Audio download failed: {e}", "error"))
+                        return
+                
+                # Find the downloaded files
+                video_file = self._find_chapter_temp_file(output_dir, f"{video_id}_temp_video") if not audio_only else None
+                audio_file = self._find_chapter_temp_file(output_dir, f"{video_id}_temp_audio")
+                
+                if not audio_file:
+                    self.after(0, lambda: self.log_panel.log("Audio file not found after download", "error"))
+                    return
+                
+                if not audio_only and not video_file:
+                    self.after(0, lambda: self.log_panel.log("Video file not found after download", "error"))
+                    return
+                
+                # ========================================
+                # STAGE 3: Merge & encode to QuickTime (50-80%)
+                # ========================================
+                if audio_only:
+                    # For audio-only, just convert to m4a
+                    self.after(0, lambda: self._update_chapter_stage("Converting audio to M4A...", 50))
+                    merged_file = os.path.join(output_dir, f"{video_id}_merged.m4a")
+                    
+                    ffmpeg_cmd = [
+                        FFMPEG_PATH,
+                        "-y",
+                        "-i", audio_file,
+                        "-c:a", "aac",
+                        "-b:a", "192k",
+                        merged_file
+                    ]
+                else:
+                    self.after(0, lambda: self._update_chapter_stage("Encoding to QuickTime format...", 50))
+                    self.after(0, lambda: self.log_panel.log("Merging video + audio with QuickTime-compatible encoding", "info"))
+                    
+                    # Get encoding settings
+                    settings_mgr = SettingsManager(SETTINGS_PATH)
+                    encoder_type = settings_mgr.get("encoder_type", "auto")
+                    
+                    if encoder_type == "cpu":
+                        video_codec = "libx264"
+                    else:
+                        video_codec = "h264_videotoolbox"  # GPU
+                    
+                    # Calculate bitrate based on resolution
+                    video_height = fmt.height if fmt else 1080
+                    if video_height >= 2160:
+                        video_bitrate = "15M"
+                    elif video_height >= 1440:
+                        video_bitrate = "10M"
+                    elif video_height >= 1080:
+                        video_bitrate = "6M"
+                    elif video_height >= 720:
+                        video_bitrate = "4M"
+                    else:
+                        video_bitrate = "2M"
+                    
+                    ffmpeg_cmd = [
+                        FFMPEG_PATH,
+                        "-y",
+                        "-i", video_file,
+                        "-i", audio_file,
+                        "-map", "0:v:0",
+                        "-map", "1:a:0",
+                        "-c:v", video_codec,
+                        "-b:v", video_bitrate,
+                        "-pix_fmt", "yuv420p",
+                        "-c:a", "aac",
+                        "-b:a", "192k",
+                        "-movflags", "+faststart",
+                        "-shortest",
+                        merged_file
+                    ]
+                
+                self.after(0, lambda: self.log_panel.log(f"Encoding with ffmpeg (this may take a while)...", "info"))
+                
+                # Run ffmpeg merge/encode
+                process = subprocess.Popen(
+                    ffmpeg_cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    encoding='utf-8',
+                    errors='replace'
+                )
+                
+                # Monitor encoding progress
+                duration = video_info.duration or 0
+                time_re = re.compile(r'time=(\d+):(\d+):(\d+(?:\.\d+)?)')
+                
+                for line in process.stderr:
+                    if duration > 0:
+                        match = time_re.search(line)
+                        if match:
+                            h = float(match.group(1))
+                            m = float(match.group(2))
+                            s = float(match.group(3))
+                            current_time = h * 3600 + m * 60 + s
+                            encode_pct = min(100, (current_time / duration) * 100)
+                            # Map encoding progress to 50-80% range
+                            overall_pct = 50 + (encode_pct * 0.3)
+                            self.after(0, lambda p=overall_pct: self._update_chapter_stage(f"Encoding... {p-50:.0f}% of video", p))
+                
+                process.wait()
+                
+                if process.returncode != 0 or not os.path.exists(merged_file):
+                    # Try CPU fallback if GPU failed
+                    if "h264_videotoolbox" in ffmpeg_cmd:
+                        self.after(0, lambda: self.log_panel.log("GPU encoding failed, trying CPU...", "warning"))
+                        ffmpeg_cmd[ffmpeg_cmd.index("h264_videotoolbox")] = "libx264"
+                        result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True, encoding='utf-8', errors='replace')
+                        if result.returncode != 0 or not os.path.exists(merged_file):
+                            self.after(0, lambda: self.log_panel.log("Encoding failed", "error"))
+                            return
+                    else:
+                        self.after(0, lambda: self.log_panel.log("Encoding failed", "error"))
+                        return
+                
+                self.after(0, lambda: self.log_panel.log("Encoding complete! Now splitting into chapters...", "success"))
+                
+                # ========================================
+                # STAGE 4: Split into chapters (80-100%)
+                # ========================================
+                self.after(0, lambda: self._update_chapter_stage("Splitting into chapters...", 80))
+                
+                total_chapters = len(chapters)
+                successful_chapters = 0
+                
+                for i, chapter in enumerate(chapters):
+                    # Calculate progress within the splitting stage (80-100%)
+                    split_progress = 80 + ((i / total_chapters) * 20)
+                    self.after(0, lambda p=split_progress, c=chapter, t=total_chapters: 
+                        self._update_chapter_stage(f"Splitting chapter {c.index + 1}/{t}: {c.title[:30]}...", p))
+                    
+                    # Build output filename
+                    safe_chapter_title = chapter.safe_filename
+                    ext = "m4a" if audio_only else "mp4"
+                    output_file = os.path.join(chapter_folder, f"{chapter.index + 1:02d} - {safe_chapter_title}.{ext}")
+                    
+                    # Calculate duration
+                    chapter_duration = chapter.end_time - chapter.start_time
+                    
+                    # Use ffmpeg to extract chapter with stream copy (FAST - no re-encoding!)
+                    if audio_only:
+                        split_cmd = [
+                            FFMPEG_PATH,
+                            "-y",
+                            "-ss", str(chapter.start_time),
+                            "-i", merged_file,
+                            "-t", str(chapter_duration),
+                            "-c:a", "copy",  # Stream copy - no re-encoding!
+                            output_file
+                        ]
+                    else:
+                        split_cmd = [
+                            FFMPEG_PATH,
+                            "-y",
+                            "-ss", str(chapter.start_time),
+                            "-i", merged_file,
+                            "-t", str(chapter_duration),
+                            "-c:v", "copy",  # Stream copy - no re-encoding!
+                            "-c:a", "copy",  # Stream copy - no re-encoding!
+                            "-avoid_negative_ts", "make_zero",
+                            output_file
+                        ]
+                    
+                    result = subprocess.run(
+                        split_cmd,
+                        capture_output=True,
+                        text=True,
+                        encoding='utf-8',
+                        errors='replace'
+                    )
+                    
+                    if result.returncode == 0 and os.path.exists(output_file):
+                        successful_chapters += 1
+                        self.after(0, lambda ch=chapter: self.log_panel.log(
+                            f"  [checkmark] Chapter {ch.index + 1}: {ch.title}", "success"
+                        ))
+                    else:
+                        self.after(0, lambda ch=chapter, err=result.stderr[:100]: self.log_panel.log(
+                            f"  [x] Chapter {ch.index + 1} failed: {err}", "error"
+                        ))
+                
+                # ========================================
+                # CLEANUP: Remove temp files
+                # ========================================
+                self.after(0, lambda: self._update_chapter_stage("Cleaning up...", 98))
+                
+                try:
+                    if video_file and os.path.exists(video_file):
+                        os.remove(video_file)
+                    if audio_file and os.path.exists(audio_file):
+                        os.remove(audio_file)
+                    if os.path.exists(merged_file):
+                        os.remove(merged_file)
+                    self.after(0, lambda: self.log_panel.log("Temporary files cleaned up", "info"))
+                except Exception as e:
+                    self.after(0, lambda err=str(e): self.log_panel.log(f"Cleanup warning: {err}", "warning"))
+                
+                # Done!
+                self.after(0, lambda: self._chapter_download_complete(chapter_folder, successful_chapters))
+                
+            except Exception as e:
+                import traceback
+                tb = traceback.format_exc()
+                self.after(0, lambda err=str(e), trace=tb: self.log_panel.log(f"Chapter download error: {err}\n{trace}", "error"))
+                # Cleanup on error
+                try:
+                    for f in [temp_video.replace("%(ext)s", "mp4"), temp_video.replace("%(ext)s", "webm"),
+                              temp_audio.replace("%(ext)s", "m4a"), temp_audio.replace("%(ext)s", "webm"),
+                              merged_file]:
+                        if os.path.exists(f):
+                            os.remove(f)
+                except:
+                    pass
+        
+        threading.Thread(target=download_chapters_thread, daemon=True).start()
+    
+    def _find_chapter_temp_file(self, directory: str, prefix: str) -> Optional[str]:
+        """Find a temp file by prefix for chapter downloads."""
+        try:
+            for fname in os.listdir(directory):
+                if fname.startswith(prefix):
+                    return os.path.join(directory, fname)
+        except Exception:
+            pass
+        return None
+    
+    def _update_chapter_stage(self, message: str, progress: float):
+        """Update UI during chapter download stages."""
+        self.main_progress.set_progress(progress, stage="converting")
+        self.main_progress.start_animation()
+        self.progress_label.configure(text=message)
+        self.percentage_label.configure(text=f"{progress:.0f}%")
+        self.queue_status.configure(text="Processing Chapters")
+    
+    def _chapter_download_complete(self, folder: str, count: int):
+        """Called when all chapters are downloaded."""
+        self.main_progress.set_progress(100, stage="idle")
+        self.main_progress.stop_animation()
+        self.progress_label.configure(text=f"Completed: {count} chapters extracted")
+        self.percentage_label.configure(text="100%")
+        self.queue_status.configure(text="Idle")
+        self.log_panel.log(f"All {count} chapters downloaded to: {folder}", "success")
+        send_notification("Chapters Downloaded", f"{count} chapters extracted successfully")
+
     def _download(self):
         """Start download."""
         url = self.url_entry.get().strip()
@@ -3852,13 +4818,23 @@ class YtDlpGUI(ctk.CTk):
                     else:
                         stage_name = "downloading_audio"
                         stage_text = "Stage 2/3: Downloading audio"
+                    
+                    # v17.7.5: Show detailed status if available (e.g., "Merging streams...")
+                    if task.status_detail:
+                        stage_text = task.status_detail
+                        
                 elif task.status == DownloadStatus.CONVERTING:
                     stage_name = "converting"
                     fmt = task.selected_format
-                    if fmt and fmt.height:
+                    
+                    # v17.7.5: Prefer status_detail if available (shows file size during stalls)
+                    if task.status_detail:
+                        stage_text = task.status_detail
+                    elif fmt and fmt.height:
                         stage_text = f"Stage 3/3: Converting ({fmt.height}p)"
                     else:
                         stage_text = "Stage 3/3: Converting"
+                        
                 elif task.status == DownloadStatus.COMPLETED:
                     stage_name = "idle"
                     stage_text = f"Completed: {task.video_info.title}"
@@ -3878,11 +4854,20 @@ class YtDlpGUI(ctk.CTk):
                 self.progress_label.configure(text=stage_text)
                 self.percentage_label.configure(text=f"{task.progress:.0f}%")
                 
-                # Update speed/fps/eta
+                # v17.7.5: Show file size if available during stalls
+                speed_text = ""
                 if task.download_speed:
-                    self.speed_label.configure(text=task.download_speed)
-                else:
-                    self.speed_label.configure(text="")
+                    speed_text = task.download_speed
+                elif task.current_file_size and task.current_file_size > 0:
+                    # Show current file size when no speed available
+                    if task.current_file_size >= 1024 ** 3:
+                        speed_text = f"{task.current_file_size / (1024 ** 3):.2f} GB"
+                    elif task.current_file_size >= 1024 ** 2:
+                        speed_text = f"{task.current_file_size / (1024 ** 2):.1f} MB"
+                    else:
+                        speed_text = f"{task.current_file_size / 1024:.1f} KB"
+                
+                self.speed_label.configure(text=speed_text)
                 
                 if task.conversion_fps:
                     self.fps_label.configure(text=task.conversion_fps)
@@ -3935,7 +4920,7 @@ class YtDlpGUI(ctk.CTk):
         help_text.pack(fill="both", expand=True, padx=20, pady=20)
         
         help_content = """
-YouTube 4K Downloader v17 - Help
+YouTube 4K Downloader v17.8 - Help
 
 QUICK START
 1. Paste a YouTube URL (or drag & drop)
@@ -3943,50 +4928,69 @@ QUICK START
 3. Select your preferred quality
 4. Click "Download" or press Cmd+Return
 
-NEW IN V17.7
-- FIXED: SponsorBlock now works via post-processing!
-- After download, segments are fetched from SponsorBlock API
-- Video is re-encoded with sponsor segments removed
-- More reliable than trying to integrate during download
+NEW IN V17.8 - CHAPTER DOWNLOADS
+- Download videos split by chapters!
+- Select individual chapters or download all
+- Supports both video and audio-only extraction
+- Files named with chapter number and title
+- 10-50x faster using stream copy (no re-encoding per chapter)
 
-NEW IN V17
-- FIXED: Settings now persist between sessions!
-- Settings stored in ~/.config/yt-dlp-gui/
-- SponsorBlock, Encoding, Subtitles settings are saved
+100% SELF-CONTAINED
+This app includes everything needed - no manual installation required:
+- yt-dlp (bundled)
+- ffmpeg (bundled)  
+- deno JavaScript runtime (bundled)
+
+Just download, drag to Applications, and run!
 
 FEATURES
-- Settings window (Ã¢Å’Ëœ,) - Configure SponsorBlock, subtitles, encoding
-- SponsorBlock post-processing - Removes sponsor segments after download
+- Chapter Downloads - Split videos into separate files per chapter
+- Settings window - Configure SponsorBlock, subtitles, encoding
+- SponsorBlock - Removes sponsor segments after download
 - History browser - Search and manage download history
-- Playlist support - Download entire playlists with selection
-- Enhanced audio-only mode - M4A/MP3 with proper metadata
-- Drag & drop URLs - Just drop a YouTube link onto the window
+- Playlist support - Download entire playlists
+- Audio-only mode - M4A/MP3 with proper metadata
+- Drag & drop URLs - Drop a YouTube link onto the window
+- QuickTime Compatible - H.264 + AAC for native macOS playback
 
 KEYBOARD SHORTCUTS
-- Ã¢Å’ËœV - Paste URL from clipboard
+- Cmd+V - Paste URL from clipboard
 - Cmd+Return - Start download
 - Enter - Analyze URL
 
-OPTIONS & FEATURES
+CHAPTER DOWNLOADS
+When a video has chapters:
+1. Click "Analyze" to load video info
+2. A purple "Download Chapters" button appears
+3. Select which chapters to download
+4. Choose "Audio Only" for audio extraction
+5. Each chapter becomes a separate file!
+
+Files are saved like:
+  Video Title/
+    01 - Introduction.mp4
+    02 - Getting Started.mp4
+    03 - Advanced Topics.mp4
+
+OPTIONS
 - Video + Audio: Download complete video
-- Audio Only: Extract audio as M4A/MP3  
+- Audio Only: Extract audio as M4A/MP3
 - QuickTime Compatible: Apple-optimized encoding
-- SponsorBlock: Remove sponsor segments via post-processing
+- SponsorBlock: Remove sponsor segments
 - Subtitles: Download and embed multiple languages
 - Trim: Cut start/end of videos
-- Automatic clipboard detection
-- Thumbnail previews
-- Progress tracking with ETA
-- macOS notifications
-- Download history
 
-REQUIREMENTS
-- yt-dlp: brew install yt-dlp
-- ffmpeg: brew install ffmpeg
+TROUBLESHOOTING
+"App is damaged" error:
+  Run in Terminal: xattr -cr /Applications/YouTube\\ 4K\\ Downloader.app
+
+App won't open:
+  Right-click the app > Select "Open" > Click "Open" in dialog
 
 For more information, visit:
-https://github.com/yt-dlp/yt-dlp
+https://github.com/bytePatrol/YT-DLP-GUI-for-MacOS
         """
+
         
         help_text.insert("1.0", help_content)
         help_text.configure(state="disabled")
