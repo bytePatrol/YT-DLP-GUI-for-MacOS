@@ -7,6 +7,12 @@ A modern, fully self-contained YouTube video downloader with a beautiful dark mo
 ### Main Interface
 <img src="assets/screenshot.png" width="700" alt="YouTube 4K Downloader Main">
 
+### Chapter Downloads (NEW in v17.8)
+<img src="assets/chapters.png" width="700" alt="Chapter Downloads">
+
+### Chapter Selection Dialog
+<img src="assets/screenshot-chapters.png" width="700" alt="Chapter Selection Dialog">
+
 ### Settings
 <img src="assets/screenshot-settings.png" width="500" alt="Settings Window">
 
@@ -15,18 +21,46 @@ A modern, fully self-contained YouTube video downloader with a beautiful dark mo
 
 ## Features
 
-- **ðŸŽ¬ 4K/1080p/720p Downloads** - Select your preferred quality
-- **ðŸŽ¨ Modern Dark Mode UI** - Beautiful iOS-inspired interface
-- **ðŸ“¦ 100% Self-Contained** - No Homebrew, no Python, no dependencies
-- **âš¡ Fast Downloads** - Separate video+audio download with smart merging
-- **ðŸŽµ Audio Only Mode** - Extract audio as M4A or MP3
-- **ðŸ“‹ Playlist Support** - Download entire playlists
-- **âœ‚ï¸ SponsorBlock Integration** - Automatically remove sponsor segments
-- **ðŸ“ Subtitles** - Download and embed subtitles
-- **ðŸŽ QuickTime Compatible** - H.264 + AAC encoding for native macOS playback
-- **ðŸ“Š Progress Tracking** - Real-time speed, ETA, and progress display
-- **ðŸ”” Notifications** - macOS notifications when downloads complete
-- **ðŸ“œ Download History** - Browse and search past downloads
+- **🎬 4K/1080p/720p Downloads** - Select your preferred quality
+- **📚 Chapter Downloads** - Split videos into separate files per chapter
+- **🎨 Modern Dark Mode UI** - Beautiful iOS-inspired interface
+- **📦 100% Self-Contained** - No Homebrew, no Python, no dependencies
+- **⚡ Fast Downloads** - Separate video+audio download with smart merging
+- **🎵 Audio Only Mode** - Extract audio as M4A or MP3
+- **📋 Playlist Support** - Download entire playlists
+- **✂️ SponsorBlock Integration** - Automatically remove sponsor segments
+- **📝 Subtitles** - Download and embed subtitles
+- **🎬 QuickTime Compatible** - H.264 + AAC encoding for native macOS playback
+- **📊 Progress Tracking** - Real-time speed, ETA, and progress display
+- **🔔 Notifications** - macOS notifications when downloads complete
+- **📜 Download History** - Browse and search past downloads
+
+## NEW: Chapter Downloads (v17.8)
+
+Download YouTube videos split by their chapters! Perfect for:
+- **Podcasts** - Download each topic as a separate file
+- **Music compilations** - Extract individual songs
+- **Tutorials** - Get specific sections you need
+- **Long videos** - Download only the chapters you want
+
+### How to use:
+1. Analyze a YouTube video that has chapters
+2. A purple **"Download Chapters"** button will appear
+3. Select which chapters to download (or download all)
+4. Choose **Audio Only** if you just want the audio
+5. Click Download - each chapter becomes a separate file!
+
+### Output Structure:
+```
+Video Title/
+├── 01 - Introduction.mp4
+├── 02 - Getting Started.mp4
+├── 03 - Advanced Topics.mp4
+└── ...
+```
+
+### Performance:
+Chapter downloads are **10-50x faster** than previous methods! The app downloads and encodes the video once, then uses stream copy to split into chapters (no re-encoding per chapter).
 
 ## Installation
 
@@ -58,7 +92,7 @@ cd YT-DLP-GUI-for-MacOS
 pip install customtkinter pillow requests yt-dlp
 
 # Run the app
-python yt_dlp_gui_v17.7.3.py
+python yt_dlp_gui_v17_8_8.py
 ```
 
 ## Usage
@@ -67,6 +101,7 @@ python yt_dlp_gui_v17.7.3.py
 2. **Click Analyze** - View available formats and quality options
 3. **Select Quality** - Choose from 4K, 1080p, 720p, etc.
 4. **Click Download** - Watch the progress with real-time stats
+5. **For Chapters** - Click the purple "Download Chapters" button if available
 
 ### Keyboard Shortcuts
 
@@ -89,15 +124,16 @@ Access settings via the **Settings** button to configure:
 ## System Requirements
 
 - macOS 10.13 (High Sierra) or later
-- Apple Silicon (M1/M2/M3) or Intel Mac
+- Apple Silicon (M1/M2/M3/M4) or Intel Mac
 - ~200MB disk space
 
 ## Tech Stack
 
 - **Python 3** - Core application
 - **CustomTkinter** - Modern UI framework
-- **yt-dlp** - Video downloading engine
-- **ffmpeg** - Video processing and encoding
+- **yt-dlp** - Video downloading engine (bundled)
+- **ffmpeg** - Video processing and encoding (bundled)
+- **deno** - JavaScript runtime for yt-dlp (bundled)
 - **py2app** - macOS app bundling
 
 ## Building from Source
@@ -137,6 +173,11 @@ Run this in Terminal to see the error:
 - Try updating yt-dlp: The bundled version may be outdated for some videos
 - Some videos may be region-locked or private
 
+### Chapter downloads not showing
+- Not all YouTube videos have chapters defined
+- Chapters must be set by the video creator
+- Try a video known to have chapters (like podcasts or music compilations)
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
@@ -157,4 +198,4 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-⭐ If you find this useful, please star the repository!
+⭐ If you find this useful, please star the repository!

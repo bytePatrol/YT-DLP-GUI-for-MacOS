@@ -2,6 +2,93 @@
 
 All notable changes to YouTube 4K Downloader will be documented in this file.
 
+## [17.8.8] - 2026-01-19
+
+### Fixed
+- **History now saves correctly** - Downloads were being saved to wrong file path (`~/.yt_dlp_gui_v16_history.json` instead of `~/.config/yt-dlp-gui/history.json`)
+
+### Changed
+- Updated Help menu with accurate, current information
+- Removed outdated references to manual yt-dlp/ffmpeg installation (app is 100% self-contained)
+- Fixed broken emoji/unicode characters throughout the codebase
+- Updated documentation to highlight chapter download features
+
+## [17.8.7] - 2026-01-19
+
+### Changed
+- SponsorBlock is now automatically disabled for chapter downloads
+- Added notice in SponsorBlock settings explaining chapter download limitation
+- Added notice in chapter selection window about SponsorBlock being disabled
+- This prevents potential issues with chapter extraction and SponsorBlock conflicts
+
+## [17.8.6] - 2026-01-19
+
+### Fixed
+- **Footer no longer disappears after clicking Analyze**
+- Footer (Output path, Open Folder, Change buttons) now stays visible permanently
+- Fixed layout issue where dynamically showing video_frame pushed footer off screen
+- Log panel no longer expands infinitely, allowing footer to remain visible
+- Can now download multiple videos without restarting the app
+
+## [17.8.5] - 2026-01-19
+
+### Changed
+- **MAJOR PERFORMANCE FIX: Chapter downloads are now 10-50x faster!**
+- New strategy: Download once → Encode once → Split into chapters
+- Old method downloaded and encoded the ENTIRE video for EACH chapter (extremely slow)
+- New method uses ffmpeg stream copy to split chapters (instant, no re-encoding)
+
+### Fixed
+- Fixed bug where only 3 chapters were output despite selecting more
+- Added proper progress tracking through all stages (download/encode/split)
+- Temp files are now properly cleaned up after chapter extraction
+
+## [17.8.4] - 2026-01-19
+
+### Fixed
+- **Chapter downloads now work with bundled ffmpeg**
+- Added `--ffmpeg-location` to chapter extraction commands
+- yt-dlp's `--download-sections` requires ffmpeg for partial video extraction
+- Error "ffmpeg is not installed" no longer occurs when downloading chapters
+
+## [17.8.3] - 2026-01-19
+
+### Fixed
+- **CRITICAL: All downloads now work with YouTube's SABR streaming restrictions**
+- Added `--extractor-args youtube:player_client=android_sdkless` to ALL yt-dlp commands
+- Added `--remote-components ejs:github` for JavaScript challenge solving
+- Fixed chapter downloads failing with "Some web client https formats have been skipped"
+- Fixed main video/audio downloads that were also affected by SABR restrictions
+- `android_sdkless` client bypasses YouTube's SABR-only enforcement
+
+## [17.8.2] - 2026-01-19
+
+### Fixed
+- **App no longer appears frozen during long merge/conversion operations** - Videos with many chapters would cause the app to appear unresponsive for 9+ minutes
+- **Analyze button now works** - Fixed UTF-8 encoding issue in `fetch_video_info()` and `fetch_full_info()`
+- **Footer stays visible** - Output path and buttons no longer disappear after clicking Analyze
+- Progress bar and status now show activity even when ffmpeg/yt-dlp don't output progress percentages
+
+### Added
+- **Chapter Downloads Restored** - Download videos split by chapters!
+  - Automatically detects YouTube chapters from video metadata
+  - Shows chapter count in video info (e.g., "📚 37 chapters")
+  - Purple "Download Chapters" button appears when chapters are available
+  - Chapter selection dialog with Select All/Deselect All options
+  - Support for both video and audio-only chapter extraction
+  - Chapter files named with number prefix and chapter title (e.g., "01 - Introduction.mp4")
+  - Progress tracking shows current chapter being extracted
+  - All chapter files saved to a folder named after the video
+- **Real-time file size monitoring** - When progress parsing fails, shows current output file size
+- **Detailed status messages** - Status bar shows "Processing chapters...", "Merging streams...", etc.
+- **Background file growth detection** - Monitor thread tracks output file growth during stalls
+
+### Changed
+- Enhanced `_run_subprocess_with_progress` to detect yt-dlp's `[Merger]` and `[ffmpeg]` phases
+- Enhanced `_run_ffmpeg_with_progress` with file monitoring when time-based progress unavailable
+- DownloadTask now includes `status_detail` and `current_file_size` fields
+- Removed debug print statements from `get_version()`
+
 ## [17.7.4] - 2026-01-19
 
 ### Fixed
@@ -24,7 +111,7 @@ All notable changes to YouTube 4K Downloader will be documented in this file.
 
 ### Fixed
 - **File size display** - Format cards now correctly show file sizes (e.g., "668 MB") instead of "Unknown"
-- Improved parsing of yt-dlp's format table output to handle `â”‚` separator characters
+- Improved parsing of yt-dlp's format table output to handle separator characters
 - Better regex matching for file sizes (MiB, GiB, KiB), bitrates, and resolutions
 - FPS values now correctly parsed from format table
 
@@ -101,4 +188,4 @@ The app is fully self-contained with bundled dependencies:
 - ffmpeg (bundled)
 - deno (bundled)
 
-No Homebrew or manual installation required.
+**No Homebrew or manual installation required.**

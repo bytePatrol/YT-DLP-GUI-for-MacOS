@@ -2,171 +2,63 @@
 """
 YouTube 4K Downloader v17 - Modern macOS Video Downloader
 
-A complete rebuild with:
-- Modern dark mode UI using CustomTkinter
-- Fully responsive layout
-- Video thumbnails and previews
-- Download queue with pause/resume
-- Playlist support
-- SponsorBlock integration (POST-PROCESSING)
-- Subtitle downloads
-- PERSISTENT SETTINGS (v17 fix)
-- Self-contained app with bundled ffmpeg AND deno
-- And much more...
+A professional-grade macOS application for downloading YouTube videos with a modern,
+dark-mode UI built using CustomTkinter. This application is designed to be fully
+self-contained, bundling all dependencies (ffmpeg, deno, yt-dlp) for a seamless
+user experience.
 
-v17.7.0 Changes:
-- MAJOR FIX: SponsorBlock now works via post-processing!
-- Queries SponsorBlock API after conversion to find segments
-- Re-encodes video with segments removed using ffmpeg filters
-- More reliable than trying to integrate during download
-- Properly removes sponsor segments, intros, outros, etc.
-- Shows detailed segment information in activity log
+Features:
+    - Modern dark mode UI with iOS-inspired design
+    - Support for 4K, 1440p, 1080p, 720p, and other resolutions
+    - Video thumbnails and metadata preview
+    - Download queue with progress tracking
+    - Playlist support with chapter extraction
+    - SponsorBlock integration (post-processing removal of sponsor segments)
+    - Subtitle downloading and embedding
+    - QuickTime-compatible H.264 + AAC output format
+    - Persistent settings stored in ~/.config/yt-dlp-gui/
+    - Self-contained app bundle with bundled ffmpeg and deno
 
-v17.6.0 Changes:
-- Reverted to proven separate download strategy (fast, reliable)
-- Using our own ffmpeg for QuickTime-compatible encoding (H.264 + AAC)
-- SponsorBlock kept disabled - doesn't work with YouTube's current API restrictions
-- Prioritizes speed and compatibility over non-functional features
+Architecture:
+    The application follows a layered architecture:
 
-v17.4.0 Changes:
-- Reverted to separate video+audio download strategy (known to work)
-- Disabled SponsorBlock in download commands (not compatible with current YouTube API)
-- SponsorBlock UI remains but feature is non-functional until YouTube API improves
-- Prioritizes getting correct quality and working downloads
+    1. UI Layer (CustomTkinter widgets):
+       - YtDlpGUI: Main application window
+       - SettingsWindow, HistoryBrowserWindow, AboutDialog: Modal dialogs
+       - Custom widgets: EnhancedProgressBar, ModernButton, FormatCard, etc.
 
-v17.3.0 Changes:
-- MAJOR CHANGE: Use 'best' format (pre-muxed video+audio) instead of merging
-- SponsorBlock works properly on complete formats
-- Simpler, more reliable approach
-- Downloads single file with both video and audio already combined
+    2. Business Logic Layer:
+       - DownloadManager: Manages download queue and threading
+       - YtDlpInterface: Wrapper for yt-dlp commands
+       - SponsorBlockAPI: Client for SponsorBlock segment data
 
-v17.2.4 Changes:
-- Fixed _find_temp_file to prefer MP4 files and skip audio-only formats
-- Now correctly finds the video+audio file even when multiple files exist
-- Proper video output with SponsorBlock working
+    3. Data Layer:
+       - SettingsManager: Persistent settings storage
+       - HistoryManager: Download history tracking
+       - Dataclasses: VideoFormat, VideoInfo, DownloadTask, Chapter
 
-v17.2.3 Changes:
-- Fixed file finder to prefer MP4 files over WebM/audio-only files
-- Now correctly selects the video+audio file for conversion
-- Filters out audio-only formats (f251, etc.) when finding complete file
+Usage:
+    Run directly:
+        python3 yt_dlp_gui_v17.8.8.py
 
-v17.2.2 Changes:
-- Improved temp file cleanup - removes ALL files with video_id after conversion
-- Better handling of yt-dlp's varied output filenames
-- Only the final converted file should remain
+    Or build as macOS app:
+        ./build_app.sh
 
-v17.2.1 Changes:
-- Fixed format selector to properly merge video+audio
-- Added --merge-output-format to ensure single mp4/mkv output
-- Prevents separate audio-only files from being created
+Dependencies:
+    Required:
+        - customtkinter >= 5.0
+        - pillow >= 9.0
+        - requests >= 2.28
+        - yt-dlp >= 2023.0
 
-v17.2.0 Changes:
-- FIXED: SponsorBlock now actually removes segments
-- Changed strategy: download complete video+audio with SponsorBlock, then re-encode
-- SponsorBlock works on the complete stream before conversion
-- Segments are properly cut from the final output
+    Optional:
+        - tkinterdnd2 (for drag & drop support)
 
-v17.1.7 Changes:
-- Don't fail on non-zero exit code if file downloaded successfully
-- Check for downloaded files before marking as failed
-- Warnings no longer cause download failure if content was retrieved
-
-v17.1.6 Changes:
-- Improved error handling - warnings no longer cause download failure
-- Better file detection - finds downloaded files even with unexpected names
-- Added debug logging to diagnose download issues
-- Downloads should now succeed despite YouTube warnings
-
-v17.1.5 Changes:
-- Added explicit SABR bypass using skip=dash,hls
-- Forces yt-dlp to skip DASH/HLS formats and use progressive formats
-- Should work around YouTube's SABR streaming restrictions
-
-v17.1.4 Changes:
-- Changed from specific format IDs to quality-based selection
-- Uses height-based format selection (bestvideo[height<=2160]) instead of format IDs
-- Avoids SABR-restricted formats by letting yt-dlp pick best available format at target quality
-- More reliable downloads by using yt-dlp's smart format selection
-
-v17.1.3 Changes:
-- Removed all client restrictions from downloads
-- Let yt-dlp automatically select the best working client
-- yt-dlp will adapt to YouTube's current restrictions dynamically
-
-v17.1.2 Changes:
-- Using tv_embedded client only (no PO token required)
-- Removed mweb client which now requires tokens
-- Should complete downloads successfully
-
-v17.1.1 Changes:
-- Fixed SABR streaming error during downloads
-- Added proper client selection for download phase
-- Format detection works (all qualities visible) AND downloads work
-
-v17.1.0 Changes:
-- MAJOR FIX: Switched from -J (JSON) to --list-formats for format detection
-- Now correctly detects all available qualities (4K, 1440p, 1080p, 720p, etc.)
-- Parses yt-dlp's format table output which has full format availability
-- Fixes YouTube API limitations with JSON output
-
-v17.0.9 Changes:
-- Removed player_client restrictions to allow yt-dlp's smart format detection
-- yt-dlp now automatically selects best working client for format availability
-- Should detect all available qualities without client-specific limitations
-
-v17.0.8 Changes:
-- Fixed format detection showing only 360p
-- Using mediaconnect client which provides full format access
-- All quality options (4K, 1440p, 1080p, 720p, etc.) now available
-
-v17.0.7 Changes:
-- Fixed YouTube PO Token requirement error
-- Using ios client which doesn't require tokens
-- Downloads work without manual token configuration
-
-v17.0.6 Changes:
-- Fixed YouTube SABR streaming error blocking downloads
-- Added --extractor-args to handle YouTube's new streaming requirements
-- Downloads now work with latest YouTube restrictions
-
-v17.0.5 Changes:
-- Fixed SponsorBlock not removing segments despite enabled settings
-- SponsorBlock now properly reads selected categories from settings
-- Categories are correctly passed to yt-dlp (e.g., 'sponsor,intro,outro')
-- Both "Remove" and "Mark" actions now work properly
-
-v17.0.4 Changes:
-- Added bundled deno JavaScript runtime support for yt-dlp
-- App automatically uses bundled deno if present (no Homebrew needed)
-- Fixes "No supported JavaScript runtime" error
-- Use bundle_dependencies.sh to install ffmpeg + deno into app
-
-v17.0.3 Changes:
-- Fixed crash with emoji/unicode in video titles (ÃƒÂ°Ã…Â¸Ã¢â‚¬Â¡Ã‚ÂµÃƒÂ°Ã…Â¸Ã¢â‚¬Â¡Ã‚Â±ÃƒÂ°Ã…Â¸Ã‹Å“Ã¢â‚¬Â¦ etc.)
-- Improved filename sanitization to ASCII-only for maximum compatibility
-- Fixed 'ascii codec can't decode' errors in ffmpeg subprocess
-- All subprocess calls now use UTF-8 encoding with error replacement
-
-v17.0.2 Changes:
-- Self-contained app: uses bundled static ffmpeg (no Homebrew required)
-- Fixed ffmpeg library loading error (libsharpyuv.0.dylib)
-
-v17.0.1 Changes:
-- Fixed conversion failures with special characters in titles (& ; $ etc.)
-- Improved ffmpeg error logging - now shows actual error messages
-- Better filename sanitization for shell-safe output files
-
-v17.0.0 Changes:
-- Fixed settings persistence - SponsorBlock, Encoding, etc. now save properly
-- Separated settings.json from config.json to prevent overwrites
-- Settings are saved immediately when changed
-- Moved config files to ~/.config/yt-dlp-gui/ for better organization
-
-Requirements:
-    pip install customtkinter pillow requests yt-dlp
+For version history, see CHANGELOG.md
 
 Author: bytePatrol
 License: MIT
+Version: 17.8.8
 """
 
 import customtkinter as ctk
@@ -218,7 +110,7 @@ except ImportError:
 # ============================================================================
 
 APP_NAME = "YouTube 4K Downloader"
-APP_VERSION = "17.7.4"
+APP_VERSION = "17.8.8"
 
 # Configuration paths - using proper config directory
 CONFIG_DIR = Path.home() / ".config" / "yt-dlp-gui"
@@ -239,20 +131,17 @@ def find_executable(name: str) -> str:
         resources_dir = os.path.join(bundle_dir, 'Resources')
         bundled_path = os.path.join(resources_dir, name)
         if os.path.isfile(bundled_path):
-            print(f"DEBUG find_executable: Found bundled {name} at {bundled_path}")
             return bundled_path
-    
+
     # Special handling for yt-dlp: prefer Python module method
     if name == "yt-dlp":
         # Try to import yt-dlp as a Python module first (most reliable)
         try:
             import yt_dlp
-            print(f"DEBUG find_executable: yt_dlp module found, using python-module method")
             return "python-module"
-        except ImportError as e:
-            print(f"DEBUG find_executable: yt_dlp module NOT found ({e}), falling back to paths")
+        except ImportError:
             pass
-        
+
         # Check Homebrew paths
         homebrew_paths = [
             "/opt/homebrew/bin/yt-dlp",
@@ -260,7 +149,6 @@ def find_executable(name: str) -> str:
         ]
         for p in homebrew_paths:
             if os.path.isfile(p):
-                print(f"DEBUG find_executable: Found yt-dlp at {p}")
                 return p
     
     # Check if it's available in PATH (includes venv)
@@ -365,7 +253,29 @@ class DownloadStatus(Enum):
 
 @dataclass
 class VideoFormat:
-    """Represents a single video/audio format."""
+    """Represents a single video/audio format available for download.
+
+    This class holds metadata about a specific format option returned by yt-dlp,
+    including resolution, codec information, and file size estimates.
+
+    Attributes:
+        format_id: Unique identifier for this format (e.g., '137', '140').
+        ext: File extension (e.g., 'mp4', 'webm', 'm4a').
+        resolution: Resolution string (e.g., '1920x1080').
+        height: Video height in pixels (e.g., 1080, 720).
+        width: Video width in pixels (e.g., 1920, 1280).
+        fps: Frames per second (e.g., 30, 60).
+        vcodec: Video codec (e.g., 'avc1', 'vp9', 'av1').
+        acodec: Audio codec (e.g., 'mp4a', 'opus').
+        filesize: Exact file size in bytes (if known).
+        filesize_approx: Approximate file size in bytes.
+        tbr: Total bitrate in kbps.
+        vbr: Video bitrate in kbps.
+        abr: Audio bitrate in kbps.
+        is_video_only: True if format contains only video (no audio).
+        is_audio_only: True if format contains only audio (no video).
+        is_quicktime_compatible: True if format is compatible with QuickTime/Apple.
+    """
     format_id: str
     ext: str
     resolution: Optional[str] = None
@@ -376,9 +286,9 @@ class VideoFormat:
     acodec: Optional[str] = None
     filesize: Optional[int] = None
     filesize_approx: Optional[int] = None
-    tbr: Optional[float] = None  # Total bitrate
-    vbr: Optional[float] = None  # Video bitrate
-    abr: Optional[float] = None  # Audio bitrate
+    tbr: Optional[float] = None
+    vbr: Optional[float] = None
+    abr: Optional[float] = None
     is_video_only: bool = False
     is_audio_only: bool = False
     is_quicktime_compatible: bool = False
@@ -410,8 +320,77 @@ class VideoFormat:
 
 
 @dataclass
+class Chapter:
+    """Represents a chapter/segment within a video.
+
+    YouTube videos can have chapters defined by the uploader, which appear
+    in the video timeline. This class stores metadata for a single chapter,
+    enabling chapter-based downloading.
+
+    Attributes:
+        index: Zero-based index of the chapter in the video.
+        title: Human-readable title of the chapter.
+        start_time: Start time of the chapter in seconds from video start.
+        end_time: End time of the chapter in seconds from video start.
+    """
+    index: int
+    title: str
+    start_time: float
+    end_time: float
+    
+    @property
+    def duration(self) -> float:
+        """Duration of the chapter in seconds."""
+        return self.end_time - self.start_time
+    
+    @property
+    def duration_str(self) -> str:
+        """Human-readable duration."""
+        duration = int(self.duration)
+        hours, remainder = divmod(duration, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        if hours:
+            return f"{hours}:{minutes:02d}:{seconds:02d}"
+        return f"{minutes}:{seconds:02d}"
+    
+    @property
+    def start_time_str(self) -> str:
+        """Human-readable start time."""
+        start = int(self.start_time)
+        hours, remainder = divmod(start, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        if hours:
+            return f"{hours}:{minutes:02d}:{seconds:02d}"
+        return f"{minutes}:{seconds:02d}"
+    
+    @property
+    def safe_filename(self) -> str:
+        """Return a filesystem-safe version of the chapter title."""
+        return sanitize_filename(self.title, max_length=100)
+
+
+@dataclass
 class VideoInfo:
-    """Represents video metadata."""
+    """Represents complete metadata for a YouTube video or playlist.
+
+    This class aggregates all information about a video retrieved from yt-dlp,
+    including basic metadata, available formats, and chapter information.
+
+    Attributes:
+        id: YouTube video ID (e.g., 'dQw4w9WgXcQ').
+        title: Video title.
+        url: Full URL to the video.
+        thumbnail: URL to the video thumbnail image.
+        duration: Video duration in seconds.
+        channel: Name of the channel that uploaded the video.
+        view_count: Number of views.
+        upload_date: Upload date in YYYYMMDD format.
+        description: Video description text.
+        formats: List of available download formats.
+        chapters: List of chapters (if video has chapters).
+        is_playlist: True if this represents a playlist, not a single video.
+        playlist_count: Number of videos in playlist (if is_playlist is True).
+    """
     id: str
     title: str
     url: str
@@ -422,6 +401,7 @@ class VideoInfo:
     upload_date: Optional[str] = None
     description: Optional[str] = None
     formats: List[VideoFormat] = field(default_factory=list)
+    chapters: List[Chapter] = field(default_factory=list)
     is_playlist: bool = False
     playlist_count: Optional[int] = None
     
@@ -446,11 +426,39 @@ class VideoInfo:
         if self.view_count >= 1_000:
             return f"{self.view_count / 1_000:.1f}K"
         return str(self.view_count)
+    
+    @property
+    def has_chapters(self) -> bool:
+        """Check if video has chapters."""
+        return len(self.chapters) > 0
 
 
 @dataclass
 class DownloadTask:
-    """Represents a download task in the queue."""
+    """Represents a download task in the queue.
+
+    This class tracks the state of a single download operation, including
+    progress metrics, status, and output information. Tasks are managed
+    by DownloadManager and updated throughout the download lifecycle.
+
+    Attributes:
+        id: Unique identifier for this task (typically the video ID).
+        video_info: Metadata about the video being downloaded.
+        selected_format: The format chosen for download.
+        output_path: Path to the final output file (set after completion).
+        status: Current status of the download (QUEUED, DOWNLOADING, etc.).
+        progress: Download progress as a percentage (0.0 to 100.0).
+        speed: Legacy speed field (deprecated, use download_speed).
+        eta: Estimated time remaining as a formatted string.
+        download_speed: Current download speed (e.g., '5.2 MB/s').
+        conversion_fps: FFmpeg encoding speed in frames per second.
+        file_size: Final file size in bytes after completion.
+        status_detail: Detailed status message for UI display.
+        current_file_size: Current size of file being written (for progress).
+        error_message: Error description if status is FAILED.
+        started_at: Timestamp when download started.
+        completed_at: Timestamp when download completed.
+    """
     id: str
     video_info: VideoInfo
     selected_format: Optional[VideoFormat] = None
@@ -459,9 +467,11 @@ class DownloadTask:
     progress: float = 0.0
     speed: Optional[str] = None
     eta: Optional[str] = None
-    download_speed: Optional[str] = None  # NEW: Download speed in Mbps
-    conversion_fps: Optional[str] = None  # NEW: Conversion FPS
-    file_size: Optional[int] = None       # NEW: File size in bytes
+    download_speed: Optional[str] = None
+    conversion_fps: Optional[str] = None
+    file_size: Optional[int] = None
+    status_detail: Optional[str] = None
+    current_file_size: Optional[int] = None
     error_message: Optional[str] = None
     created_at: datetime = field(default_factory=datetime.now)
     started_at: Optional[datetime] = None
@@ -473,13 +483,40 @@ class DownloadTask:
 # ============================================================================
 
 class SponsorBlockAPI:
-    """Interface for SponsorBlock API to fetch segment information."""
-    
+    """Interface for the SponsorBlock crowdsourced sponsorship database.
+
+    SponsorBlock is a community-driven API that provides timestamps for
+    sponsor segments, intros, outros, and other skippable content in
+    YouTube videos. This class provides methods to query the API and
+    convert segments to FFmpeg filter expressions for removal.
+
+    The API uses a privacy-preserving hash prefix mechanism to avoid
+    sending full video IDs.
+
+    Attributes:
+        API_BASE: Base URL for the SponsorBlock API.
+
+    See Also:
+        https://sponsor.ajay.app/ - SponsorBlock project website
+        https://wiki.sponsor.ajay.app/w/API_Docs - API documentation
+    """
+
     API_BASE = "https://sponsor.ajay.app/api"
     
     @staticmethod
     def get_video_hash_prefix(video_id: str) -> str:
-        """Get SHA256 hash prefix for privacy-preserving API calls."""
+        """Generate SHA256 hash prefix for privacy-preserving API queries.
+
+        The SponsorBlock API accepts hash prefixes instead of full video IDs
+        to protect user privacy. The server returns data for all videos
+        matching the prefix, and the client filters for the exact match.
+
+        Args:
+            video_id: YouTube video ID (e.g., 'dQw4w9WgXcQ').
+
+        Returns:
+            First 4 characters of the SHA256 hash of the video ID.
+        """
         hash_full = hashlib.sha256(video_id.encode('utf-8')).hexdigest()
         return hash_full[:4]  # First 4 characters
     
@@ -584,7 +621,24 @@ class SponsorBlockAPI:
 # ============================================================================
 
 def sanitize_filename(name: str, max_length: int = 200) -> str:
-    """Create a filesystem-safe filename, removing problematic characters and emoji."""
+    """Create a filesystem-safe filename from arbitrary text.
+
+    Sanitizes input by removing or replacing characters that are problematic
+    for filesystems, shells, or encoding. This includes emoji, special shell
+    characters, and non-ASCII characters that may cause issues on macOS.
+
+    Args:
+        name: The original filename or title to sanitize.
+        max_length: Maximum length of the resulting filename. Defaults to 200.
+
+    Returns:
+        A safe filename containing only ASCII letters, numbers, spaces, and
+        basic punctuation. Returns "video" if the result would be empty.
+
+    Example:
+        >>> sanitize_filename('My Video 🎬 (2024)')
+        'My Video _ _2024_'
+    """
     import unicodedata
     
     # First, normalize unicode characters
@@ -615,7 +669,24 @@ def sanitize_filename(name: str, max_length: int = 200) -> str:
 
 
 def format_time(seconds: float) -> str:
-    """Format seconds as HH:MM:SS."""
+    """Format a duration in seconds as a human-readable time string.
+
+    Converts a floating-point seconds value to HH:MM:SS or MM:SS format,
+    depending on whether the duration exceeds one hour.
+
+    Args:
+        seconds: Duration in seconds. Negative values are treated as 0.
+
+    Returns:
+        Formatted time string in HH:MM:SS format if >= 1 hour,
+        otherwise MM:SS format.
+
+    Example:
+        >>> format_time(3661.5)
+        '01:01:01'
+        >>> format_time(125)
+        '02:05'
+    """
     seconds = int(max(0, seconds))
     h, remainder = divmod(seconds, 3600)
     m, s = divmod(remainder, 60)
@@ -625,16 +696,43 @@ def format_time(seconds: float) -> str:
 
 
 def send_notification(title: str, message: str):
-    """Send macOS notification."""
+    """Send macOS notification safely.
+
+    Escapes special characters to prevent shell injection attacks
+    from malicious video titles.
+    """
     try:
-        script = f'display notification "{message}" with title "{title}"'
-        subprocess.run(["osascript", "-e", script], check=False, capture_output=True)
-    except Exception:
+        # Escape backslashes and quotes to prevent AppleScript injection
+        safe_title = title.replace('\\', '\\\\').replace('"', '\\"').replace("'", "\\'")
+        safe_message = message.replace('\\', '\\\\').replace('"', '\\"').replace("'", "\\'")
+        # Truncate to reasonable length
+        safe_title = safe_title[:100]
+        safe_message = safe_message[:200]
+        script = f'display notification "{safe_message}" with title "{safe_title}"'
+        subprocess.run(["osascript", "-e", script], check=False, capture_output=True, timeout=5)
+    except (subprocess.TimeoutExpired, OSError):
         pass
 
 
 def load_json_file(path: Path, default: Any = None) -> Any:
-    """Load JSON from file with fallback, merging with defaults if dict."""
+    """Load JSON data from a file with fallback to default values.
+
+    Reads and parses a JSON file. If the file doesn't exist or cannot be
+    parsed, returns the default value. When both the default and loaded
+    data are dictionaries, merges them (loaded values override defaults).
+
+    Args:
+        path: Path to the JSON file to load.
+        default: Default value to return if file doesn't exist or is invalid.
+            If a dict, will be merged with loaded data.
+
+    Returns:
+        The loaded JSON data, merged with defaults if both are dicts,
+        or the default value if loading fails.
+
+    Note:
+        Prints a warning message to stdout if loading fails.
+    """
     result = default.copy() if isinstance(default, dict) else (default if default is not None else {})
     try:
         if path.exists():
@@ -649,8 +747,21 @@ def load_json_file(path: Path, default: Any = None) -> Any:
     return result
 
 
-def save_json_file(path: Path, data: Any):
-    """Save data to JSON file."""
+def save_json_file(path: Path, data: Any) -> None:
+    """Save data to a JSON file with automatic directory creation.
+
+    Serializes data to JSON format and writes it to the specified file.
+    Creates parent directories if they don't exist. Uses 2-space
+    indentation for readability.
+
+    Args:
+        path: Destination path for the JSON file.
+        data: Data to serialize. Must be JSON-serializable. Objects with
+            __str__ methods are converted using str() as a fallback.
+
+    Note:
+        Prints an error message to stdout if saving fails.
+    """
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, 'w', encoding='utf-8') as f:
@@ -664,8 +775,27 @@ def save_json_file(path: Path, data: Any):
 # ============================================================================
 
 class YtDlpInterface:
-    """Interface for yt-dlp operations."""
-    
+    """High-level interface for interacting with yt-dlp.
+
+    Provides methods to fetch video metadata, list available formats, and
+    build download commands. Supports multiple execution modes:
+    - Direct executable invocation
+    - Python module execution (via `python -m yt_dlp`)
+    - Homebrew-installed yt-dlp with system Python
+
+    The class automatically detects the best execution method based on
+    the yt-dlp installation location.
+
+    Attributes:
+        ytdlp_path: Path to yt-dlp executable or "python-module" for module mode.
+
+    Example:
+        >>> ytdlp = YtDlpInterface()
+        >>> if ytdlp.is_available:
+        ...     info = ytdlp.fetch_video_info('https://youtube.com/watch?v=...')
+        ...     print(info.title)
+    """
+
     def __init__(self, ytdlp_path: str = YTDLP_PATH):
         self.ytdlp_path = ytdlp_path
         self._version: Optional[str] = None
@@ -685,7 +815,15 @@ class YtDlpInterface:
             self._use_system_python = False
     
     def _find_system_python(self) -> Optional[str]:
-        """Find system Python that can run Homebrew scripts."""
+        """Find a system Python interpreter for running Homebrew scripts.
+
+        When yt-dlp is installed via Homebrew, it may require execution
+        through a specific Python interpreter rather than direct invocation.
+
+        Returns:
+            Path to the first available Python 3 interpreter, or None if
+            no suitable interpreter is found.
+        """
         candidates = [
             '/opt/homebrew/bin/python3',      # Homebrew Python (Apple Silicon) - try first
             '/usr/local/bin/python3',          # Homebrew Python (Intel)
@@ -697,7 +835,18 @@ class YtDlpInterface:
         return None
     
     def _build_command(self, args: List[str]) -> List[str]:
-        """Build command to execute yt-dlp."""
+        """Build the command list to execute yt-dlp with given arguments.
+
+        Constructs the appropriate command based on the execution mode
+        (direct, module, or system Python). Automatically includes
+        JavaScript runtime arguments if Deno is bundled with the app.
+
+        Args:
+            args: Command-line arguments to pass to yt-dlp.
+
+        Returns:
+            Complete command list suitable for subprocess execution.
+        """
         # Check if we have a bundled deno and add --js-runtimes flag
         js_runtime_args = []
         if DENO_PATH and os.path.isfile(DENO_PATH):
@@ -714,6 +863,11 @@ class YtDlpInterface:
     
     @property
     def is_available(self) -> bool:
+        """Check if yt-dlp is available for use.
+
+        Returns:
+            True if yt-dlp can be executed (either as module or file exists).
+        """
         if self._use_python_module:
             try:
                 import yt_dlp
@@ -723,32 +877,50 @@ class YtDlpInterface:
         return os.path.isfile(self.ytdlp_path)
     
     def get_version(self) -> str:
-        """Get yt-dlp version string."""
+        """Get the yt-dlp version string.
+
+        Caches the version after first retrieval for efficiency.
+
+        Returns:
+            Version string (e.g., '2024.01.01') or "Not found" if
+            yt-dlp cannot be executed.
+        """
         if self._version:
             return self._version
         try:
             cmd = self._build_command(["--version"])
-            print(f"DEBUG: Running command: {' '.join(cmd)}")  # Debug output
             result = subprocess.run(
                 cmd,
-                capture_output=True, text=True, check=False
+                capture_output=True, text=True, check=False, timeout=10,
+                encoding='utf-8', errors='replace'
             )
-            print(f"DEBUG: Return code: {result.returncode}")  # Debug output
-            print(f"DEBUG: stdout: {result.stdout[:100]}")  # Debug output
-            print(f"DEBUG: stderr: {result.stderr[:100]}")  # Debug output
             if result.returncode == 0:
                 self._version = result.stdout.strip().split('\n')[0]
                 return self._version
-        except Exception as e:
-            print(f"DEBUG: Exception: {e}")  # Debug output
+        except (subprocess.TimeoutExpired, OSError, ValueError):
+            pass
         return "Not found"
-    
+
     def fetch_video_info(self, url: str) -> VideoInfo:
-        """Fetch video metadata using yt-dlp -J."""
+        """Fetch basic video metadata from a URL.
+
+        Uses yt-dlp's JSON output mode (-J) with flat playlist mode to
+        quickly retrieve video information without downloading.
+
+        Args:
+            url: YouTube URL (video, playlist, or channel).
+
+        Returns:
+            VideoInfo object containing video metadata.
+
+        Raises:
+            RuntimeError: If yt-dlp fails or returns invalid JSON.
+        """
         try:
             result = subprocess.run(
                 self._build_command(["-J", "--flat-playlist", url]),
-                capture_output=True, text=True, check=False
+                capture_output=True, text=True, check=False, timeout=30,
+                encoding='utf-8', errors='replace'
             )
             
             if result.returncode != 0:
@@ -761,12 +933,27 @@ class YtDlpInterface:
             raise RuntimeError(f"Failed to parse yt-dlp output: {e}")
     
     def fetch_full_info(self, url: str) -> VideoInfo:
-        """Fetch full video info including all formats using --list-formats."""
+        """Fetch complete video metadata including all available formats.
+
+        Performs two yt-dlp calls: one for basic metadata and another
+        for the complete format list. This provides more detailed format
+        information than fetch_video_info().
+
+        Args:
+            url: YouTube URL (video, playlist, or channel).
+
+        Returns:
+            VideoInfo object with complete metadata and format list.
+
+        Raises:
+            RuntimeError: If yt-dlp fails, times out, or returns invalid data.
+        """
         try:
             # First get basic metadata with -J (this works for basic info)
             result_info = subprocess.run(
                 self._build_command(["-J", "--flat-playlist", url]),
-                capture_output=True, text=True, check=False, timeout=30
+                capture_output=True, text=True, check=False, timeout=30,
+                encoding='utf-8', errors='replace'
             )
             
             if result_info.returncode != 0:
@@ -782,7 +969,8 @@ class YtDlpInterface:
                     "--remote-components", "ejs:github",
                     url
                 ]),
-                capture_output=True, text=True, check=False, timeout=30
+                capture_output=True, text=True, check=False, timeout=30,
+                encoding='utf-8', errors='replace'
             )
             
             if result_formats.returncode == 0:
@@ -814,15 +1002,15 @@ class YtDlpInterface:
         # Parse each format line
         for line in lines[table_start:]:
             line = line.strip()
-            if not line or line.startswith('[') or line.startswith('â”€'):
+            if not line or line.startswith('[') or '---' in line:
                 continue
             
             # Skip audio-only lines (we want video formats)
             if 'audio only' in line.lower() and 'video' not in line.lower():
                 continue
             
-            # Split by â”‚ separator to get sections
-            sections = line.split('â”‚')
+            # Split by vertical bar separator to get sections
+            sections = line.split('|')
             if len(sections) < 2:
                 # Try splitting by whitespace only
                 parts = line.split()
@@ -893,17 +1081,17 @@ class YtDlpInterface:
                     if re.match(r'^\d+k$', part):
                         try:
                             tbr = int(part[:-1])
-                        except:
+                        except ValueError:
                             pass
                         break
                     # Match patterns like "1.8M" or "4M"
                     elif re.match(r'^[\d.]+M$', part):
                         try:
                             tbr = int(float(part[:-1]) * 1000)
-                        except:
+                        except ValueError:
                             pass
                         break
-                
+
                 # Parse file size (look for patterns like "668.33MiB", "91.60MiB", "1.5GiB")
                 filesize = None
                 filesize_approx = None
@@ -911,7 +1099,7 @@ class YtDlpInterface:
                     # Remove leading ~ for approximate sizes
                     size_part = part.lstrip('~')
                     is_approx = part.startswith('~')
-                    
+
                     # Match MiB sizes like "668.33MiB"
                     mib_match = re.match(r'^([\d.]+)MiB$', size_part)
                     if mib_match:
@@ -922,10 +1110,10 @@ class YtDlpInterface:
                                 filesize_approx = size_bytes
                             else:
                                 filesize = size_bytes
-                        except:
+                        except ValueError:
                             pass
                         continue
-                    
+
                     # Match GiB sizes like "1.5GiB"
                     gib_match = re.match(r'^([\d.]+)GiB$', size_part)
                     if gib_match:
@@ -936,10 +1124,10 @@ class YtDlpInterface:
                                 filesize_approx = size_bytes
                             else:
                                 filesize = size_bytes
-                        except:
+                        except ValueError:
                             pass
                         continue
-                    
+
                     # Match KiB sizes like "500KiB"
                     kib_match = re.match(r'^([\d.]+)KiB$', size_part)
                     if kib_match:
@@ -950,7 +1138,7 @@ class YtDlpInterface:
                                 filesize_approx = size_bytes
                             else:
                                 filesize = size_bytes
-                        except:
+                        except ValueError:
                             pass
                         continue
                 
@@ -987,6 +1175,19 @@ class YtDlpInterface:
         # Check if it's a playlist
         is_playlist = data.get("_type") == "playlist"
         
+        # Parse chapters if available
+        chapters = []
+        chapters_data = data.get("chapters", [])
+        if chapters_data:
+            for i, ch in enumerate(chapters_data):
+                chapter = Chapter(
+                    index=i,
+                    title=ch.get("title", f"Chapter {i + 1}"),
+                    start_time=ch.get("start_time", 0),
+                    end_time=ch.get("end_time", 0)
+                )
+                chapters.append(chapter)
+        
         info = VideoInfo(
             id=data.get("id", "unknown"),
             title=data.get("title", "Unknown Title"),
@@ -997,6 +1198,7 @@ class YtDlpInterface:
             view_count=data.get("view_count"),
             upload_date=data.get("upload_date"),
             description=data.get("description"),
+            chapters=chapters,
             is_playlist=is_playlist,
             playlist_count=data.get("playlist_count") if is_playlist else None,
         )
@@ -1028,7 +1230,7 @@ class YtDlpInterface:
                     try:
                         width = int(parts[0])
                         height = int(parts[1])
-                    except:
+                    except ValueError:
                         pass
             
             # Skip storyboard/thumbnail formats
@@ -1198,6 +1400,15 @@ class ProgressTracker:
         self.current_stage = "idle"
         self.download_speed = None  # Mbps
         self.conversion_fps = None
+        # v17.7.5: Stall detection
+        self.last_progress_time = None
+        self.last_progress_value = 0
+        self.stall_threshold = 5  # Seconds before considering progress stalled
+        self.is_stalled = False
+        # v17.7.5: File monitoring
+        self.monitored_file = None
+        self.last_file_size = 0
+        self.file_growth_rate = 0  # bytes per second
         
     def start(self, stage="downloading"):
         """Start tracking a new stage."""
@@ -1206,6 +1417,12 @@ class ProgressTracker:
         self.current_stage = stage
         self.download_speed = None
         self.conversion_fps = None
+        self.last_progress_time = time.time()
+        self.last_progress_value = 0
+        self.is_stalled = False
+        self.monitored_file = None
+        self.last_file_size = 0
+        self.file_growth_rate = 0
         
     def update(self, percentage):
         """Update progress percentage."""
@@ -1218,6 +1435,58 @@ class ProgressTracker:
         # Keep only last window_size seconds
         cutoff_time = current_time - self.window_size
         self.history = [(t, p) for t, p in self.history if t >= cutoff_time]
+        
+        # v17.7.5: Update stall detection
+        if percentage > self.last_progress_value:
+            self.last_progress_time = current_time
+            self.last_progress_value = percentage
+            self.is_stalled = False
+    
+    def check_stall(self) -> bool:
+        """Check if progress appears stalled (no updates for threshold seconds)."""
+        if self.last_progress_time is None:
+            return False
+        time_since_progress = time.time() - self.last_progress_time
+        self.is_stalled = time_since_progress > self.stall_threshold
+        return self.is_stalled
+    
+    def get_stall_duration(self) -> float:
+        """Get how long progress has been stalled."""
+        if self.last_progress_time is None:
+            return 0
+        return time.time() - self.last_progress_time
+    
+    def set_monitored_file(self, filepath: str):
+        """Set a file to monitor for growth (used when progress parsing fails)."""
+        self.monitored_file = filepath
+        self.last_file_size = 0
+        
+    def check_file_growth(self) -> tuple[bool, int, float]:
+        """
+        Check if the monitored file is growing.
+        Returns: (is_growing, current_size, growth_rate_mbps)
+        """
+        if not self.monitored_file or not os.path.exists(self.monitored_file):
+            return False, 0, 0
+        
+        try:
+            current_size = os.path.getsize(self.monitored_file)
+            current_time = time.time()
+            
+            if self.last_file_size > 0 and hasattr(self, '_last_size_check_time'):
+                time_delta = current_time - self._last_size_check_time
+                if time_delta > 0:
+                    size_delta = current_size - self.last_file_size
+                    # Convert bytes/sec to Mbps (megabits per second)
+                    self.file_growth_rate = (size_delta * 8) / (time_delta * 1_000_000)
+            
+            self._last_size_check_time = current_time
+            is_growing = current_size > self.last_file_size
+            self.last_file_size = current_size
+            
+            return is_growing, current_size, self.file_growth_rate
+        except Exception:
+            return False, 0, 0
     
     def get_eta(self):
         """Calculate ETA in seconds using sliding window."""
@@ -1277,6 +1546,16 @@ class ProgressTracker:
         if self.conversion_fps is None:
             return ""
         return f"{self.conversion_fps:.0f} fps"
+    
+    def format_file_size(self, size_bytes: int) -> str:
+        """Format file size as human-readable string."""
+        if size_bytes >= 1024 ** 3:
+            return f"{size_bytes / (1024 ** 3):.2f} GB"
+        elif size_bytes >= 1024 ** 2:
+            return f"{size_bytes / (1024 ** 2):.1f} MB"
+        elif size_bytes >= 1024:
+            return f"{size_bytes / 1024:.1f} KB"
+        return f"{size_bytes} B"
 
 
 # ============================================================================
@@ -1284,8 +1563,32 @@ class ProgressTracker:
 # ============================================================================
 
 class DownloadManager:
-    """Manages download queue and operations."""
-    
+    """Manages the download queue and executes download operations.
+
+    Provides a thread-safe queue system for downloading videos using yt-dlp.
+    Supports pausing, resuming, and cancelling downloads, with progress
+    tracking and callback notifications for UI updates.
+
+    Features:
+    - Thread-safe task queue with add/remove operations
+    - Progress tracking with ETA calculation
+    - SponsorBlock integration for removing sponsored segments
+    - Callback system for real-time status updates
+    - Support for concurrent format downloads and remuxing
+
+    Attributes:
+        ytdlp: YtDlpInterface instance for executing downloads.
+        output_dir: Default directory for downloaded files.
+        queue: List of pending and active DownloadTask objects.
+        current_task: Currently executing download task, if any.
+
+    Example:
+        >>> manager = DownloadManager(ytdlp_interface, '/path/to/downloads')
+        >>> manager.add_callback(lambda event, data: print(f'{event}: {data}'))
+        >>> task = manager.add_task(video_info, selected_format)
+        >>> manager.start()
+    """
+
     def __init__(self, ytdlp: YtDlpInterface, output_dir: str):
         self.ytdlp = ytdlp
         self.output_dir = output_dir
@@ -1301,12 +1604,28 @@ class DownloadManager:
         from pathlib import Path as PathLib
         self.settings_mgr = SettingsManager(SETTINGS_PATH)
     
-    def add_callback(self, callback: Callable):
-        """Add a callback for status updates."""
+    def add_callback(self, callback: Callable[[str, Any], None]) -> None:
+        """Register a callback for download status updates.
+
+        Callbacks are invoked with (event, data) parameters when download
+        state changes. Events include: 'task_added', 'task_removed',
+        'task_updated', 'queue_complete'.
+
+        Args:
+            callback: Function accepting (event: str, data: Any) parameters.
+        """
         self._callbacks.append(callback)
     
-    def _notify(self, event: str, data: Any = None):
-        """Notify all callbacks."""
+    def _notify(self, event: str, data: Any = None) -> None:
+        """Notify all registered callbacks of an event.
+
+        Catches and logs exceptions from callbacks to prevent one
+        failing callback from affecting others.
+
+        Args:
+            event: Event name (e.g., 'task_added', 'task_updated').
+            data: Event-specific data, typically a DownloadTask or task ID.
+        """
         for cb in self._callbacks:
             try:
                 cb(event, data)
@@ -1314,7 +1633,18 @@ class DownloadManager:
                 print(f"Callback error: {e}")
     
     def add_task(self, video_info: VideoInfo, selected_format: Optional[VideoFormat] = None) -> DownloadTask:
-        """Add a download task to the queue."""
+        """Add a new download task to the queue.
+
+        Creates a DownloadTask from video metadata and queues it for
+        processing. Notifies callbacks with 'task_added' event.
+
+        Args:
+            video_info: Video metadata from YtDlpInterface.
+            selected_format: Specific format to download, or None for default.
+
+        Returns:
+            The created DownloadTask object.
+        """
         task = DownloadTask(
             id=f"{video_info.id}_{int(time.time())}",
             video_info=video_info,
@@ -1327,14 +1657,25 @@ class DownloadManager:
         self._notify("task_added", task)
         return task
     
-    def remove_task(self, task_id: str):
-        """Remove a task from the queue."""
+    def remove_task(self, task_id: str) -> None:
+        """Remove a task from the queue by ID.
+
+        Thread-safe removal of a queued task. Does not affect tasks
+        that are currently downloading.
+
+        Args:
+            task_id: Unique identifier of the task to remove.
+        """
         with self._lock:
             self.queue = [t for t in self.queue if t.id != task_id]
         self._notify("task_removed", task_id)
     
-    def start(self):
-        """Start processing the queue."""
+    def start(self) -> None:
+        """Start processing the download queue.
+
+        Spawns a daemon thread to process queued tasks. If already
+        running, this method returns immediately without effect.
+        """
         if self._running:
             return
         
@@ -1342,30 +1683,46 @@ class DownloadManager:
         self._paused = False
         threading.Thread(target=self._process_queue, daemon=True).start()
     
-    def pause(self):
-        """Pause queue processing."""
+    def pause(self) -> None:
+        """Pause queue processing.
+
+        Sets the paused flag and updates the current task status.
+        The download process continues but new tasks are not started.
+        """
         self._paused = True
         if self.current_task:
             self.current_task.status = DownloadStatus.PAUSED
             self._notify("task_updated", self.current_task)
     
-    def resume(self):
-        """Resume queue processing."""
+    def resume(self) -> None:
+        """Resume queue processing after a pause.
+
+        Clears the paused flag and updates the current task status
+        back to DOWNLOADING.
+        """
         self._paused = False
         if self.current_task:
             self.current_task.status = DownloadStatus.DOWNLOADING
             self._notify("task_updated", self.current_task)
     
-    def cancel_current(self):
-        """Cancel the current download."""
+    def cancel_current(self) -> None:
+        """Cancel the currently active download.
+
+        Terminates the yt-dlp subprocess and marks the task as cancelled.
+        The queue continues processing the next task.
+        """
         if self.current_process:
             self.current_process.terminate()
         if self.current_task:
             self.current_task.status = DownloadStatus.CANCELLED
             self._notify("task_updated", self.current_task)
     
-    def _process_queue(self):
-        """Process downloads in the queue."""
+    def _process_queue(self) -> None:
+        """Main queue processing loop (runs in background thread).
+
+        Continuously checks for queued tasks and processes them one at
+        a time. Handles pausing, cancellation, and status updates.
+        """
         while self._running:
             if self._paused:
                 time.sleep(0.5)
@@ -1423,6 +1780,7 @@ class DownloadManager:
             video_cmd_args = [
                 "--newline",
                 "--remote-components", "ejs:github",
+                "--extractor-args", "youtube:player_client=android_sdkless",
                 "-f", video_format,
                 "-o", temp_video,
                 video_info.url
@@ -1457,6 +1815,7 @@ class DownloadManager:
             audio_cmd = self.ytdlp._build_command([
                 "--newline",
                 "--remote-components", "ejs:github",
+                "--extractor-args", "youtube:player_client=android_sdkless",
                 "-f", "bestaudio[ext=m4a]/bestaudio/best",
                 "-o", temp_audio,
                 video_info.url
@@ -1553,7 +1912,7 @@ class DownloadManager:
                 bitrate_num = float(video_bitrate.rstrip('MmKk'))
                 maxrate = video_bitrate
                 bufsize = f"{int(bitrate_num * 2)}M"
-            except:
+            except (ValueError, AttributeError):
                 maxrate = "10M"
                 bufsize = "16M"
             
@@ -1615,14 +1974,14 @@ class DownloadManager:
                         try:
                             os.remove(file_path)
                             files_removed.append(fname)
-                        except:
+                        except OSError:
                             pass
-                
+
                 if files_removed:
                     self._notify("log", ("info", f"Cleaned up temp files: {', '.join(files_removed)}"))
-            except Exception as e:
+            except OSError as e:
                 self._notify("log", ("warning", f"Cleanup error: {e}"))
-            
+
             if success and os.path.exists(final_output):
                 # Step 4: Apply SponsorBlock post-processing if enabled
                 if self.settings_mgr.get('sponsorblock_enabled', False):
@@ -1633,21 +1992,20 @@ class DownloadManager:
                     # No SponsorBlock - mark as 100% complete after conversion
                     task.progress = 100.0
                     self._notify("task_updated", task)
-                
+
                 task.status = DownloadStatus.COMPLETED
                 task.progress = 100.0
                 task.completed_at = datetime.now()
                 task.output_path = final_output
-                
+
                 # Calculate file size
                 try:
                     task.file_size = os.path.getsize(final_output)
-                except:
+                except OSError:
                     task.file_size = None
                 
                 # BUGFIX v16.1: Save to history
                 try:
-                    from pathlib import Path as PathLib
                     history_entry = {
                         "id": video_info.id,
                         "title": video_info.title,
@@ -1659,7 +2017,7 @@ class DownloadManager:
                         "duration": video_info.duration,
                         "format": f"{fmt.height}p" if fmt and fmt.height else "best"
                     }
-                    hist_mgr = HistoryManager(PathLib.home() / ".yt_dlp_gui_v16_history.json")
+                    hist_mgr = HistoryManager(HISTORY_PATH)
                     hist_mgr.add(history_entry)
                 except Exception:
                     pass  # Don't fail download if history fails
@@ -1915,6 +2273,9 @@ class DownloadManager:
                                        expected_file_pattern: Optional[str] = None):
         """Run a subprocess and update progress with speed metrics.
         
+        v17.7.5: Enhanced to detect yt-dlp merging phases and show file activity
+        when progress appears stalled.
+        
         Args:
             expected_file_pattern: Optional pattern to check if file was downloaded despite errors
         """
@@ -1934,7 +2295,53 @@ class DownloadManager:
             
             progress_re = re.compile(r'\[download\]\s+(\d+(?:\.\d+)?)%')
             speed_re = re.compile(r'at\s+([\d.]+)(Ki|Mi|Gi)?B/s')
+            # v17.7.5: Detect merging/processing messages from yt-dlp
+            merge_re = re.compile(r'\[Merger\]|\[ffmpeg\]|\[ExtractAudio\]|\[FixupM3u8\]|\[Fixup\]|Merging formats|Destination:.*_temp')
+            chapter_re = re.compile(r'Chapter \d+|Writing chapter')
             error_lines = []  # Capture error messages
+            
+            # v17.7.5: Track when we last saw real progress
+            last_progress_update = time.time()
+            is_in_merge_phase = False
+            merge_start_time = None
+            
+            # v17.7.5: Start a background thread to monitor file growth during stalls
+            file_monitor_active = False
+            
+            def monitor_file_growth():
+                """Background thread to update UI during long operations."""
+                nonlocal file_monitor_active
+                while file_monitor_active and self.current_process and self.current_process.poll() is None:
+                    # Check for growing files in output directory
+                    try:
+                        for fname in os.listdir(self.output_dir):
+                            if expected_file_pattern and expected_file_pattern in fname:
+                                fpath = os.path.join(self.output_dir, fname)
+                                if os.path.isfile(fpath):
+                                    is_growing, size, rate = False, 0, 0
+                                    try:
+                                        size = os.path.getsize(fpath)
+                                        if hasattr(self, '_last_monitored_size'):
+                                            is_growing = size > self._last_monitored_size
+                                            if is_growing:
+                                                rate = (size - self._last_monitored_size) * 8 / 1_000_000  # Mbps
+                                        self._last_monitored_size = size
+                                    except OSError:
+                                        pass
+                                    
+                                    if size > 0:
+                                        task.current_file_size = size
+                                        size_str = self.progress_tracker.format_file_size(size)
+                                        if is_in_merge_phase and merge_start_time:
+                                            elapsed = time.time() - merge_start_time
+                                            task.status_detail = f"Merging streams... ({size_str}, {elapsed:.0f}s elapsed)"
+                                        else:
+                                            task.status_detail = f"Processing... ({size_str})"
+                                        self._notify("task_updated", task)
+                                    break
+                    except Exception:
+                        pass
+                    time.sleep(1)  # Check every second
             
             for line in self.current_process.stdout:
                 if self._paused:
@@ -1945,12 +2352,36 @@ class DownloadManager:
                 if "error" in line.lower() and "warning" not in line.lower():
                     error_lines.append(line.strip())
                 
+                # v17.7.5: Detect merge/processing phases
+                if merge_re.search(line):
+                    if not is_in_merge_phase:
+                        is_in_merge_phase = True
+                        merge_start_time = time.time()
+                        task.status_detail = "Merging video and audio streams..."
+                        self._notify("log", ("info", "Merging streams (this may take several minutes for long videos)..."))
+                        self._notify("task_updated", task)
+                        
+                        # Start file monitoring thread
+                        if not file_monitor_active:
+                            file_monitor_active = True
+                            self._last_monitored_size = 0
+                            monitor_thread = threading.Thread(target=monitor_file_growth, daemon=True)
+                            monitor_thread.start()
+                
+                # v17.7.5: Detect chapter processing
+                if chapter_re.search(line):
+                    task.status_detail = f"Processing chapters..."
+                    self._notify("task_updated", task)
+                
                 # Parse progress percentage
                 match = progress_re.search(line)
                 if match:
                     pct = float(match.group(1))
                     # Scale to our progress range
                     task.progress = progress_start + (pct / 100) * (progress_end - progress_start)
+                    last_progress_update = time.time()
+                    is_in_merge_phase = False  # Real progress means we're past merge phase
+                    task.status_detail = None  # Clear special status
                     
                     # Update progress tracker
                     self.progress_tracker.update(task.progress)
@@ -1979,7 +2410,13 @@ class DownloadManager:
                     
                     self._notify("task_updated", task)
             
+            # Stop file monitor
+            file_monitor_active = False
+            
             self.current_process.wait()
+            
+            # Clear status detail after completion
+            task.status_detail = None
             
             # Check if download succeeded despite non-zero return code
             file_exists = False
@@ -1991,7 +2428,7 @@ class DownloadManager:
                             file_exists = True
                             self._notify("log", ("warning", f"{stage} had non-zero exit code but file was downloaded successfully"))
                             break
-                except:
+                except OSError:
                     pass
             
             # Only fail if returncode is non-zero AND no file was downloaded
@@ -2010,10 +2447,20 @@ class DownloadManager:
     def _run_ffmpeg_with_progress(self, cmd: List[str], task: DownloadTask,
                                    stage: str, progress_start: float, progress_end: float,
                                    duration: Optional[int]) -> bool:
-        """Run ffmpeg and update progress with FPS metrics."""
+        """Run ffmpeg and update progress with FPS metrics.
+        
+        v17.7.5: Enhanced with file size monitoring and stall detection to show
+        users that processing is still active during long conversions.
+        """
         try:
             # Start progress tracking for conversion stage
             self.progress_tracker.start("converting")
+            
+            # v17.7.5: Get the output file path from the command (last argument)
+            output_file = cmd[-1] if cmd else None
+            last_file_size = 0
+            last_progress_time = time.time()
+            stall_logged = False
             
             # Use encoding='utf-8' and errors='replace' to handle unicode in paths
             self.current_process = subprocess.Popen(
@@ -2027,9 +2474,55 @@ class DownloadManager:
             
             time_re = re.compile(r'time=(\d+):(\d+):(\d+(?:\.\d+)?)')
             fps_re = re.compile(r'fps=\s*([\d.]+)')
+            size_re = re.compile(r'size=\s*(\d+)(ki|Mi|Gi)?B')  # v17.7.5: Also parse size from ffmpeg output
             total_duration = float(duration) if duration else 0
             
             stderr_lines = []  # Capture stderr for error reporting
+            
+            # v17.7.5: Start a background thread to monitor file growth during apparent stalls
+            file_monitor_active = True
+            conversion_start = time.time()
+            
+            def monitor_conversion_file():
+                """Background thread to show file growth during conversion."""
+                nonlocal last_file_size, stall_logged
+                check_interval = 2  # Check every 2 seconds
+                
+                while file_monitor_active and self.current_process and self.current_process.poll() is None:
+                    time.sleep(check_interval)
+                    
+                    # Check if progress appears stalled
+                    time_since_progress = time.time() - last_progress_time
+                    
+                    if time_since_progress > 5 and output_file and os.path.exists(output_file):
+                        try:
+                            current_size = os.path.getsize(output_file)
+                            
+                            if current_size > last_file_size:
+                                # File is growing - show activity
+                                size_delta = current_size - last_file_size
+                                write_rate = (size_delta * 8) / (check_interval * 1_000_000)  # Mbps
+                                
+                                size_str = self.progress_tracker.format_file_size(current_size)
+                                elapsed = time.time() - conversion_start
+                                elapsed_str = f"{int(elapsed // 60)}m {int(elapsed % 60)}s" if elapsed >= 60 else f"{int(elapsed)}s"
+                                
+                                task.current_file_size = current_size
+                                task.status_detail = f"Converting... {size_str} written ({elapsed_str} elapsed, {write_rate:.1f} Mbps)"
+                                task.eta = "calculating..."  # Clear ETA since we don't have reliable progress
+                                self._notify("task_updated", task)
+                                
+                                if not stall_logged and time_since_progress > 10:
+                                    self._notify("log", ("info", f"Conversion in progress - {size_str} written so far"))
+                                    stall_logged = True
+                            
+                            last_file_size = current_size
+                        except Exception:
+                            pass
+            
+            # Start monitor thread
+            monitor_thread = threading.Thread(target=monitor_conversion_file, daemon=True)
+            monitor_thread.start()
             
             for line in self.current_process.stderr:
                 stderr_lines.append(line)  # Store for potential error reporting
@@ -2037,6 +2530,24 @@ class DownloadManager:
                 if self._paused:
                     while self._paused and self._running:
                         time.sleep(0.1)
+                
+                # v17.7.5: Parse size from ffmpeg output even if no time info
+                size_match = size_re.search(line)
+                if size_match:
+                    size_value = float(size_match.group(1))
+                    size_unit = size_match.group(2) or ""
+                    
+                    # Convert to bytes
+                    if size_unit == "ki":
+                        current_size = int(size_value * 1024)
+                    elif size_unit == "Mi":
+                        current_size = int(size_value * 1024 * 1024)
+                    elif size_unit == "Gi":
+                        current_size = int(size_value * 1024 * 1024 * 1024)
+                    else:
+                        current_size = int(size_value)
+                    
+                    task.current_file_size = current_size
                 
                 if total_duration > 0:
                     match = time_re.search(line)
@@ -2047,6 +2558,11 @@ class DownloadManager:
                         current_time = h * 3600 + m * 60 + s
                         pct = min(100, (current_time / total_duration) * 100)
                         task.progress = progress_start + (pct / 100) * (progress_end - progress_start)
+                        
+                        # v17.7.5: Update last progress time
+                        last_progress_time = time.time()
+                        task.status_detail = None  # Clear status detail when we have real progress
+                        stall_logged = False
                         
                         # Update progress tracker
                         self.progress_tracker.update(task.progress)
@@ -2063,7 +2579,13 @@ class DownloadManager:
                         
                         self._notify("task_updated", task)
             
+            # v17.7.5: Stop file monitor
+            file_monitor_active = False
+            
             self.current_process.wait()
+            
+            # Clear status detail after completion
+            task.status_detail = None
             
             # If failed, log the error
             if self.current_process.returncode != 0:
@@ -2088,8 +2610,20 @@ class DownloadManager:
 # ============================================================================
 
 class EnhancedProgressBar(ctk.CTkFrame):
-    """Enhanced progress bar with segmented blocks and animation."""
-    
+    """Animated progress bar with segmented block visualization.
+
+    Displays download progress as a series of blocks that fill in as the
+    download progresses. Supports different colors for different stages
+    (downloading video, audio, converting) and includes a pulsing
+    animation effect for active downloads.
+
+    Attributes:
+        progress: Current progress percentage (0-100).
+        stage: Current download stage ('downloading_video', 'downloading_audio',
+            'converting', or 'idle').
+        animating: Whether the pulse animation is currently active.
+    """
+
     def __init__(self, parent, **kwargs):
         super().__init__(parent, fg_color="transparent", **kwargs)
         
@@ -2209,8 +2743,20 @@ class EnhancedProgressBar(ctk.CTkFrame):
 
 
 class ModernButton(ctk.CTkButton):
-    """Modern styled button with hover effects."""
-    
+    """Styled button with predefined appearance themes.
+
+    Extends CTkButton with predefined styles (primary, secondary, danger,
+    success) that automatically apply appropriate colors, borders, and
+    hover effects consistent with the application's design system.
+
+    Args:
+        master: Parent widget.
+        text: Button label text.
+        icon: Optional icon character to prepend to text.
+        style: Button style - 'primary', 'secondary', 'danger', or 'success'.
+        **kwargs: Additional arguments passed to CTkButton.
+    """
+
     def __init__(self, master, text="", icon=None, style="primary", **kwargs):
         styles = {
             "primary": {
@@ -2251,8 +2797,18 @@ class ModernButton(ctk.CTkButton):
 
 
 class ModernEntry(ctk.CTkEntry):
-    """Modern styled entry with focus effects."""
-    
+    """Styled text entry field with consistent appearance.
+
+    Extends CTkEntry with predefined styling matching the application's
+    dark theme, including rounded corners, appropriate colors, and
+    placeholder text styling.
+
+    Args:
+        master: Parent widget.
+        placeholder: Placeholder text shown when entry is empty.
+        **kwargs: Additional arguments passed to CTkEntry.
+    """
+
     def __init__(self, master, placeholder="", **kwargs):
         super().__init__(
             master,
@@ -2269,8 +2825,22 @@ class ModernEntry(ctk.CTkEntry):
 
 
 class OptionChip(ctk.CTkButton):
-    """Selectable option chip/pill."""
-    
+    """Toggleable chip/pill button for option selection.
+
+    A compact button styled as a pill/chip that can be toggled between
+    active and inactive states. Used for filter options, format selection,
+    and other binary choices.
+
+    Args:
+        master: Parent widget.
+        text: Chip label text.
+        active: Initial selection state.
+        **kwargs: Additional arguments passed to CTkButton.
+
+    Attributes:
+        active: Current selection state (True if selected).
+    """
+
     def __init__(self, master, text="", active=False, **kwargs):
         self.active = active
         
@@ -2310,8 +2880,25 @@ class OptionChip(ctk.CTkButton):
 
 
 class FormatCard(ctk.CTkFrame):
-    """Card for displaying a format option."""
-    
+    """Card widget displaying a video/audio format option.
+
+    Shows format information (resolution, codec, file size, bitrate) in
+    a clickable card format. Used in the format selection UI to allow
+    users to choose their preferred download format.
+
+    Args:
+        master: Parent widget.
+        format_info: VideoFormat object containing format metadata.
+        selected: Whether this card is currently selected.
+        recommended: Whether to show a 'Recommended' badge.
+        on_select: Callback function when card is clicked.
+        **kwargs: Additional arguments passed to CTkFrame.
+
+    Attributes:
+        format_info: The VideoFormat this card represents.
+        selected: Current selection state.
+    """
+
     # Codec display names
     CODEC_NAMES = {
         "avc1": "H.264",
@@ -2403,8 +2990,21 @@ class FormatCard(ctk.CTkFrame):
 
 
 class ProgressCard(ctk.CTkFrame):
-    """Card showing download progress."""
-    
+    """Card widget displaying download task progress.
+
+    Shows a download task's current state including title, status,
+    progress bar, and statistics (speed, ETA). Automatically updates
+    colors based on the task status.
+
+    Args:
+        master: Parent widget.
+        task: DownloadTask to display.
+        **kwargs: Additional arguments passed to CTkFrame.
+
+    Attributes:
+        task: The DownloadTask being displayed.
+    """
+
     def __init__(self, master, task: DownloadTask, **kwargs):
         super().__init__(
             master,
@@ -2491,8 +3091,20 @@ class ProgressCard(ctk.CTkFrame):
 
 
 class LogPanel(ctk.CTkFrame):
-    """Scrollable log panel."""
-    
+    """Scrollable activity log panel with timestamped messages.
+
+    Displays application activity messages with timestamps and color-coded
+    severity levels. Includes a header with title and clear button.
+
+    Args:
+        master: Parent widget.
+        **kwargs: Additional arguments passed to CTkFrame.
+
+    Methods:
+        log(message, level): Add a timestamped message with severity level.
+        clear(): Clear all log messages.
+    """
+
     def __init__(self, master, **kwargs):
         super().__init__(
             master,
@@ -2567,8 +3179,27 @@ class LogPanel(ctk.CTkFrame):
 # ============================================================================
 
 class SettingsManager:
-    """Manages application settings with persistent storage."""
-    
+    """Manages application settings with persistent JSON storage.
+
+    Handles loading, saving, and accessing application settings. Settings
+    are stored in a JSON file and merged with defaults on load to ensure
+    new settings are available after updates.
+
+    Settings categories include:
+    - SponsorBlock: segment removal preferences
+    - Subtitles: language and embedding options
+    - Encoding: video/audio bitrate and encoder settings
+    - Trim: video trimming start/end times
+    - Playlist: download order and limits
+
+    Args:
+        config_path: Path to settings JSON file. Defaults to SETTINGS_PATH.
+
+    Attributes:
+        settings: Dictionary of current settings.
+        config_path: Path to the settings file.
+    """
+
     def __init__(self, config_path: Path = None):
         # Use SETTINGS_PATH by default (separate from main config)
         self.config_path = config_path or SETTINGS_PATH
@@ -2643,8 +3274,20 @@ class SettingsManager:
 
 
 class HistoryManager:
-    """Manages download history."""
-    
+    """Manages persistent download history.
+
+    Tracks completed downloads with metadata (title, URL, date, file path)
+    and provides search functionality. History is limited to 1000 entries
+    with oldest entries automatically pruned.
+
+    Args:
+        history_path: Path to history JSON file.
+
+    Attributes:
+        entries: List of history entry dictionaries.
+        history_path: Path to the history file.
+    """
+
     def __init__(self, history_path: Path):
         self.history_path = history_path
         self.entries = self._load()
@@ -2680,8 +3323,20 @@ class HistoryManager:
 # ============================================================================
 
 class SettingsWindow(ctk.CTkToplevel):
-    """Settings configuration window."""
-    
+    """Modal window for configuring application settings.
+
+    Provides a tabbed interface for configuring:
+    - SponsorBlock: segment removal categories and behavior
+    - Subtitles: language preferences and embedding options
+    - Encoding: video/audio quality and encoder settings
+    - Trim: video start/end time clipping
+    - Playlist: download order and item limits
+
+    Args:
+        parent: Parent window.
+        settings_mgr: SettingsManager instance to read/write settings.
+    """
+
     def __init__(self, parent, settings_mgr: SettingsManager):
         super().__init__(parent)
         self.settings_mgr = settings_mgr
@@ -2746,6 +3401,27 @@ class SettingsWindow(ctk.CTkToplevel):
         ctk.CTkLabel(
             info_frame,
             text="After download & conversion, segments are fetched from SponsorBlock API\nand removed via re-encoding. This is reliable but adds extra processing time.",
+            font=ctk.CTkFont(size=11),
+            text_color="#9ca3af",
+            anchor="w",
+            justify="left"
+        ).pack(anchor="w", padx=15, pady=(0, 10))
+        
+        # Chapter download notice banner
+        chapter_notice_frame = ctk.CTkFrame(scroll_frame, fg_color="#4d3a1c", corner_radius=8)
+        chapter_notice_frame.pack(fill="x", padx=10, pady=(0, 15))
+        
+        ctk.CTkLabel(
+            chapter_notice_frame,
+            text="Note: Chapter Downloads",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color="#fbbf24",
+            anchor="w"
+        ).pack(anchor="w", padx=15, pady=(10, 5))
+        
+        ctk.CTkLabel(
+            chapter_notice_frame,
+            text="SponsorBlock is automatically disabled when downloading chapters.\nChapter extraction uses a different process that is incompatible with SponsorBlock.",
             font=ctk.CTkFont(size=11),
             text_color="#9ca3af",
             anchor="w",
@@ -3038,10 +3714,10 @@ class SettingsWindow(ctk.CTkToplevel):
                     value = entry.get().strip()
                     float(value)  # Validate it's a number
                     per_res_bitrates[res_key] = value
-                except:
+                except (ValueError, AttributeError):
                     per_res_bitrates[res_key] = "10"  # Default fallback
             self.settings_mgr.set("per_resolution_bitrates", per_res_bitrates)
-        
+
         # Save custom bitrate
         if bitrate_mode == "custom":
             custom_value = self.vid_bitrate.get().strip()
@@ -3050,24 +3726,24 @@ class SettingsWindow(ctk.CTkToplevel):
             self.settings_mgr.set("video_bitrate", custom_value if custom_value else "auto")
         else:
             self.settings_mgr.set("video_bitrate", "auto")
-        
+
         # Audio bitrate
         try:
             self.settings_mgr.set("audio_bitrate", int(self.aud_bitrate.get()))
-        except:
+        except (ValueError, TypeError):
             self.settings_mgr.set("audio_bitrate", 192)
-        
+
         # Trim
         self.settings_mgr.set("trim_enabled", self.trim_enabled.get() == 1)
         self.settings_mgr.set("trim_start", self.trim_start.get().strip())
         self.settings_mgr.set("trim_end", self.trim_end.get().strip())
-        
+
         # Playlist
         self.settings_mgr.set("playlist_download_all", self.pl_all.get() == 1)
         self.settings_mgr.set("playlist_reverse", self.pl_reverse.get() == 1)
         try:
             self.settings_mgr.set("playlist_max_items", max(0, int(self.pl_max.get())))
-        except:
+        except (ValueError, TypeError):
             self.settings_mgr.set("playlist_max_items", 0)
         
         self.settings_mgr.save()
@@ -3075,8 +3751,16 @@ class SettingsWindow(ctk.CTkToplevel):
 
 
 class HistoryBrowserWindow(ctk.CTkToplevel):
-    """History browser window."""
-    
+    """Window for browsing and searching download history.
+
+    Displays a searchable list of previously downloaded videos with
+    title, date, and file path. Allows clearing the entire history.
+
+    Args:
+        parent: Parent window.
+        history_mgr: HistoryManager instance for history data.
+    """
+
     def __init__(self, parent, history_mgr: HistoryManager):
         super().__init__(parent)
         self.history_mgr = history_mgr
@@ -3137,8 +3821,16 @@ class HistoryBrowserWindow(ctk.CTkToplevel):
 
 
 class AboutDialog(ctk.CTkToplevel):
-    """About dialog."""
-    
+    """Application information dialog.
+
+    Displays version information, credits, and links to the project
+    repository and donation page.
+
+    Args:
+        parent: Parent window.
+        ytdlp_version: Version string of the installed yt-dlp.
+    """
+
     def __init__(self, parent, ytdlp_version: str):
         super().__init__(parent)
         
@@ -3165,7 +3857,7 @@ FFmpeg for media processing
 Author: bytePatrol
 License: MIT
 
-Ãƒâ€š(c) 2025 All Rights Reserved"""
+(c) 2025 All Rights Reserved"""
         
         ctk.CTkLabel(content, text=info, font=ctk.CTkFont(size=12), 
                     text_color=COLORS["text_secondary"], justify="center").pack(pady=(0, 20))
@@ -3173,6 +3865,212 @@ License: MIT
         ModernButton(content, text="Close", style="primary", width=100, command=self.destroy).pack()
 
 
+class ChapterSelectionWindow(ctk.CTkToplevel):
+    """Window for selecting specific video chapters to download.
+
+    Displays a list of available chapters with checkboxes for selection.
+    Users can select individual chapters or use select/deselect all.
+    Selected chapters are downloaded as separate files.
+
+    Args:
+        parent: Parent window.
+        video_info: VideoInfo containing chapter metadata.
+        on_download: Callback function receiving list of selected chapters.
+
+    Note:
+        SponsorBlock is automatically disabled for chapter downloads
+        to avoid timing conflicts.
+    """
+
+    def __init__(self, parent, video_info: VideoInfo, on_download: Callable):
+        super().__init__(parent)
+        
+        self.video_info = video_info
+        self.on_download = on_download
+        self.chapter_vars = []  # List of BooleanVars for checkboxes
+        
+        self.title(f"Chapters - {video_info.title[:50]}...")
+        self.geometry("700x550")
+        self.transient(parent)
+        self.resizable(True, True)
+        self.minsize(500, 400)
+        
+        # Configure colors
+        self.configure(fg_color=COLORS["bg_primary"])
+        
+        # Main container
+        main_frame = ctk.CTkFrame(self, fg_color="transparent")
+        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+        
+        # Header
+        header = ctk.CTkFrame(main_frame, fg_color="transparent")
+        header.pack(fill="x", pady=(0, 15))
+        
+        ctk.CTkLabel(
+            header,
+            text=f"{len(video_info.chapters)} Chapters Available",
+            font=ctk.CTkFont(size=18, weight="bold"),
+            text_color=COLORS["text_primary"]
+        ).pack(side="left")
+        
+        # Select all / Deselect all buttons
+        btn_frame = ctk.CTkFrame(header, fg_color="transparent")
+        btn_frame.pack(side="right")
+        
+        ctk.CTkButton(
+            btn_frame,
+            text="Select All",
+            width=90,
+            height=30,
+            font=ctk.CTkFont(size=12),
+            fg_color=COLORS["bg_elevated"],
+            hover_color=COLORS["bg_hover"],
+            command=self._select_all
+        ).pack(side="left", padx=(0, 8))
+        
+        ctk.CTkButton(
+            btn_frame,
+            text="Deselect All",
+            width=90,
+            height=30,
+            font=ctk.CTkFont(size=12),
+            fg_color=COLORS["bg_elevated"],
+            hover_color=COLORS["bg_hover"],
+            command=self._deselect_all
+        ).pack(side="left")
+        
+        # SponsorBlock notice banner
+        sb_notice = ctk.CTkFrame(main_frame, fg_color="#3d3d1c", corner_radius=8)
+        sb_notice.pack(fill="x", pady=(0, 10))
+        
+        ctk.CTkLabel(
+            sb_notice,
+            text=" SponsorBlock is disabled for chapter downloads",
+            font=ctk.CTkFont(size=11),
+            text_color="#d4d4a0",
+            anchor="w"
+        ).pack(anchor="w", padx=12, pady=8)
+        
+        # Chapters list (scrollable)
+        self.chapters_frame = ctk.CTkScrollableFrame(
+            main_frame,
+            fg_color=COLORS["bg_secondary"],
+            corner_radius=10
+        )
+        self.chapters_frame.pack(fill="both", expand=True, pady=(0, 15))
+        
+        # Create chapter rows
+        for chapter in video_info.chapters:
+            self._create_chapter_row(chapter)
+        
+        # Footer with options and download button
+        footer = ctk.CTkFrame(main_frame, fg_color="transparent")
+        footer.pack(fill="x")
+        
+        # Audio only option
+        self.audio_only_var = ctk.BooleanVar(value=False)
+        ctk.CTkCheckBox(
+            footer,
+            text="Audio Only (M4A)",
+            variable=self.audio_only_var,
+            font=ctk.CTkFont(size=13),
+            text_color=COLORS["text_secondary"]
+        ).pack(side="left")
+        
+        # Download button
+        ModernButton(
+            footer,
+            text="Download Selected Chapters",
+            style="primary",
+            width=200,
+            command=self._download_chapters
+        ).pack(side="right")
+        
+        # Cancel button
+        ModernButton(
+            footer,
+            text="Cancel",
+            style="secondary",
+            width=80,
+            command=self.destroy
+        ).pack(side="right", padx=(0, 10))
+    
+    def _create_chapter_row(self, chapter: Chapter):
+        """Create a row for a single chapter."""
+        row = ctk.CTkFrame(self.chapters_frame, fg_color="transparent")
+        row.pack(fill="x", padx=10, pady=5)
+        
+        # Checkbox
+        var = ctk.BooleanVar(value=True)  # Selected by default
+        self.chapter_vars.append((chapter, var))
+        
+        cb = ctk.CTkCheckBox(
+            row,
+            text="",
+            variable=var,
+            width=24,
+            checkbox_width=20,
+            checkbox_height=20
+        )
+        cb.pack(side="left", padx=(0, 10))
+        
+        # Chapter number
+        ctk.CTkLabel(
+            row,
+            text=f"{chapter.index + 1:02d}",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color=COLORS["accent_purple"],
+            width=30
+        ).pack(side="left", padx=(0, 10))
+        
+        # Chapter title
+        ctk.CTkLabel(
+            row,
+            text=chapter.title[:60] + ("..." if len(chapter.title) > 60 else ""),
+            font=ctk.CTkFont(size=13),
+            text_color=COLORS["text_primary"],
+            anchor="w"
+        ).pack(side="left", fill="x", expand=True)
+        
+        # Duration
+        ctk.CTkLabel(
+            row,
+            text=chapter.duration_str,
+            font=ctk.CTkFont(size=12),
+            text_color=COLORS["text_secondary"],
+            width=60
+        ).pack(side="right", padx=(10, 0))
+        
+        # Start time
+        ctk.CTkLabel(
+            row,
+            text=chapter.start_time_str,
+            font=ctk.CTkFont(size=12),
+            text_color=COLORS["text_tertiary"],
+            width=60
+        ).pack(side="right")
+    
+    def _select_all(self):
+        """Select all chapters."""
+        for _, var in self.chapter_vars:
+            var.set(True)
+    
+    def _deselect_all(self):
+        """Deselect all chapters."""
+        for _, var in self.chapter_vars:
+            var.set(False)
+    
+    def _download_chapters(self):
+        """Start downloading selected chapters."""
+        selected_chapters = [ch for ch, var in self.chapter_vars if var.get()]
+        
+        if not selected_chapters:
+            messagebox.showwarning("No Selection", "Please select at least one chapter to download.")
+            return
+        
+        audio_only = self.audio_only_var.get()
+        self.on_download(selected_chapters, audio_only)
+        self.destroy()
 
 
 # ============================================================================
@@ -3180,8 +4078,33 @@ License: MIT
 # ============================================================================
 
 class YtDlpGUI(ctk.CTk):
-    """Main application window."""
-    
+    """Main application window for 4K YouTube Downloader.
+
+    The primary GUI class that orchestrates all application functionality
+    including URL input, format selection, download management, and
+    settings configuration.
+
+    Features:
+    - URL paste/drag-drop with automatic video info fetching
+    - Format selection with quality presets and manual format cards
+    - Progress tracking with ETA and speed display
+    - Clipboard monitoring for YouTube URLs
+    - Keyboard shortcuts for common actions
+    - Persistent settings and download history
+
+    Attributes:
+        settings_mgr: SettingsManager for application preferences.
+        history_mgr: HistoryManager for download history.
+        ytdlp: YtDlpInterface for yt-dlp operations.
+        download_manager: DownloadManager for queue management.
+        current_video: Currently loaded VideoInfo, if any.
+        selected_format: Currently selected VideoFormat for download.
+
+    Example:
+        >>> app = YtDlpGUI()
+        >>> app.mainloop()
+    """
+
     def __init__(self):
         super().__init__()
         
@@ -3248,6 +4171,10 @@ class YtDlpGUI(ctk.CTk):
         self.main_container = ctk.CTkFrame(self, fg_color="transparent")
         self.main_container.pack(fill="both", expand=True, padx=20, pady=20)
         
+        # Footer MUST be created first when using side="bottom" 
+        # This ensures it stays at the bottom regardless of other elements
+        self._create_footer()
+        
         # Header
         self._create_header()
         
@@ -3265,9 +4192,6 @@ class YtDlpGUI(ctk.CTk):
         
         # Log panel
         self._create_log_section()
-        
-        # Footer
-        self._create_footer()
     
     def _create_header(self):
         """Create the header with title and version."""
@@ -3445,11 +4369,11 @@ class YtDlpGUI(ctk.CTk):
         self.duration_badge.place(relx=0.95, rely=0.95, anchor="se")
         
         # Right side - info
-        info_frame = ctk.CTkFrame(self.preview_frame, fg_color="transparent")
-        info_frame.pack(side="left", fill="both", expand=True)
+        self.info_frame = ctk.CTkFrame(self.preview_frame, fg_color="transparent")
+        self.info_frame.pack(side="left", fill="both", expand=True)
         
         self.title_label = ctk.CTkLabel(
-            info_frame,
+            self.info_frame,
             text="Video Title",
             font=ctk.CTkFont(size=18, weight="bold"),
             text_color=COLORS["text_primary"],
@@ -3459,8 +4383,8 @@ class YtDlpGUI(ctk.CTk):
         self.title_label.pack(fill="x", pady=(0, 8))
         
         # Meta info
-        meta_frame = ctk.CTkFrame(info_frame, fg_color="transparent")
-        meta_frame.pack(fill="x", pady=(0, 16))
+        meta_frame = ctk.CTkFrame(self.info_frame, fg_color="transparent")
+        meta_frame.pack(fill="x", pady=(0, 10))
         
         self.channel_label = ctk.CTkLabel(
             meta_frame,
@@ -3478,9 +4402,28 @@ class YtDlpGUI(ctk.CTk):
         )
         self.views_label.pack(side="left", padx=(0, 16))
         
+        # Chapters label (hidden by default, shown when chapters detected)
+        self.chapters_label = ctk.CTkLabel(
+            meta_frame,
+            text="",
+            font=ctk.CTkFont(size=13),
+            text_color=COLORS["accent_purple"]
+        )
+        self.chapters_label.pack(side="left", padx=(0, 16))
+        
+        # Chapters button (hidden by default)
+        self.chapters_button = ModernButton(
+            meta_frame,
+            text="Download Chapters",
+            style="secondary",
+            width=160,
+            command=self._show_chapters_dialog
+        )
+        # Will be packed when chapters are detected
+        
         # Format selection label
         ctk.CTkLabel(
-            info_frame,
+            self.info_frame,
             text="SELECT QUALITY",
             font=ctk.CTkFont(size=11, weight="bold"),
             text_color=COLORS["text_tertiary"]
@@ -3488,7 +4431,7 @@ class YtDlpGUI(ctk.CTk):
         
         # Format cards container (scrollable)
         self.formats_scroll = ctk.CTkScrollableFrame(
-            info_frame,
+            self.info_frame,
             fg_color="transparent",
             height=100,
             orientation="horizontal"
@@ -3579,8 +4522,8 @@ class YtDlpGUI(ctk.CTk):
     
     def _create_log_section(self):
         """Create log panel."""
-        self.log_panel = LogPanel(self.main_container, height=150)
-        self.log_panel.pack(fill="both", expand=True, pady=(0, 16))
+        self.log_panel = LogPanel(self.main_container, height=120)
+        self.log_panel.pack(fill="x", pady=(0, 8))  # Changed from fill="both", expand=True
         
         # Welcome message
         self.log_panel.log(f"Welcome to {APP_NAME} v{APP_VERSION}", "info")
@@ -3588,11 +4531,12 @@ class YtDlpGUI(ctk.CTk):
     
     def _create_footer(self):
         """Create footer with output path and buttons."""
-        footer = ctk.CTkFrame(self.main_container, fg_color="transparent")
-        footer.pack(fill="x")
+        self.footer = ctk.CTkFrame(self.main_container, fg_color="transparent", height=40)
+        self.footer.pack(fill="x", side="bottom", pady=(0, 5))  # Pack at bottom to ensure visibility
+        self.footer.pack_propagate(False)  # Prevent footer from shrinking
         
         # Output path
-        path_frame = ctk.CTkFrame(footer, fg_color="transparent")
+        path_frame = ctk.CTkFrame(self.footer, fg_color="transparent")
         path_frame.pack(side="left")
         
         ctk.CTkLabel(
@@ -3611,7 +4555,7 @@ class YtDlpGUI(ctk.CTk):
         self.output_path_label.pack(side="left", padx=(8, 0))
         
         # Footer buttons
-        btn_frame = ctk.CTkFrame(footer, fg_color="transparent")
+        btn_frame = ctk.CTkFrame(self.footer, fg_color="transparent")
         btn_frame.pack(side="right")
         
         ModernButton(
@@ -3707,11 +4651,11 @@ class YtDlpGUI(ctk.CTk):
         # Ensure format_cards is initialized
         if not hasattr(self, 'format_cards'):
             self.format_cards = []
-        
+
         for card in self.format_cards:
             try:
                 card.destroy()
-            except:
+            except (tk.TclError, RuntimeError):
                 pass
         self.format_cards.clear()
         
@@ -3737,6 +4681,15 @@ class YtDlpGUI(ctk.CTk):
         self.channel_label.configure(text=f"{info.channel or 'Unknown'}")
         self.views_label.configure(text=f"{info.views_str} views")
         self.duration_badge.configure(text=info.duration_str)
+        
+        # Update chapters info
+        if info.has_chapters:
+            self.chapters_label.configure(text=f"{len(info.chapters)} chapters")
+            self.chapters_button.pack(side="left")
+            self.log_panel.log(f"Found {len(info.chapters)} chapters in video", "success")
+        else:
+            self.chapters_label.configure(text="")
+            self.chapters_button.pack_forget()
         
         # Load thumbnail
         if info.thumbnail:
@@ -3809,6 +4762,372 @@ class YtDlpGUI(ctk.CTk):
         
         self.log_panel.log(f"Selected: {fmt.height}p {fmt.bitrate_str}", "info")
     
+    def _show_chapters_dialog(self):
+        """Show the chapter selection dialog."""
+        if not self.current_video or not self.current_video.has_chapters:
+            messagebox.showwarning("No Chapters", "This video does not have chapters.")
+            return
+        
+        ChapterSelectionWindow(
+            self,
+            self.current_video,
+            on_download=self._download_chapters
+        )
+    
+    def _download_chapters(self, chapters: List[Chapter], audio_only: bool = False):
+        """Download selected chapters as separate files.
+        
+        v17.8.5: Complete rewrite for efficiency:
+        1. Download full video once (video + audio streams)
+        2. Merge/encode to QuickTime-compatible format once
+        3. Split into chapters using ffmpeg stream copy (fast, no re-encoding)
+        
+        This is MUCH faster than the old approach which downloaded and encoded
+        the entire video separately for each chapter.
+        
+        v17.8.7: SponsorBlock is automatically disabled for chapter downloads
+        to avoid compatibility issues with the chapter extraction process.
+        """
+        if not self.current_video:
+            return
+        
+        video_info = self.current_video
+        output_dir = self.config.get("output_dir", str(Path.home() / "Desktop"))
+        
+        # Create a folder for the chapters
+        safe_title = sanitize_filename(video_info.title, max_length=100)
+        chapter_folder = os.path.join(output_dir, safe_title)
+        os.makedirs(chapter_folder, exist_ok=True)
+        
+        self.log_panel.log(f"Downloading {len(chapters)} chapters to: {chapter_folder}", "info")
+        self.log_panel.log("Strategy: Download once â†’ Encode once â†’ Split into chapters (fast)", "info")
+        
+        # v17.8.7: Log that SponsorBlock is disabled for chapter downloads
+        if self.settings_mgr.get('sponsorblock_enabled', False):
+            self.log_panel.log("Note: SponsorBlock is disabled for chapter downloads", "warning")
+        
+        # Start chapter download in a thread
+        def download_chapters_thread():
+            video_id = video_info.id
+            temp_video = os.path.join(output_dir, f"{video_id}_temp_video.%(ext)s")
+            temp_audio = os.path.join(output_dir, f"{video_id}_temp_audio.%(ext)s")
+            merged_file = os.path.join(output_dir, f"{video_id}_merged.mp4")
+            
+            try:
+                # ========================================
+                # STAGE 1: Download video stream (0-30%)
+                # ========================================
+                self.after(0, lambda: self._update_chapter_stage("Downloading video stream...", 0))
+                
+                fmt = self.selected_format
+                if audio_only:
+                    # For audio-only, we just need the audio stream
+                    self.after(0, lambda: self.log_panel.log("Audio-only mode: downloading best audio", "info"))
+                else:
+                    if fmt and fmt.height:
+                        video_format = f"bestvideo[height<={fmt.height}][ext=mp4]/bestvideo[height<={fmt.height}]/bestvideo"
+                        self.after(0, lambda h=fmt.height: self.log_panel.log(f"Downloading best video at or below {h}p", "info"))
+                    else:
+                        video_format = "bestvideo[ext=mp4]/bestvideo/best"
+                        self.after(0, lambda: self.log_panel.log("Downloading best available video", "info"))
+                    
+                    video_cmd = self.ytdlp._build_command([
+                        "--newline",
+                        "--remote-components", "ejs:github",
+                        "--extractor-args", "youtube:player_client=android_sdkless",
+                        "-f", video_format,
+                        "-o", temp_video,
+                        video_info.url
+                    ])
+                    
+                    result = subprocess.run(
+                        video_cmd,
+                        capture_output=True,
+                        text=True,
+                        encoding='utf-8',
+                        errors='replace'
+                    )
+                    
+                    if result.returncode != 0:
+                        # Check if file exists anyway
+                        video_file = self._find_chapter_temp_file(output_dir, f"{video_id}_temp_video")
+                        if not video_file:
+                            self.after(0, lambda e=result.stderr[:300]: self.log_panel.log(f"Video download failed: {e}", "error"))
+                            return
+                
+                # ========================================
+                # STAGE 2: Download audio stream (30-50%)
+                # ========================================
+                self.after(0, lambda: self._update_chapter_stage("Downloading audio stream...", 30))
+                self.after(0, lambda: self.log_panel.log("Downloading best audio stream", "info"))
+                
+                audio_cmd = self.ytdlp._build_command([
+                    "--newline",
+                    "--remote-components", "ejs:github",
+                    "--extractor-args", "youtube:player_client=android_sdkless",
+                    "-f", "bestaudio[ext=m4a]/bestaudio/best",
+                    "-o", temp_audio,
+                    video_info.url
+                ])
+                
+                result = subprocess.run(
+                    audio_cmd,
+                    capture_output=True,
+                    text=True,
+                    encoding='utf-8',
+                    errors='replace'
+                )
+                
+                if result.returncode != 0:
+                    audio_file = self._find_chapter_temp_file(output_dir, f"{video_id}_temp_audio")
+                    if not audio_file:
+                        self.after(0, lambda e=result.stderr[:300]: self.log_panel.log(f"Audio download failed: {e}", "error"))
+                        return
+                
+                # Find the downloaded files
+                video_file = self._find_chapter_temp_file(output_dir, f"{video_id}_temp_video") if not audio_only else None
+                audio_file = self._find_chapter_temp_file(output_dir, f"{video_id}_temp_audio")
+                
+                if not audio_file:
+                    self.after(0, lambda: self.log_panel.log("Audio file not found after download", "error"))
+                    return
+                
+                if not audio_only and not video_file:
+                    self.after(0, lambda: self.log_panel.log("Video file not found after download", "error"))
+                    return
+                
+                # ========================================
+                # STAGE 3: Merge & encode to QuickTime (50-80%)
+                # ========================================
+                if audio_only:
+                    # For audio-only, just convert to m4a
+                    self.after(0, lambda: self._update_chapter_stage("Converting audio to M4A...", 50))
+                    merged_file = os.path.join(output_dir, f"{video_id}_merged.m4a")
+                    
+                    ffmpeg_cmd = [
+                        FFMPEG_PATH,
+                        "-y",
+                        "-i", audio_file,
+                        "-c:a", "aac",
+                        "-b:a", "192k",
+                        merged_file
+                    ]
+                else:
+                    self.after(0, lambda: self._update_chapter_stage("Encoding to QuickTime format...", 50))
+                    self.after(0, lambda: self.log_panel.log("Merging video + audio with QuickTime-compatible encoding", "info"))
+                    
+                    # Get encoding settings
+                    settings_mgr = SettingsManager(SETTINGS_PATH)
+                    encoder_type = settings_mgr.get("encoder_type", "auto")
+                    
+                    if encoder_type == "cpu":
+                        video_codec = "libx264"
+                    else:
+                        video_codec = "h264_videotoolbox"  # GPU
+                    
+                    # Calculate bitrate based on resolution
+                    video_height = fmt.height if fmt else 1080
+                    if video_height >= 2160:
+                        video_bitrate = "15M"
+                    elif video_height >= 1440:
+                        video_bitrate = "10M"
+                    elif video_height >= 1080:
+                        video_bitrate = "6M"
+                    elif video_height >= 720:
+                        video_bitrate = "4M"
+                    else:
+                        video_bitrate = "2M"
+                    
+                    ffmpeg_cmd = [
+                        FFMPEG_PATH,
+                        "-y",
+                        "-i", video_file,
+                        "-i", audio_file,
+                        "-map", "0:v:0",
+                        "-map", "1:a:0",
+                        "-c:v", video_codec,
+                        "-b:v", video_bitrate,
+                        "-pix_fmt", "yuv420p",
+                        "-c:a", "aac",
+                        "-b:a", "192k",
+                        "-movflags", "+faststart",
+                        "-shortest",
+                        merged_file
+                    ]
+                
+                self.after(0, lambda: self.log_panel.log(f"Encoding with ffmpeg (this may take a while)...", "info"))
+                
+                # Run ffmpeg merge/encode
+                process = subprocess.Popen(
+                    ffmpeg_cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    encoding='utf-8',
+                    errors='replace'
+                )
+                
+                # Monitor encoding progress
+                duration = video_info.duration or 0
+                time_re = re.compile(r'time=(\d+):(\d+):(\d+(?:\.\d+)?)')
+                
+                for line in process.stderr:
+                    if duration > 0:
+                        match = time_re.search(line)
+                        if match:
+                            h = float(match.group(1))
+                            m = float(match.group(2))
+                            s = float(match.group(3))
+                            current_time = h * 3600 + m * 60 + s
+                            encode_pct = min(100, (current_time / duration) * 100)
+                            # Map encoding progress to 50-80% range
+                            overall_pct = 50 + (encode_pct * 0.3)
+                            self.after(0, lambda p=overall_pct: self._update_chapter_stage(f"Encoding... {p-50:.0f}% of video", p))
+                
+                process.wait()
+                
+                if process.returncode != 0 or not os.path.exists(merged_file):
+                    # Try CPU fallback if GPU failed
+                    if "h264_videotoolbox" in ffmpeg_cmd:
+                        self.after(0, lambda: self.log_panel.log("GPU encoding failed, trying CPU...", "warning"))
+                        ffmpeg_cmd[ffmpeg_cmd.index("h264_videotoolbox")] = "libx264"
+                        result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True, encoding='utf-8', errors='replace')
+                        if result.returncode != 0 or not os.path.exists(merged_file):
+                            self.after(0, lambda: self.log_panel.log("Encoding failed", "error"))
+                            return
+                    else:
+                        self.after(0, lambda: self.log_panel.log("Encoding failed", "error"))
+                        return
+                
+                self.after(0, lambda: self.log_panel.log("Encoding complete! Now splitting into chapters...", "success"))
+                
+                # ========================================
+                # STAGE 4: Split into chapters (80-100%)
+                # ========================================
+                self.after(0, lambda: self._update_chapter_stage("Splitting into chapters...", 80))
+                
+                total_chapters = len(chapters)
+                successful_chapters = 0
+                
+                for i, chapter in enumerate(chapters):
+                    # Calculate progress within the splitting stage (80-100%)
+                    split_progress = 80 + ((i / total_chapters) * 20)
+                    self.after(0, lambda p=split_progress, c=chapter, t=total_chapters: 
+                        self._update_chapter_stage(f"Splitting chapter {c.index + 1}/{t}: {c.title[:30]}...", p))
+                    
+                    # Build output filename
+                    safe_chapter_title = chapter.safe_filename
+                    ext = "m4a" if audio_only else "mp4"
+                    output_file = os.path.join(chapter_folder, f"{chapter.index + 1:02d} - {safe_chapter_title}.{ext}")
+                    
+                    # Calculate duration
+                    chapter_duration = chapter.end_time - chapter.start_time
+                    
+                    # Use ffmpeg to extract chapter with stream copy (FAST - no re-encoding!)
+                    if audio_only:
+                        split_cmd = [
+                            FFMPEG_PATH,
+                            "-y",
+                            "-ss", str(chapter.start_time),
+                            "-i", merged_file,
+                            "-t", str(chapter_duration),
+                            "-c:a", "copy",  # Stream copy - no re-encoding!
+                            output_file
+                        ]
+                    else:
+                        split_cmd = [
+                            FFMPEG_PATH,
+                            "-y",
+                            "-ss", str(chapter.start_time),
+                            "-i", merged_file,
+                            "-t", str(chapter_duration),
+                            "-c:v", "copy",  # Stream copy - no re-encoding!
+                            "-c:a", "copy",  # Stream copy - no re-encoding!
+                            "-avoid_negative_ts", "make_zero",
+                            output_file
+                        ]
+                    
+                    result = subprocess.run(
+                        split_cmd,
+                        capture_output=True,
+                        text=True,
+                        encoding='utf-8',
+                        errors='replace'
+                    )
+                    
+                    if result.returncode == 0 and os.path.exists(output_file):
+                        successful_chapters += 1
+                        self.after(0, lambda ch=chapter: self.log_panel.log(
+                            f"  [checkmark] Chapter {ch.index + 1}: {ch.title}", "success"
+                        ))
+                    else:
+                        self.after(0, lambda ch=chapter, err=result.stderr[:100]: self.log_panel.log(
+                            f"  [x] Chapter {ch.index + 1} failed: {err}", "error"
+                        ))
+                
+                # ========================================
+                # CLEANUP: Remove temp files
+                # ========================================
+                self.after(0, lambda: self._update_chapter_stage("Cleaning up...", 98))
+                
+                try:
+                    if video_file and os.path.exists(video_file):
+                        os.remove(video_file)
+                    if audio_file and os.path.exists(audio_file):
+                        os.remove(audio_file)
+                    if os.path.exists(merged_file):
+                        os.remove(merged_file)
+                    self.after(0, lambda: self.log_panel.log("Temporary files cleaned up", "info"))
+                except Exception as e:
+                    self.after(0, lambda err=str(e): self.log_panel.log(f"Cleanup warning: {err}", "warning"))
+                
+                # Done!
+                self.after(0, lambda: self._chapter_download_complete(chapter_folder, successful_chapters))
+                
+            except Exception as e:
+                import traceback
+                tb = traceback.format_exc()
+                self.after(0, lambda err=str(e), trace=tb: self.log_panel.log(f"Chapter download error: {err}\n{trace}", "error"))
+                # Cleanup on error
+                try:
+                    for f in [temp_video.replace("%(ext)s", "mp4"), temp_video.replace("%(ext)s", "webm"),
+                              temp_audio.replace("%(ext)s", "m4a"), temp_audio.replace("%(ext)s", "webm"),
+                              merged_file]:
+                        if os.path.exists(f):
+                            os.remove(f)
+                except OSError:
+                    pass
+        
+        threading.Thread(target=download_chapters_thread, daemon=True).start()
+    
+    def _find_chapter_temp_file(self, directory: str, prefix: str) -> Optional[str]:
+        """Find a temp file by prefix for chapter downloads."""
+        try:
+            for fname in os.listdir(directory):
+                if fname.startswith(prefix):
+                    return os.path.join(directory, fname)
+        except Exception:
+            pass
+        return None
+    
+    def _update_chapter_stage(self, message: str, progress: float):
+        """Update UI during chapter download stages."""
+        self.main_progress.set_progress(progress, stage="converting")
+        self.main_progress.start_animation()
+        self.progress_label.configure(text=message)
+        self.percentage_label.configure(text=f"{progress:.0f}%")
+        self.queue_status.configure(text="Processing Chapters")
+    
+    def _chapter_download_complete(self, folder: str, count: int):
+        """Called when all chapters are downloaded."""
+        self.main_progress.set_progress(100, stage="idle")
+        self.main_progress.stop_animation()
+        self.progress_label.configure(text=f"Completed: {count} chapters extracted")
+        self.percentage_label.configure(text="100%")
+        self.queue_status.configure(text="Idle")
+        self.log_panel.log(f"All {count} chapters downloaded to: {folder}", "success")
+        send_notification("Chapters Downloaded", f"{count} chapters extracted successfully")
+
     def _download(self):
         """Start download."""
         url = self.url_entry.get().strip()
@@ -3852,13 +5171,23 @@ class YtDlpGUI(ctk.CTk):
                     else:
                         stage_name = "downloading_audio"
                         stage_text = "Stage 2/3: Downloading audio"
+                    
+                    # v17.7.5: Show detailed status if available (e.g., "Merging streams...")
+                    if task.status_detail:
+                        stage_text = task.status_detail
+                        
                 elif task.status == DownloadStatus.CONVERTING:
                     stage_name = "converting"
                     fmt = task.selected_format
-                    if fmt and fmt.height:
+                    
+                    # v17.7.5: Prefer status_detail if available (shows file size during stalls)
+                    if task.status_detail:
+                        stage_text = task.status_detail
+                    elif fmt and fmt.height:
                         stage_text = f"Stage 3/3: Converting ({fmt.height}p)"
                     else:
                         stage_text = "Stage 3/3: Converting"
+                        
                 elif task.status == DownloadStatus.COMPLETED:
                     stage_name = "idle"
                     stage_text = f"Completed: {task.video_info.title}"
@@ -3878,11 +5207,20 @@ class YtDlpGUI(ctk.CTk):
                 self.progress_label.configure(text=stage_text)
                 self.percentage_label.configure(text=f"{task.progress:.0f}%")
                 
-                # Update speed/fps/eta
+                # v17.7.5: Show file size if available during stalls
+                speed_text = ""
                 if task.download_speed:
-                    self.speed_label.configure(text=task.download_speed)
-                else:
-                    self.speed_label.configure(text="")
+                    speed_text = task.download_speed
+                elif task.current_file_size and task.current_file_size > 0:
+                    # Show current file size when no speed available
+                    if task.current_file_size >= 1024 ** 3:
+                        speed_text = f"{task.current_file_size / (1024 ** 3):.2f} GB"
+                    elif task.current_file_size >= 1024 ** 2:
+                        speed_text = f"{task.current_file_size / (1024 ** 2):.1f} MB"
+                    else:
+                        speed_text = f"{task.current_file_size / 1024:.1f} KB"
+                
+                self.speed_label.configure(text=speed_text)
                 
                 if task.conversion_fps:
                     self.fps_label.configure(text=task.conversion_fps)
@@ -3935,7 +5273,7 @@ class YtDlpGUI(ctk.CTk):
         help_text.pack(fill="both", expand=True, padx=20, pady=20)
         
         help_content = """
-YouTube 4K Downloader v17 - Help
+YouTube 4K Downloader v17.8 - Help
 
 QUICK START
 1. Paste a YouTube URL (or drag & drop)
@@ -3943,50 +5281,69 @@ QUICK START
 3. Select your preferred quality
 4. Click "Download" or press Cmd+Return
 
-NEW IN V17.7
-- FIXED: SponsorBlock now works via post-processing!
-- After download, segments are fetched from SponsorBlock API
-- Video is re-encoded with sponsor segments removed
-- More reliable than trying to integrate during download
+NEW IN V17.8 - CHAPTER DOWNLOADS
+- Download videos split by chapters!
+- Select individual chapters or download all
+- Supports both video and audio-only extraction
+- Files named with chapter number and title
+- 10-50x faster using stream copy (no re-encoding per chapter)
 
-NEW IN V17
-- FIXED: Settings now persist between sessions!
-- Settings stored in ~/.config/yt-dlp-gui/
-- SponsorBlock, Encoding, Subtitles settings are saved
+100% SELF-CONTAINED
+This app includes everything needed - no manual installation required:
+- yt-dlp (bundled)
+- ffmpeg (bundled)  
+- deno JavaScript runtime (bundled)
+
+Just download, drag to Applications, and run!
 
 FEATURES
-- Settings window (Ã¢Å’Ëœ,) - Configure SponsorBlock, subtitles, encoding
-- SponsorBlock post-processing - Removes sponsor segments after download
+- Chapter Downloads - Split videos into separate files per chapter
+- Settings window - Configure SponsorBlock, subtitles, encoding
+- SponsorBlock - Removes sponsor segments after download
 - History browser - Search and manage download history
-- Playlist support - Download entire playlists with selection
-- Enhanced audio-only mode - M4A/MP3 with proper metadata
-- Drag & drop URLs - Just drop a YouTube link onto the window
+- Playlist support - Download entire playlists
+- Audio-only mode - M4A/MP3 with proper metadata
+- Drag & drop URLs - Drop a YouTube link onto the window
+- QuickTime Compatible - H.264 + AAC for native macOS playback
 
 KEYBOARD SHORTCUTS
-- Ã¢Å’ËœV - Paste URL from clipboard
+- Cmd+V - Paste URL from clipboard
 - Cmd+Return - Start download
 - Enter - Analyze URL
 
-OPTIONS & FEATURES
+CHAPTER DOWNLOADS
+When a video has chapters:
+1. Click "Analyze" to load video info
+2. A purple "Download Chapters" button appears
+3. Select which chapters to download
+4. Choose "Audio Only" for audio extraction
+5. Each chapter becomes a separate file!
+
+Files are saved like:
+  Video Title/
+    01 - Introduction.mp4
+    02 - Getting Started.mp4
+    03 - Advanced Topics.mp4
+
+OPTIONS
 - Video + Audio: Download complete video
-- Audio Only: Extract audio as M4A/MP3  
+- Audio Only: Extract audio as M4A/MP3
 - QuickTime Compatible: Apple-optimized encoding
-- SponsorBlock: Remove sponsor segments via post-processing
+- SponsorBlock: Remove sponsor segments
 - Subtitles: Download and embed multiple languages
 - Trim: Cut start/end of videos
-- Automatic clipboard detection
-- Thumbnail previews
-- Progress tracking with ETA
-- macOS notifications
-- Download history
 
-REQUIREMENTS
-- yt-dlp: brew install yt-dlp
-- ffmpeg: brew install ffmpeg
+TROUBLESHOOTING
+"App is damaged" error:
+  Run in Terminal: xattr -cr /Applications/YouTube\\ 4K\\ Downloader.app
+
+App won't open:
+  Right-click the app > Select "Open" > Click "Open" in dialog
 
 For more information, visit:
-https://github.com/yt-dlp/yt-dlp
+https://github.com/bytePatrol/YT-DLP-GUI-for-MacOS
         """
+
         
         help_text.insert("1.0", help_content)
         help_text.configure(state="disabled")
