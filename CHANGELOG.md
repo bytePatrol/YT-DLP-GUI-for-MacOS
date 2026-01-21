@@ -2,6 +2,29 @@
 
 All notable changes to YouTube 4K Downloader will be documented in this file.
 
+## [17.10.0] - 2026-01-21
+
+### Added
+- **Auto-update yt-dlp from GitHub releases!** No more re-downloading the entire app when yt-dlp updates
+- Update button in header with visual indicator (turns orange when update available)
+- Background check for updates on app launch (configurable in settings)
+- YtDlpUpdater class for managing yt-dlp binary downloads and installation
+- User-installed yt-dlp stored in `~/Library/Application Support/YouTube 4K Downloader/`
+- Version caching for faster startup
+
+### Changed
+- `find_executable()` now checks user-installed yt-dlp location first
+- YtDlpInterface now has `refresh_path()` method to pick up updates
+- Updated help text with auto-update instructions
+- Settings now include `ytdlp_auto_update_check` option
+
+### Technical Details
+- Downloads standalone `yt-dlp_macos` binary (universal for ARM64 and Intel)
+- Verifies downloaded binary before replacing existing one
+- Removes macOS quarantine attribute automatically
+- Progress shown in main progress bar during download
+- All operations are non-blocking with proper threading
+
 ## [17.9.0] - 2026-01-20
 
 ### Security
@@ -75,7 +98,7 @@ All notable changes to YouTube 4K Downloader will be documented in this file.
 
 ### Changed
 - **MAJOR PERFORMANCE FIX: Chapter downloads are now 10-50x faster!**
-- New strategy: Download once → Encode once → Split into chapters
+- New strategy: Download once â†’ Encode once â†’ Split into chapters
 - Old method downloaded and encoded the ENTIRE video for EACH chapter (extremely slow)
 - New method uses ffmpeg stream copy to split chapters (instant, no re-encoding)
 
@@ -113,7 +136,7 @@ All notable changes to YouTube 4K Downloader will be documented in this file.
 ### Added
 - **Chapter Downloads Restored** - Download videos split by chapters!
   - Automatically detects YouTube chapters from video metadata
-  - Shows chapter count in video info (e.g., "📚 37 chapters")
+  - Shows chapter count in video info (e.g., "ðŸ“š 37 chapters")
   - Purple "Download Chapters" button appears when chapters are available
   - Chapter selection dialog with Select All/Deselect All options
   - Support for both video and audio-only chapter extraction
