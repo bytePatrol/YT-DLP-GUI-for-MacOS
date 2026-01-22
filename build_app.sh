@@ -25,7 +25,7 @@
 # Auto-detect project directory (where this script is located)
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 VENV_DIR="$PROJECT_DIR/venv"
-MAIN_SCRIPT="yt_dlp_gui_v18_0_2.py"  # Default script name
+MAIN_SCRIPT="yt_dlp_gui_v18_0_4.py"  # Default script name
 APP_NAME="YouTube 4K Downloader"
 BUNDLE_ID="com.bytepatrol.youtube4kdownloader"
 INSTALL_DIR="/Applications"

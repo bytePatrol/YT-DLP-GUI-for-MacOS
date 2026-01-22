@@ -5,16 +5,36 @@ YouTube 4K Downloader v18 - 2026 Modern Design Edition
 Complete UI/UX overhaul with contemporary design standards:
 - 🎨 Glass morphism design with backdrop blur effects
 - 💫 Purple-blue gradient accents throughout
-- 📏 Responsive flexbox layout (no cut-off sections)
+- 📁 Responsive flexbox layout (no cut-off sections)
 - 🎯 Collapsible activity log panel (max 200px, scrollable)
-- 📱 Modern card-based interface with generous spacing
+- 📁± Modern card-based interface with generous spacing
 - ✨ Smooth animations and micro-interactions
-- 🔘 Larger touch targets (56-60px buttons)
+- 📘 Larger touch targets (56-60px buttons)
 - 💎 Softer corners (16-20px border radius)
+
+v18.0.3 Changes - AUDIO ONLY MODE:
+- NEW: Audio Only toggle switch in the download section
+- NEW: Downloads audio as M4A (AAC) - fully macOS/QuickTime compatible
+- NEW: Toggle shows "Audio Only (M4A)" with purple accent when enabled
+- NEW: Download button text changes to "Download Audio" when in audio mode
+- NEW: Audio-only preference is saved and persists across sessions
+- NEW: Skips video download entirely - faster downloads for music/podcasts
+- CHANGED: DownloadTask now includes audio_only field
+- CHANGED: DownloadManager.add_task() accepts audio_only parameter
+
+v18.0.5 Changes - DOWNLOAD BUTTON & SELECTION FIX:
+- FIXED: Download button now ALWAYS visible without needing fullscreen
+- FIXED: Quality selection now properly deselects 1080p when clicking another option
+  - Orange "recommended" highlight is cleared when user selects a different format
+  - Only the selected format shows the purple highlight
+- CHANGED: Video section now uses internal grid layout for better space management
+- CHANGED: More compact format cards (smaller padding, font sizes)
+- CHANGED: Smaller thumbnail (160x90) to save vertical space
+- CHANGED: Download button row is fixed at bottom of video card, never hidden
 
 v18.0.2 Changes - NO-SCROLL LAYOUT:
 - FIXED: Everything now fits without scrolling at any window size
-- FIXED: "Best" badge no longer overlaps resolution text (now inline: "⭐1080p")
+- FIXED: "Best" badge no longer overlaps resolution text (now inline: "⭐1080p")
 - FIXED: Progress bar and metrics always fully visible
 - CHANGED: Removed ScrollableFrame - using pure grid layout
 - CHANGED: Much more compact design throughout:
@@ -318,7 +338,7 @@ except ImportError:
 # ============================================================================
 
 APP_NAME = "YouTube 4K Downloader"
-APP_VERSION = "18.0.2"
+APP_VERSION = "18.0.3"
 
 # Configuration paths - using proper config directory
 CONFIG_DIR = Path.home() / ".config" / "yt-dlp-gui"
@@ -604,8 +624,8 @@ class AppUpdateChecker:
         
         # Clean up markdown formatting for display
         body = body.replace("**", "")
-        body = body.replace("###", "•")
-        body = body.replace("##", "•")
+        body = body.replace("###", "â€¢")
+        body = body.replace("##", "â€¢")
         body = body.replace("#", "")
         
         return body.strip()
@@ -676,7 +696,7 @@ class UpdateNotificationDialog(ctk.CTkToplevel):
         # Version info
         version_text = f"Version {self.release_info['version']} is now available"
         if self.release_info.get('published_date'):
-            version_text += f" • Released {self.release_info['published_date']}"
+            version_text += f" â€¢ Released {self.release_info['published_date']}"
         
         version_label = ctk.CTkLabel(
             header_frame,
@@ -731,7 +751,7 @@ class UpdateNotificationDialog(ctk.CTkToplevel):
         # Download button (primary)
         download_btn = ModernButton(
             button_frame,
-            text="📥 Download Update",
+            text="📁¥ Download Update",
             style="primary",
             width=200,
             command=self._open_release_page
@@ -876,8 +896,8 @@ class AppUpdateChecker:
         
         # Clean up markdown for better display
         body = body.replace("**", "")
-        body = body.replace("###", "•")
-        body = body.replace("##", "•")
+        body = body.replace("###", "â€¢")
+        body = body.replace("##", "â€¢")
         body = body.replace("#", "")
         
         return body.strip()
@@ -957,7 +977,7 @@ class UpdateNotificationDialog(ctk.CTkToplevel):
         # Version info
         version_text = f"Version {self.release_info['version']} is now available"
         if self.release_info.get('published_date'):
-            version_text += f" • Released {self.release_info['published_date']}"
+            version_text += f" â€¢ Released {self.release_info['published_date']}"
         
         version_label = ctk.CTkLabel(
             header_content,
@@ -980,7 +1000,7 @@ class UpdateNotificationDialog(ctk.CTkToplevel):
         # Changelog section
         changelog_header = ctk.CTkLabel(
             main_frame,
-            text="📝 What's New:",
+            text="📁 What's New:",
             font=ctk.CTkFont(size=15, weight="bold"),
             text_color=COLORS["text_primary"],
             anchor="w"
@@ -1019,7 +1039,7 @@ class UpdateNotificationDialog(ctk.CTkToplevel):
         # Download button (primary, prominent)
         download_btn = ModernButton(
             button_frame,
-            text="📥 Download Update",
+            text="📁¥ Download Update",
             style="primary",
             width=220,
             height=48,
@@ -1576,6 +1596,7 @@ class DownloadTask:
     video_info: VideoInfo
     selected_format: Optional[VideoFormat] = None
     output_path: Optional[str] = None
+    audio_only: bool = False  # v18.0.3: Audio-only download mode (M4A output)
     status: DownloadStatus = DownloadStatus.QUEUED
     progress: float = 0.0
     speed: Optional[str] = None
@@ -2548,12 +2569,20 @@ class DownloadManager:
             except Exception as e:
                 print(f"Callback error: {e}")
     
-    def add_task(self, video_info: VideoInfo, selected_format: Optional[VideoFormat] = None) -> DownloadTask:
-        """Add a download task to the queue."""
+    def add_task(self, video_info: VideoInfo, selected_format: Optional[VideoFormat] = None, 
+                 audio_only: bool = False) -> DownloadTask:
+        """Add a download task to the queue.
+        
+        Args:
+            video_info: Video metadata
+            selected_format: Selected video format (quality)
+            audio_only: If True, download audio only as M4A (macOS compatible)
+        """
         task = DownloadTask(
             id=f"{video_info.id}_{int(time.time())}",
             video_info=video_info,
             selected_format=selected_format,
+            audio_only=audio_only,
         )
         
         with self._lock:
@@ -2623,7 +2652,10 @@ class DownloadManager:
             self.current_task = None
         
     def _download_task(self, task: DownloadTask):
-        """Execute a single download task with ffmpeg conversion for QuickTime compatibility."""
+        """Execute a single download task with ffmpeg conversion for QuickTime compatibility.
+        
+        v18.0.3: Added audio_only support - downloads only audio and converts to M4A.
+        """
         task.status = DownloadStatus.DOWNLOADING
         task.started_at = datetime.now()
         self._notify("task_updated", task)
@@ -2637,7 +2669,13 @@ class DownloadManager:
             video_id = video_info.id
             temp_video = os.path.join(self.output_dir, f"{video_id}_temp_video.%(ext)s")
             temp_audio = os.path.join(self.output_dir, f"{video_id}_temp_audio.%(ext)s")
-            final_output = os.path.join(self.output_dir, f"{safe_title}.mp4")
+            
+            # v18.0.3: Set output extension based on audio_only mode
+            if task.audio_only:
+                final_output = os.path.join(self.output_dir, f"{safe_title}.m4a")
+                self._notify("log", ("info", "Audio-only mode: downloading best audio stream"))
+            else:
+                final_output = os.path.join(self.output_dir, f"{safe_title}.mp4")
             
             # Handle duplicate filenames
             counter = 1
@@ -2646,6 +2684,106 @@ class DownloadManager:
                 name, ext = os.path.splitext(base_output)
                 final_output = f"{name} ({counter}){ext}"
                 counter += 1
+            
+            # v18.0.3: Audio-only download path
+            if task.audio_only:
+                # Download best audio only
+                audio_cmd = self.ytdlp._build_command([
+                    "--newline",
+                    "--remote-components", "ejs:github",
+                    "--extractor-args", "youtube:player_client=android_sdkless",
+                    "-f", "bestaudio[ext=m4a]/bestaudio/best",
+                    "-o", temp_audio,
+                    video_info.url
+                ])
+                
+                self._run_subprocess_with_progress(audio_cmd, task, "Downloading audio", 0, 60, video_id)
+                
+                if task.status == DownloadStatus.FAILED:
+                    return
+                
+                # Find the downloaded audio file
+                audio_file = self._find_temp_file(self.output_dir, f"{video_id}_temp_audio")
+                
+                if not audio_file:
+                    self._notify("log", ("warning", f"Temp audio file not found, searching..."))
+                    for fname in os.listdir(self.output_dir):
+                        if video_id in fname and fname.endswith(('.m4a', '.webm', '.opus', '.mp3')):
+                            audio_file = os.path.join(self.output_dir, fname)
+                            self._notify("log", ("info", f"Found audio file: {fname}"))
+                            break
+                
+                if not audio_file:
+                    task.status = DownloadStatus.FAILED
+                    task.error_message = "Audio file not found after download"
+                    return
+                
+                # Convert to M4A (AAC) for macOS compatibility
+                task.status = DownloadStatus.CONVERTING
+                self._notify("task_updated", task)
+                
+                settings_mgr = SettingsManager(SETTINGS_PATH)
+                audio_bitrate = settings_mgr.get("audio_bitrate", 192)
+                
+                self._notify("log", ("info", f"Converting to M4A (AAC @ {audio_bitrate}kbps)"))
+                
+                ffmpeg_cmd = [
+                    FFMPEG_PATH,
+                    "-y",
+                    "-i", audio_file,
+                    "-c:a", "aac",
+                    "-b:a", f"{audio_bitrate}k",
+                    "-movflags", "+faststart",
+                    final_output
+                ]
+                
+                success = self._run_ffmpeg_with_progress(ffmpeg_cmd, task, "Converting audio", 60, 95, video_info.duration)
+                
+                # Cleanup temp files
+                try:
+                    if os.path.exists(audio_file):
+                        os.remove(audio_file)
+                        self._notify("log", ("info", f"Cleaned up temp file: {os.path.basename(audio_file)}"))
+                except Exception as e:
+                    self._notify("log", ("warning", f"Cleanup error: {e}"))
+                
+                if success and os.path.exists(final_output):
+                    task.status = DownloadStatus.COMPLETED
+                    task.progress = 100.0
+                    task.completed_at = datetime.now()
+                    task.output_path = final_output
+                    
+                    try:
+                        task.file_size = os.path.getsize(final_output)
+                    except:
+                        task.file_size = None
+                    
+                    # Save to history
+                    try:
+                        history_entry = {
+                            "id": video_info.id,
+                            "title": video_info.title,
+                            "url": video_info.url,
+                            "channel": video_info.channel,
+                            "downloaded_at": datetime.now().isoformat(),
+                            "output_path": final_output,
+                            "file_size": task.file_size,
+                            "duration": video_info.duration,
+                            "format": "Audio Only (M4A)"
+                        }
+                        hist_mgr = HistoryManager(HISTORY_PATH)
+                        hist_mgr.add(history_entry)
+                    except Exception:
+                        pass
+                    
+                    send_notification("Download Complete", f"🎵 {video_info.title}")
+                else:
+                    task.status = DownloadStatus.FAILED
+                    task.error_message = "Audio conversion failed"
+                
+                return  # End of audio-only path
+            
+            # === STANDARD VIDEO+AUDIO DOWNLOAD PATH ===
             
             # Step 1: Download best video (using working strategy from v17.1.7)
             if fmt and fmt.height:
@@ -3796,12 +3934,12 @@ class OptionChip(ctk.CTkButton):
 
 
 class FormatCard(ctk.CTkFrame):
-    """Compact card for displaying format options."""
+    """Modern card for displaying format options with hover effects."""
     
     # Codec display names
     CODEC_NAMES = {
         "avc1": "H.264",
-        "avc": "H.264", 
+        "avc": "H.264",
         "h264": "H.264",
         "hev1": "HEVC",
         "hvc1": "HEVC",
@@ -3816,20 +3954,23 @@ class FormatCard(ctk.CTkFrame):
         "vorbis": "Vorbis",
     }
     
-    def __init__(self, master, format_info: VideoFormat, selected=False, 
+    def __init__(self, master, format_info: VideoFormat, selected=False,
                  recommended=False, on_select=None, **kwargs):
         # Use orange border for recommended, purple for selected
         if recommended:
             border_color = COLORS["accent_orange"]
+            bg_color = COLORS["bg_elevated"]
         elif selected:
             border_color = COLORS["accent_gradient_start"]
+            bg_color = COLORS["bg_elevated"]
         else:
             border_color = COLORS["border_light"]
+            bg_color = COLORS["bg_secondary"]
         
         super().__init__(
             master,
-            corner_radius=8,
-            fg_color=COLORS["bg_elevated"] if selected else COLORS["bg_tertiary"],
+            corner_radius=10,
+            fg_color=bg_color,
             border_width=2,
             border_color=border_color,
             **kwargs
@@ -3839,58 +3980,94 @@ class FormatCard(ctk.CTkFrame):
         self.selected = selected
         self.recommended = recommended
         self.on_select = on_select
+        self._default_bg = bg_color
         
         # Main container with compact padding
         content = ctk.CTkFrame(self, fg_color="transparent")
-        content.pack(fill="both", expand=True, padx=6, pady=4)
+        content.pack(fill="both", expand=True, padx=8, pady=6)
         
         # Resolution label - with star prefix if recommended
         res_text = f"{format_info.height}p" if format_info.height else "Audio"
         if recommended:
-            res_text = f"⭐{res_text}"
+            res_text = f"⭐ {res_text}"
         
         self.res_label = ctk.CTkLabel(
             content,
             text=res_text,
-            font=ctk.CTkFont(size=14, weight="bold"),
+            font=ctk.CTkFont(size=15, weight="bold"),
             text_color=COLORS["accent_orange"] if recommended else COLORS["text_primary"]
         )
-        self.res_label.pack()
+        self.res_label.pack(pady=(0, 2))
         
-        # Codec and size on single line
+        # Codec
         codec_raw = format_info.vcodec or format_info.acodec or ""
         codec_base = codec_raw.split('.')[0].lower() if codec_raw else ""
         codec_display = self.CODEC_NAMES.get(codec_base, codec_base.upper() if codec_base else "N/A")
         
-        details = f"{codec_display} • {format_info.size_str}"
-        self.details_label = ctk.CTkLabel(
+        self.codec_label = ctk.CTkLabel(
             content,
-            text=details,
-            font=ctk.CTkFont(size=9),
+            text=codec_display,
+            font=ctk.CTkFont(size=10),
             text_color=COLORS["text_secondary"]
         )
-        self.details_label.pack()
+        self.codec_label.pack()
         
-        # Bind click events
+        # File size
+        self.size_label = ctk.CTkLabel(
+            content,
+            text=format_info.size_str,
+            font=ctk.CTkFont(size=10),
+            text_color=COLORS["text_tertiary"]
+        )
+        self.size_label.pack()
+        
+        # Bind click events to all elements
         self.bind("<Button-1>", self._on_click)
         content.bind("<Button-1>", self._on_click)
         self.res_label.bind("<Button-1>", self._on_click)
-        self.details_label.bind("<Button-1>", self._on_click)
+        self.codec_label.bind("<Button-1>", self._on_click)
+        self.size_label.bind("<Button-1>", self._on_click)
+        
+        # Hover effects
+        self.bind("<Enter>", self._on_enter)
+        self.bind("<Leave>", self._on_leave)
+        content.bind("<Enter>", self._on_enter)
+        content.bind("<Leave>", self._on_leave)
     
     def _on_click(self, event):
         if self.on_select:
             self.on_select(self.format_info)
     
+    def _on_enter(self, event):
+        """Handle mouse enter - subtle highlight."""
+        if not self.selected and not self.recommended:
+            self.configure(fg_color=COLORS["bg_elevated"])
+    
+    def _on_leave(self, event):
+        """Handle mouse leave - restore original color."""
+        if not self.selected and not self.recommended:
+            self.configure(fg_color=self._default_bg)
+    
     def set_selected(self, selected: bool):
         self.selected = selected
-        if self.recommended:
-            border_color = COLORS["accent_orange"]
-        elif selected:
+        # When a card is selected, it becomes the "active" one
+        # When another card is selected, this card loses its special status
+        if selected:
+            # This card is now selected - use purple border
             border_color = COLORS["accent_gradient_start"]
+            bg_color = COLORS["bg_elevated"]
+            # Clear recommended status since user made a different choice
+            self.recommended = False
+            # Update the resolution label to remove star if it had one
+            res_text = f"{self.format_info.height}p" if self.format_info.height else "Audio"
+            self.res_label.configure(text=res_text, text_color=COLORS["text_primary"])
         else:
+            # This card is not selected - use default styling
             border_color = COLORS["border_light"]
+            bg_color = COLORS["bg_secondary"]
+        self._default_bg = bg_color
         self.configure(
-            fg_color=COLORS["bg_elevated"] if selected else COLORS["bg_tertiary"],
+            fg_color=bg_color,
             border_color=border_color
         )
 
@@ -4804,7 +4981,7 @@ class ChapterSelectionWindow(ctk.CTkToplevel):
         
         ctk.CTkLabel(
             sb_notice,
-            text="Â SponsorBlock is disabled for chapter downloads",
+            text="⚠️ SponsorBlock is disabled for chapter downloads",
             font=ctk.CTkFont(size=11),
             text_color="#d4d4a0",
             anchor="w"
@@ -5248,7 +5425,7 @@ class YtDlpGUI(ctk.CTk):
         
         icon_label = ctk.CTkLabel(
             icon_frame,
-            text="📥",
+            text="🔥",
             font=ctk.CTkFont(size=22),
             cursor="hand2"
         )
@@ -5310,7 +5487,7 @@ class YtDlpGUI(ctk.CTk):
         # Settings button
         settings_btn = ModernButton(
             button_frame,
-            text="⚙️",
+            text="⚙️",
             style="icon",
             width=36,
             height=36,
@@ -5376,28 +5553,35 @@ class YtDlpGUI(ctk.CTk):
         ).pack(side="left")
     
     def _create_video_section(self):
-        """Create compact video preview card."""
+        """Create a compact video preview card that always shows download button."""
         self.video_frame = ctk.CTkFrame(
             self.content_frame,
             fg_color=COLORS["bg_tertiary"],
-            corner_radius=12,
+            corner_radius=16,
             border_width=1,
             border_color=COLORS["border_light"]
         )
         # Initially hidden - shown when video is analyzed
         # Will use grid row 0
         
-        # Preview content - horizontal layout
-        self.preview_frame = ctk.CTkFrame(self.video_frame, fg_color="transparent")
-        self.preview_frame.pack(fill="both", expand=True, padx=12, pady=10)
+        # Use grid layout inside video_frame for better control
+        self.video_frame.grid_rowconfigure(0, weight=0)  # Top row (thumbnail + info) - fixed
+        self.video_frame.grid_rowconfigure(1, weight=0)  # Divider - fixed
+        self.video_frame.grid_rowconfigure(2, weight=1)  # Format cards - can expand
+        self.video_frame.grid_rowconfigure(3, weight=0)  # Download button - fixed at bottom
+        self.video_frame.grid_columnconfigure(0, weight=1)
         
-        # Left side - thumbnail
+        # === TOP ROW: Thumbnail + Video Info ===
+        top_row = ctk.CTkFrame(self.video_frame, fg_color="transparent")
+        top_row.grid(row=0, column=0, sticky="ew", padx=16, pady=(12, 8))
+        
+        # Thumbnail container (left side) - smaller
         self.thumb_frame = ctk.CTkFrame(
-            self.preview_frame,
+            top_row,
             fg_color=COLORS["bg_elevated"],
-            corner_radius=8,
+            corner_radius=10,
             width=160,
-            height=90  # 16:9 ratio
+            height=90  # 16:9 ratio, smaller
         )
         self.thumb_frame.pack(side="left", padx=(0, 12))
         self.thumb_frame.pack_propagate(False)
@@ -5410,99 +5594,143 @@ class YtDlpGUI(ctk.CTk):
         )
         self.thumb_label.place(relx=0.5, rely=0.5, anchor="center")
         
-        # Duration badge
+        # Duration badge on thumbnail
         self.duration_badge = ctk.CTkLabel(
             self.thumb_frame,
             text="0:00",
-            font=ctk.CTkFont(size=8, weight="bold"),
+            font=ctk.CTkFont(size=9, weight="bold"),
             text_color="white",
-            fg_color=("#000000", "#1a1a1a"),
+            fg_color="black",
             corner_radius=4,
             padx=4,
             pady=1
         )
         self.duration_badge.place(relx=0.95, rely=0.95, anchor="se")
         
-        # Right side - info
-        self.info_frame = ctk.CTkFrame(self.preview_frame, fg_color="transparent")
-        self.info_frame.pack(side="left", fill="both", expand=True)
+        # Video info (right side of thumbnail)
+        info_container = ctk.CTkFrame(top_row, fg_color="transparent")
+        info_container.pack(side="left", fill="both", expand=True)
         
-        # Title
+        # Title - single line with ellipsis
         self.title_label = ctk.CTkLabel(
-            self.info_frame,
+            info_container,
             text="Video Title",
-            font=ctk.CTkFont(size=13, weight="bold"),
+            font=ctk.CTkFont(size=14, weight="bold"),
             text_color=COLORS["text_primary"],
-            anchor="w",
-            wraplength=380
+            anchor="w"
         )
-        self.title_label.pack(fill="x", pady=(0, 2))
+        self.title_label.pack(fill="x", anchor="w")
         
-        # Meta info row
-        meta_frame = ctk.CTkFrame(self.info_frame, fg_color="transparent")
-        meta_frame.pack(fill="x", pady=(0, 6))
+        # Meta info row (channel, views, chapters) - compact
+        meta_frame = ctk.CTkFrame(info_container, fg_color="transparent")
+        meta_frame.pack(fill="x", pady=(4, 0), anchor="w")
         
         self.channel_label = ctk.CTkLabel(
             meta_frame,
             text="👤 Channel",
-            font=ctk.CTkFont(size=9),
+            font=ctk.CTkFont(size=11),
             text_color=COLORS["text_secondary"]
         )
-        self.channel_label.pack(side="left", padx=(0, 8))
+        self.channel_label.pack(side="left", padx=(0, 12))
         
         self.views_label = ctk.CTkLabel(
             meta_frame,
-            text="👁️ Views",
-            font=ctk.CTkFont(size=9),
+            text="👁 Views",
+            font=ctk.CTkFont(size=11),
             text_color=COLORS["text_secondary"]
         )
-        self.views_label.pack(side="left", padx=(0, 8))
+        self.views_label.pack(side="left", padx=(0, 12))
         
         self.chapters_label = ctk.CTkLabel(
             meta_frame,
             text="",
-            font=ctk.CTkFont(size=9),
+            font=ctk.CTkFont(size=11),
             text_color=COLORS["accent_purple"]
         )
-        self.chapters_label.pack(side="left", padx=(0, 8))
+        self.chapters_label.pack(side="left", padx=(0, 6))
         
         # Chapters button (hidden initially)
         self.chapters_button = ModernButton(
             meta_frame,
             text="📑 Chapters",
             style="secondary",
-            width=80,
-            height=22,
+            width=90,
+            height=24,
             command=self._show_chapters_dialog
         )
         
-        # Quality selection label
+        # === DIVIDER with quality header ===
+        quality_row = ctk.CTkFrame(self.video_frame, fg_color="transparent")
+        quality_row.grid(row=1, column=0, sticky="ew", padx=16, pady=(0, 6))
+        
         ctk.CTkLabel(
-            self.info_frame,
+            quality_row,
             text="SELECT QUALITY",
-            font=ctk.CTkFont(size=8, weight="bold"),
+            font=ctk.CTkFont(size=10, weight="bold"),
             text_color=COLORS["text_tertiary"]
-        ).pack(anchor="w", pady=(0, 3))
+        ).pack(side="left")
         
-        # Format cards container
-        self.formats_container = ctk.CTkFrame(
-            self.info_frame,
-            fg_color="transparent"
+        # Selected format indicator (right side)
+        self.selected_format_label = ctk.CTkLabel(
+            quality_row,
+            text="",
+            font=ctk.CTkFont(size=10),
+            text_color=COLORS["accent_gradient_start"]
         )
-        self.formats_container.pack(fill="x")
+        self.selected_format_label.pack(side="right")
         
-        # Download button at bottom of video card
-        download_btn_frame = ctk.CTkFrame(self.video_frame, fg_color="transparent")
-        download_btn_frame.pack(fill="x", padx=12, pady=(4, 8))
+        # === FORMAT CARDS SECTION - scrollable if needed ===
+        formats_frame = ctk.CTkFrame(self.video_frame, fg_color="transparent")
+        formats_frame.grid(row=2, column=0, sticky="nsew", padx=16, pady=(0, 8))
         
-        ModernButton(
-            download_btn_frame,
+        # Format cards container - will be a responsive grid
+        self.formats_container = ctk.CTkFrame(formats_frame, fg_color="transparent")
+        self.formats_container.pack(fill="both", expand=True)
+        
+        # === BOTTOM ROW: Audio Only Toggle + Download Button - ALWAYS VISIBLE ===
+        bottom_row = ctk.CTkFrame(self.video_frame, fg_color="transparent")
+        bottom_row.grid(row=3, column=0, sticky="ew", padx=16, pady=(0, 12))
+        
+        # v18.0.3: Audio Only toggle (left side)
+        audio_only_frame = ctk.CTkFrame(bottom_row, fg_color="transparent")
+        audio_only_frame.pack(side="left")
+        
+        self.audio_only_var = ctk.BooleanVar(value=self.config.get("audio_only", False))
+        
+        self.audio_only_switch = ctk.CTkSwitch(
+            audio_only_frame,
+            text="🎵 Audio Only (M4A)",
+            variable=self.audio_only_var,
+            font=ctk.CTkFont(size=12),
+            text_color=COLORS["text_secondary"],
+            progress_color=COLORS["accent_purple"],
+            button_color=COLORS["accent_purple"],
+            button_hover_color=COLORS["accent_gradient_end"],
+            command=self._on_audio_only_toggle
+        )
+        self.audio_only_switch.pack(side="left")
+        
+        # Info label that appears when audio only is enabled
+        self.audio_only_info = ctk.CTkLabel(
+            audio_only_frame,
+            text="  macOS compatible",
+            font=ctk.CTkFont(size=10),
+            text_color=COLORS["text_tertiary"]
+        )
+        # Only show when toggle is on
+        if self.audio_only_var.get():
+            self.audio_only_info.pack(side="left")
+        
+        # Download button (right aligned)
+        self.download_btn = ModernButton(
+            bottom_row,
             text="⚡ Download",
             style="primary",
-            width=120,
-            height=32,
+            width=140,
+            height=40,
             command=self._download
-        ).pack(anchor="e")
+        )
+        self.download_btn.pack(side="right")
     
     def _create_progress_section(self):
         """Create compact progress section with inline metrics."""
@@ -5533,7 +5761,7 @@ class YtDlpGUI(ctk.CTk):
         
         self.status_dot = ctk.CTkLabel(
             status_frame,
-            text="●",
+            text="●",
             font=ctk.CTkFont(size=12),
             text_color=COLORS["text_tertiary"]
         )
@@ -5687,7 +5915,7 @@ class YtDlpGUI(ctk.CTk):
         
         ctk.CTkLabel(
             path_row,
-            text="📁 Output:",
+            text="📁 Output:",
             font=ctk.CTkFont(size=12),
             text_color=COLORS["text_tertiary"]
         ).pack(side="left")
@@ -5834,7 +6062,7 @@ class YtDlpGUI(ctk.CTk):
         # Update labels
         self.title_label.configure(text=info.title)
         self.channel_label.configure(text=f"👤 {info.channel or 'Unknown'}")
-        self.views_label.configure(text=f"👁️ {info.views_str}")
+        self.views_label.configure(text=f"👁 {info.views_str}")
         self.duration_badge.configure(text=info.duration_str)
         
         # Update chapters info
@@ -5846,7 +6074,7 @@ class YtDlpGUI(ctk.CTk):
             self.chapters_label.configure(text="")
             self.chapters_button.pack_forget()
         
-        # Load thumbnail (smaller size to match compact layout)
+        # Load thumbnail (compact size for new layout)
         if info.thumbnail:
             def load_thumb():
                 thumb = self.thumbnail_manager.get_thumbnail(
@@ -5892,10 +6120,22 @@ class YtDlpGUI(ctk.CTk):
         # Select recommended by default
         self.selected_format = recommended
         
-        # Layout format cards in a grid (3 per row)
+        # Update selected format label
+        if recommended:
+            self._update_selected_format_label(recommended)
+        
+        # Calculate number of columns based on number of formats
+        num_formats = len(unique_formats)
+        if num_formats <= 3:
+            max_cols = num_formats
+        elif num_formats <= 6:
+            max_cols = 3
+        else:
+            max_cols = 4
+        
+        # Layout format cards in a responsive grid
         row = 0
         col = 0
-        max_cols = 3
         
         for fmt in unique_formats:
             card = FormatCard(
@@ -5903,10 +6143,9 @@ class YtDlpGUI(ctk.CTk):
                 fmt,
                 selected=(fmt == recommended),
                 recommended=(fmt == recommended),
-                on_select=self._select_format,
-                width=110  # Smaller cards
+                on_select=self._select_format
             )
-            card.grid(row=row, column=col, padx=4, pady=4, sticky="ew")
+            card.grid(row=row, column=col, padx=6, pady=6, sticky="nsew")
             self.format_cards.append(card)
             
             col += 1
@@ -5920,6 +6159,17 @@ class YtDlpGUI(ctk.CTk):
         
         self.log_panel.log(f"Found {len(info.formats)} formats, showing {len(unique_formats)} quality options", "success")
     
+    def _update_selected_format_label(self, fmt: VideoFormat):
+        """Update the selected format indicator label."""
+        if fmt:
+            codec_raw = fmt.vcodec or fmt.acodec or ""
+            codec_base = codec_raw.split('.')[0].lower() if codec_raw else ""
+            codec_names = {"avc1": "H.264", "avc": "H.264", "h264": "H.264", "vp9": "VP9", "vp09": "VP9", "av01": "AV1"}
+            codec_display = codec_names.get(codec_base, codec_base.upper() if codec_base else "")
+            self.selected_format_label.configure(
+                text=f"Selected: {fmt.height}p • {codec_display} • {fmt.size_str}"
+            )
+    
     def _select_format(self, fmt: VideoFormat):
         """Handle format selection."""
         self.selected_format = fmt
@@ -5927,7 +6177,40 @@ class YtDlpGUI(ctk.CTk):
         for card in self.format_cards:
             card.set_selected(card.format_info == fmt)
         
+        # Update the selected format label
+        self._update_selected_format_label(fmt)
+        
         self.log_panel.log(f"Selected: {fmt.height}p {fmt.bitrate_str}", "info")
+    
+    def _on_audio_only_toggle(self):
+        """Handle audio-only toggle switch change.
+        
+        v18.0.3: Updates UI to reflect audio-only mode and saves preference.
+        """
+        audio_only = self.audio_only_var.get()
+        
+        # Save preference to config
+        self.config["audio_only"] = audio_only
+        self._save_config()
+        
+        # Show/hide the info label
+        if audio_only:
+            self.audio_only_info.pack(side="left")
+            self.log_panel.log("Audio-only mode enabled - will download M4A (macOS compatible)", "info")
+            # Update download button text
+            self.download_btn.configure(text="🎵 Download Audio")
+            # Update selected format label to show audio mode
+            self.selected_format_label.configure(text="Mode: Audio Only (M4A)")
+        else:
+            self.audio_only_info.pack_forget()
+            self.log_panel.log("Audio-only mode disabled - will download video + audio", "info")
+            # Restore download button text
+            self.download_btn.configure(text="⚡ Download")
+            # Restore selected format label
+            if self.selected_format:
+                self._update_selected_format_label(self.selected_format)
+            else:
+                self.selected_format_label.configure(text="")
     
     def _show_chapters_dialog(self):
         """Show the chapter selection dialog."""
@@ -5967,7 +6250,7 @@ class YtDlpGUI(ctk.CTk):
         os.makedirs(chapter_folder, exist_ok=True)
         
         self.log_panel.log(f"Downloading {len(chapters)} chapters to: {chapter_folder}", "info")
-        self.log_panel.log("Strategy: Download once Ã¢â€ â€™ Encode once Ã¢â€ â€™ Split into chapters (fast)", "info")
+        self.log_panel.log("Strategy: Download once ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Encode once ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Split into chapters (fast)", "info")
         
         # v17.8.7: Log that SponsorBlock is disabled for chapter downloads
         if self.settings_mgr.get('sponsorblock_enabled', False):
@@ -6307,13 +6590,20 @@ class YtDlpGUI(ctk.CTk):
             self._analyze()
             return
         
-        # Add to queue
+        # v18.0.3: Get audio_only setting from toggle
+        audio_only = self.audio_only_var.get() if hasattr(self, 'audio_only_var') else False
+        
+        # Add to queue with audio_only flag
         task = self.download_manager.add_task(
             self.current_video,
-            self.selected_format
+            self.selected_format,
+            audio_only=audio_only
         )
         
-        self.log_panel.log(f"Added to queue: {self.current_video.title}", "info")
+        if audio_only:
+            self.log_panel.log(f"Added to queue (Audio Only): {self.current_video.title}", "info")
+        else:
+            self.log_panel.log(f"Added to queue: {self.current_video.title}", "info")
         
         # Start download manager
         self.download_manager.start()
@@ -6355,7 +6645,7 @@ class YtDlpGUI(ctk.CTk):
                         
                 elif task.status == DownloadStatus.COMPLETED:
                     stage_name = "idle"
-                    stage_text = f"✓ Completed: {task.video_info.title[:50]}"
+                    stage_text = f"âœ“ Completed: {task.video_info.title[:50]}"
                 
                 # Update enhanced progress bar
                 self.main_progress.set_progress(task.progress, stage=stage_name)
@@ -6457,83 +6747,151 @@ class YtDlpGUI(ctk.CTk):
         help_text.pack(fill="both", expand=True, padx=20, pady=20)
         
         help_content = """
-YouTube 4K Downloader v17.10 - Help
+YouTube 4K Downloader v18.0.3 - Help
 
+═══════════════════════════════════════════════════════
 QUICK START
-1. Paste a YouTube URL (or drag & drop)
+═══════════════════════════════════════════════════════
+1. Paste a YouTube URL (auto-detected from clipboard)
 2. Click "Analyze" to see available formats
-3. Select your preferred quality
-4. Click "Download" or press Cmd+Return
+3. Select your preferred quality (1080p recommended)
+4. Toggle "Audio Only" if you just want the audio
+5. Click "Download" or press Cmd+Return
 
-NEW IN V17.10 - AUTO-UPDATE YT-DLP
-- Click "Update" in the header to check for yt-dlp updates
-- Updates are downloaded from GitHub releases automatically
-- No need to re-download the entire app!
-- The Update button turns orange when an update is available
-- Updates are stored in ~/Library/Application Support/
+═══════════════════════════════════════════════════════
+NEW IN V18 - MODERN REDESIGN
+═══════════════════════════════════════════════════════
+• Beautiful dark mode interface with purple accents
+• Two-column layout: video info + activity log
+• Real-time system resource monitoring (CPU/Memory)
+• Compact design - everything visible without scrolling
+• Smooth animations and progress tracking
 
-CHAPTER DOWNLOADS (V17.8)
-- Download videos split by chapters!
-- Select individual chapters or download all
-- Supports both video and audio-only extraction
-- Files named with chapter number and title
-- 10-50x faster using stream copy (no re-encoding per chapter)
+═══════════════════════════════════════════════════════
+AUDIO ONLY MODE (V18.0.3)
+═══════════════════════════════════════════════════════
+Perfect for music, podcasts, and audiobooks!
 
+• Toggle "Audio Only (M4A)" before downloading
+• Output is AAC audio in M4A container
+• Fully compatible with macOS, QuickTime, Music app
+• Faster downloads - skips video stream entirely
+• Configurable bitrate in Settings > Encoding
+
+═══════════════════════════════════════════════════════
+CHAPTER DOWNLOADS
+═══════════════════════════════════════════════════════
+Download videos split by their YouTube chapters!
+
+1. Analyze a video that has chapters
+2. Click the purple "Chapters" button
+3. Select which chapters to download
+4. Choose "Audio Only" for music compilations
+5. Each chapter becomes a separate file
+
+Output structure:
+  Video Title/
+    01 - Introduction.mp4
+    02 - Main Content.mp4
+    03 - Conclusion.mp4
+
+Performance: 10-50x faster than old methods!
+
+═══════════════════════════════════════════════════════
+AUTO-UPDATE YT-DLP
+═══════════════════════════════════════════════════════
+Keep yt-dlp current without re-downloading the app!
+
+• Click the "Update" button (🔄) in the header
+• Button turns orange when update available
+• Updates download from GitHub automatically
+• Stored in ~/Library/Application Support/
+• New version active immediately - no restart needed
+
+═══════════════════════════════════════════════════════
 100% SELF-CONTAINED
-This app includes everything needed - no manual installation required:
-- yt-dlp (bundled, auto-updates available)
-- ffmpeg (bundled)  
-- deno JavaScript runtime (bundled)
+═══════════════════════════════════════════════════════
+This app includes everything - no Homebrew needed:
+
+• yt-dlp - video downloading engine (auto-updatable)
+• ffmpeg - video/audio processing
+• deno - JavaScript runtime for yt-dlp
 
 Just download, drag to Applications, and run!
 
+═══════════════════════════════════════════════════════
 FEATURES
-- Auto-Update yt-dlp - Keep yt-dlp current without app re-download
-- Chapter Downloads - Split videos into separate files per chapter
-- Settings window - Configure SponsorBlock, subtitles, encoding
-- SponsorBlock - Removes sponsor segments after download
-- History browser - Search and manage download history
-- Playlist support - Download entire playlists
-- Audio-only mode - M4A/MP3 with proper metadata
-- Drag & drop URLs - Drop a YouTube link onto the window
-- QuickTime Compatible - H.264 + AAC for native macOS playback
+═══════════════════════════════════════════════════════
+• 4K/1080p/720p Downloads - Select your quality
+• Audio Only Mode - M4A output for macOS
+• Chapter Downloads - Split by YouTube chapters
+• Auto-Update yt-dlp - Stay current easily
+• SponsorBlock - Remove sponsor segments
+• QuickTime Compatible - H.264 + AAC encoding
+• Playlist Support - Download entire playlists
+• History Browser - Search past downloads
+• Drag & Drop - Drop URLs onto the window
+• Real-time Progress - Speed, ETA, file size
 
+═══════════════════════════════════════════════════════
 KEYBOARD SHORTCUTS
-- Cmd+V - Paste URL from clipboard
-- Cmd+Return - Start download
-- Enter - Analyze URL
+═══════════════════════════════════════════════════════
+Cmd+V          Paste URL from clipboard
+Cmd+Return     Start download
+Return/Enter   Analyze URL
 
-CHAPTER DOWNLOADS
-When a video has chapters:
-1. Click "Analyze" to load video info
-2. A purple "Download Chapters" button appears
-3. Select which chapters to download
-4. Choose "Audio Only" for audio extraction
-5. Each chapter becomes a separate file!
+═══════════════════════════════════════════════════════
+SETTINGS (⚙️ button)
+═══════════════════════════════════════════════════════
+SponsorBlock:
+  • Enable/disable sponsor removal
+  • Choose categories (sponsor, intro, outro, etc.)
 
-Files are saved like:
-  Video Title/
-    01 - Introduction.mp4
-    02 - Getting Started.mp4
-    03 - Advanced Topics.mp4
+Encoding:
+  • GPU/CPU encoder selection
+  • Video bitrate (auto/per-resolution/custom)
+  • Audio bitrate (default: 192 kbps)
 
-OPTIONS
-- Video + Audio: Download complete video
-- Audio Only: Extract audio as M4A/MP3
-- QuickTime Compatible: Apple-optimized encoding
-- SponsorBlock: Remove sponsor segments
-- Subtitles: Download and embed multiple languages
-- Trim: Cut start/end of videos
+Subtitles:
+  • Download and embed subtitles
+  • Multiple language support
 
+Trim:
+  • Set start/end times to clip videos
+
+Playlist:
+  • Download all or select videos
+  • Reverse order option
+
+═══════════════════════════════════════════════════════
 TROUBLESHOOTING
+═══════════════════════════════════════════════════════
 "App is damaged" error:
-  Run in Terminal: xattr -cr /Applications/YouTube\\ 4K\\ Downloader.app
+  Run in Terminal:
+  xattr -cr /Applications/YouTube\\ 4K\\ Downloader.app
 
 App won't open:
-  Right-click the app > Select "Open" > Click "Open" in dialog
+  Right-click the app → Select "Open" → Click "Open"
 
-For more information, visit:
-https://github.com/bytePatrol/YT-DLP-GUI-for-MacOS
+Downloads failing:
+  • Click Update (🔄) to get latest yt-dlp
+  • Check your internet connection
+  • Some videos may be region-locked
+
+No formats showing:
+  • Try clicking Analyze again
+  • Update yt-dlp if formats still missing
+
+═══════════════════════════════════════════════════════
+SUPPORT & LINKS
+═══════════════════════════════════════════════════════
+GitHub Repository:
+  github.com/bytePatrol/YT-DLP-GUI-for-MacOS
+
+Report Issues:
+  Use the GitHub Issues page
+
+Made with ❤️ by bytePatrol
         """
 
         
