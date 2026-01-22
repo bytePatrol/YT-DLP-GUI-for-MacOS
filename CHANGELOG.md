@@ -2,6 +2,92 @@
 
 All notable changes to YouTube 4K Downloader will be documented in this file.
 
+## [18.0.2] - 2026-01-22
+
+### 🎉 MAJOR RELEASE: Complete UI/UX Redesign
+
+This is a major update featuring a complete visual overhaul with modern 2026 design standards.
+
+### Added
+- **App Update Checker** - Automatically checks for new app versions on GitHub
+  - Shows notification dialog when updates are available
+  - Displays changelog and release notes
+  - One-click link to download page
+- **Two-Column Layout** - Video/progress on left, activity log on right
+- **Real-time System Resource Gauges** - CPU, Memory, and GPU usage displays in footer
+- **Glass Morphism Design** - Modern semi-transparent backgrounds with blur effects
+- **Purple-Blue Gradient Accents** - Beautiful gradient color scheme throughout
+
+### Fixed
+- **NO-SCROLL LAYOUT** - Everything now fits without scrolling at any window size
+- **"Best" badge no longer overlaps resolution text** - Now displays inline as "⭐1080p"
+- **Progress bar and metrics always fully visible** - No more cut-off sections
+- **Resource gauges always visible in footer** - CPU/Memory/GPU monitors no longer hidden
+
+### Changed
+- Complete visual overhaul with contemporary design standards
+- Removed ScrollableFrame - using pure grid layout for better performance
+- Much more compact design throughout:
+  - Header reduced from 72px to 56px
+  - URL input reduced from 64px to 48px
+  - Thumbnail reduced from 180x101 to 160x90
+  - Format cards: smaller padding, single-line details
+  - Progress section: tighter spacing
+  - All fonts slightly smaller for better density
+- Video section now uses grid row 0 (expands), progress uses row 1 (fixed)
+- Wider minimum window size (1200x800) optimized for two-column layout
+
+### Design Highlights
+- 🎨 Glass morphism effects with semi-transparent backgrounds
+- 💫 Purple-blue gradient color scheme (#667eea → #764ba2)
+- 📐 Responsive flexbox layout with no cut-off sections
+- 🎯 Collapsible activity log panel (max 200px, scrollable)
+- 📱 Modern card-based interface with generous spacing
+- ✨ Smooth hover effects and transitions
+- 🔘 Larger touch targets (56-60px buttons)
+- 💎 Softer corners (16-20px border radius)
+
+## [18.0.1] - 2026-01-22
+
+### Fixed
+- **Resource gauges (CPU/Memory/GPU) now in footer** - Always visible without scrolling
+- **Gauges no longer cut off** even on smaller screens
+- **Download metrics (Speed/FPS/ETA/Size) always visible** in compact inline row
+
+### Changed
+- More compact video card with smaller thumbnail and tighter spacing
+- More compact format cards (quality selection buttons)
+- More compact progress section with inline metrics bar
+- Footer shows system resources alongside output path
+- Overall ~30% reduction in vertical space usage
+
+## [18.0.0] - 2026-01-22
+
+### Added
+- **Complete Visual Overhaul** - 2026 modern design standards
+- **Glass Morphism Effects** - Semi-transparent backgrounds with blur
+- **Purple-Blue Gradient Color Scheme** - Modern accent colors
+- **Collapsible Activity Log** - Saves space, max 200px height
+- **Responsive Layout** - Fixed header/footer, scrollable content
+- **Real-time System Monitoring** - CPU, Memory, GPU gauges (requires psutil)
+- **Larger Modern Buttons** - 56-60px height for better touch targets
+- **Icon-First Header Design** - Circular icon buttons
+- **Enhanced Progress Section** - Cleaner metrics display
+- **Improved Quality Cards** - Better visual hierarchy
+- **Smooth Hover Effects** - Transitions throughout
+
+### Changed
+- Better spacing and padding (20-24px standard)
+- Softer border radius (16-20px vs 8-10px)
+- All v17.10 features maintained (auto-update, chapters, SponsorBlock, etc.)
+
+### Technical
+- New `SystemMonitor` class for real-time resource tracking
+- New `ResourceGauge` widget for RPM-style displays
+- Requires `psutil` package for system monitoring (optional but recommended)
+
+---
+
 ## [17.10.0] - 2026-01-21
 
 ### Added
@@ -98,7 +184,7 @@ All notable changes to YouTube 4K Downloader will be documented in this file.
 
 ### Changed
 - **MAJOR PERFORMANCE FIX: Chapter downloads are now 10-50x faster!**
-- New strategy: Download once â†’ Encode once â†’ Split into chapters
+- New strategy: Download once Ã¢â€ â€™ Encode once Ã¢â€ â€™ Split into chapters
 - Old method downloaded and encoded the ENTIRE video for EACH chapter (extremely slow)
 - New method uses ffmpeg stream copy to split chapters (instant, no re-encoding)
 
@@ -136,7 +222,7 @@ All notable changes to YouTube 4K Downloader will be documented in this file.
 ### Added
 - **Chapter Downloads Restored** - Download videos split by chapters!
   - Automatically detects YouTube chapters from video metadata
-  - Shows chapter count in video info (e.g., "ðŸ“š 37 chapters")
+  - Shows chapter count in video info (e.g., "Ã°Å¸â€œÅ¡ 37 chapters")
   - Purple "Download Chapters" button appears when chapters are available
   - Chapter selection dialog with Select All/Deselect All options
   - Support for both video and audio-only chapter extraction

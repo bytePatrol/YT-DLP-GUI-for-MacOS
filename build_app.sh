@@ -25,7 +25,7 @@
 # Auto-detect project directory (where this script is located)
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 VENV_DIR="$PROJECT_DIR/venv"
-MAIN_SCRIPT="yt_dlp_gui_v17_9_0.py"  # Default script name
+MAIN_SCRIPT="yt_dlp_gui_v18_0_2.py"  # Default script name
 APP_NAME="YouTube 4K Downloader"
 BUNDLE_ID="com.bytepatrol.youtube4kdownloader"
 INSTALL_DIR="/Applications"
@@ -106,7 +106,7 @@ activate_venv() {
         
         print_info "Installing required packages..."
         pip install --upgrade pip
-        pip install py2app customtkinter pillow requests yt-dlp darkdetect idna urllib3 charset-normalizer certifi
+        pip install py2app customtkinter pillow requests yt-dlp darkdetect idna urllib3 charset-normalizer certifi psutil
         
         if [ $? -ne 0 ]; then
             print_error "Failed to install dependencies"
@@ -117,6 +117,17 @@ activate_venv() {
     else
         source "$VENV_DIR/bin/activate"
         print_success "Virtual environment activated"
+        
+        # Check if psutil is installed (required for v18.0.0+)
+        if ! python -c "import psutil" 2>/dev/null; then
+            print_warning "psutil not found in existing venv, installing..."
+            pip install psutil
+            if [ $? -ne 0 ]; then
+                print_error "Failed to install psutil"
+                exit 1
+            fi
+            print_success "psutil installed"
+        fi
     fi
 }
 
@@ -226,7 +237,7 @@ OPTIONS = {
         'NSHighResolutionCapable': True,
         'LSMinimumSystemVersion': '10.13',
     },
-    'frameworks': frameworks_to_include,
+    'frameworks': [],  # Don't bundle Tcl/Tk - let system handle it
     'packages': [
         'customtkinter',
         'tkinter',
@@ -238,6 +249,7 @@ OPTIONS = {
         'idna',
         'urllib3',
         'darkdetect',
+        'psutil',
     ],
     'includes': [
         'subprocess',
@@ -380,7 +392,7 @@ bundle_dependencies() {
     local RESOURCES_DIR="$APP_PATH/Contents/Resources"
     local FRAMEWORKS_DIR="$APP_PATH/Contents/Frameworks"
     
-    print_header "Bundling Dependencies (ffmpeg + deno + Tcl/Tk)"
+    print_header "Bundling Dependencies (ffmpeg + deno)"
     
     echo "App path: $APP_PATH"
     echo "Resources dir: $RESOURCES_DIR"
@@ -403,76 +415,10 @@ bundle_dependencies() {
     TEMP_DIR=$(mktemp -d)
     cd "$TEMP_DIR"
     
-    # --- Bundle Tcl/Tk Frameworks ---
-    echo ""
-    echo "Bundling Tcl/Tk frameworks..."
-    
-    # First check if already bundled by py2app
-    if [ -d "$FRAMEWORKS_DIR/Tcl.framework" ] && [ -d "$FRAMEWORKS_DIR/Tk.framework" ]; then
-        print_success "Tcl/Tk already bundled by py2app"
-    else
-        # Try to find and copy from various sources
-        TCL_FRAMEWORK=""
-        TK_FRAMEWORK=""
-        
-        # Check Homebrew tcl-tk (Apple Silicon)
-        if [ -d "/opt/homebrew/opt/tcl-tk/lib/Tcl.framework" ]; then
-            TCL_FRAMEWORK="/opt/homebrew/opt/tcl-tk/lib/Tcl.framework"
-            TK_FRAMEWORK="/opt/homebrew/opt/tcl-tk/lib/Tk.framework"
-            echo "Found Tcl/Tk from Homebrew (Apple Silicon)"
-        # Check Homebrew tcl-tk (Intel)
-        elif [ -d "/usr/local/opt/tcl-tk/lib/Tcl.framework" ]; then
-            TCL_FRAMEWORK="/usr/local/opt/tcl-tk/lib/Tcl.framework"
-            TK_FRAMEWORK="/usr/local/opt/tcl-tk/lib/Tk.framework"
-            echo "Found Tcl/Tk from Homebrew (Intel)"
-        # Check system location (some macOS versions)
-        elif [ -d "/Library/Frameworks/Tcl.framework" ]; then
-            TCL_FRAMEWORK="/Library/Frameworks/Tcl.framework"
-            TK_FRAMEWORK="/Library/Frameworks/Tk.framework"
-            echo "Found Tcl/Tk from /Library/Frameworks"
-        fi
-        
-        if [ -n "$TCL_FRAMEWORK" ] && [ -d "$TCL_FRAMEWORK" ]; then
-            # Copy frameworks to app bundle
-            cp -R "$TCL_FRAMEWORK" "$FRAMEWORKS_DIR/" 2>/dev/null && print_success "Tcl.framework bundled"
-            cp -R "$TK_FRAMEWORK" "$FRAMEWORKS_DIR/" 2>/dev/null && print_success "Tk.framework bundled"
-        else
-            # Download pre-built Tcl/Tk frameworks
-            print_info "Tcl/Tk not found locally, downloading..."
-            
-            ARCH=$(uname -m)
-            if [ "$ARCH" = "arm64" ]; then
-                TCL_TK_URL="https://github.com/nicholaswilson/macos-tcl-tk/releases/download/v8.6.14/tcl-tk-8.6.14-arm64.tar.gz"
-            else
-                TCL_TK_URL="https://github.com/nicholaswilson/macos-tcl-tk/releases/download/v8.6.14/tcl-tk-8.6.14-x86_64.tar.gz"
-            fi
-            
-            echo "Downloading Tcl/Tk for $ARCH..."
-            if curl -L --progress-bar "$TCL_TK_URL" -o tcl-tk.tar.gz 2>/dev/null; then
-                tar -xzf tcl-tk.tar.gz 2>/dev/null
-                
-                # Find and copy the frameworks
-                if [ -d "Tcl.framework" ]; then
-                    cp -R Tcl.framework "$FRAMEWORKS_DIR/"
-                    cp -R Tk.framework "$FRAMEWORKS_DIR/"
-                    print_success "Tcl/Tk downloaded and bundled"
-                elif [ -d "lib/Tcl.framework" ]; then
-                    cp -R lib/Tcl.framework "$FRAMEWORKS_DIR/"
-                    cp -R lib/Tk.framework "$FRAMEWORKS_DIR/"
-                    print_success "Tcl/Tk downloaded and bundled"
-                else
-                    print_warning "Downloaded Tcl/Tk but couldn't find frameworks"
-                    ls -la
-                fi
-            else
-                print_warning "Could not download Tcl/Tk - trying alternative source..."
-                
-                # Alternative: Download from python.org's macOS installer resources
-                # The app may still work if the user's system has Tcl/Tk
-                print_warning "Tcl/Tk not bundled - users may need 'brew install tcl-tk'"
-            fi
-        fi
-    fi
+    # --- Tcl/Tk Bundling Skipped ---
+    # Python 3.14 ships with Tcl 9.0, but we need to let it use system Tcl/Tk
+    # to avoid version conflicts with CustomTkinter
+    print_info "Skipping Tcl/Tk bundling - using system/Python's Tcl/Tk"
     
     # --- Install FFmpeg ---
     echo ""
@@ -568,21 +514,6 @@ verify_app() {
     else
         print_error "deno missing!"
         ERRORS=$((ERRORS + 1))
-    fi
-    
-    # Check Tcl/Tk frameworks
-    echo ""
-    echo "Checking Tcl/Tk frameworks..."
-    if [ -d "$FRAMEWORKS_DIR/Tcl.framework" ]; then
-        print_success "Tcl.framework present"
-    else
-        print_warning "Tcl.framework not bundled (may cause issues on some Macs)"
-    fi
-    
-    if [ -d "$FRAMEWORKS_DIR/Tk.framework" ]; then
-        print_success "Tk.framework present"
-    else
-        print_warning "Tk.framework not bundled (may cause issues on some Macs)"
     fi
     
     # Check for Python packages in site-packages
@@ -710,6 +641,17 @@ build_app() {
     
     # Activate venv and build
     activate_venv
+    
+    # Ensure psutil is installed (v18.0.0 requirement)
+    if ! python -c "import psutil" 2>/dev/null; then
+        print_info "Installing psutil (required for v18.0.0)..."
+        pip install psutil
+        if [ $? -ne 0 ]; then
+            print_error "Failed to install psutil"
+            exit 1
+        fi
+        print_success "psutil installed"
+    fi
     
     echo ""
     echo "Running py2app..."

@@ -1,10 +1,14 @@
 # YouTube 4K Downloader for macOS
 
-A modern, fully self-contained YouTube video downloader with a beautiful dark mode interface. No dependencies required - just download and run!
+A modern, fully self-contained YouTube video downloader with a stunning 2026 glass morphism design. No dependencies required - just download and run!
+
+[![Version](https://img.shields.io/badge/version-18.0.2-blue.svg)](https://github.com/bytePatrol/YT-DLP-GUI-for-MacOS/releases)
+[![macOS](https://img.shields.io/badge/macOS-10.13+-brightgreen.svg)](https://github.com/bytePatrol/YT-DLP-GUI-for-MacOS)
+[![License](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE)
 
 ## Screenshots
 
-### Main Interface
+### Main Interface - v18 Modern Design
 <img src="assets/screenshot.png" width="700" alt="YouTube 4K Downloader Main">
 
 ### Chapter Downloads
@@ -16,12 +20,32 @@ A modern, fully self-contained YouTube video downloader with a beautiful dark mo
 ### Download Progress
 <img src="assets/screenshot-download.png" width="700" alt="Download Progress">
 
+## ✨ What's New in v18.0
+
+### 🎨 Complete UI Redesign
+- **Glass Morphism Design** - Beautiful semi-transparent backgrounds with modern blur effects
+- **Purple-Blue Gradient Accents** - Stunning gradient color scheme (#667eea → #764ba2)
+- **Two-Column Layout** - Video/progress on left, activity log on right
+- **Real-time System Monitoring** - CPU, Memory, GPU gauges in the footer
+- **No-Scroll Layout** - Everything fits perfectly without scrolling
+
+### 🔄 Auto-Update App Notifications
+- Automatically checks for new app versions on GitHub
+- Shows changelog and release notes
+- One-click link to download updates
+
+### 🎯 Design Highlights
+- Larger touch targets (56-60px buttons)
+- Softer corners (16-20px border radius)
+- Responsive layout that adapts to any window size
+- Smooth hover effects and transitions throughout
+
 ## Features
 
-- **🔄 Auto-Update yt-dlp** - Keep yt-dlp current without re-downloading the app *(NEW in v17.10)*
+- **🔄 Auto-Update yt-dlp** - Keep yt-dlp current without re-downloading the app
 - **🎬 4K/1080p/720p Downloads** - Select your preferred quality
 - **📚 Chapter Downloads** - Split videos into separate files per chapter
-- **🎨 Modern Dark Mode UI** - Beautiful iOS-inspired interface
+- **🎨 Modern Glass UI** - Beautiful 2026-style dark mode interface
 - **📦 100% Self-Contained** - No Homebrew, no Python, no dependencies
 - **⚡ Fast Downloads** - Separate video+audio download with smart merging
 - **🎵 Audio Only Mode** - Extract audio as M4A or MP3
@@ -30,17 +54,18 @@ A modern, fully self-contained YouTube video downloader with a beautiful dark mo
 - **📝 Subtitles** - Download and embed subtitles
 - **🎬 QuickTime Compatible** - H.264 + AAC encoding for native macOS playback
 - **📊 Progress Tracking** - Real-time speed, ETA, and progress display
+- **📈 System Monitoring** - Real-time CPU, Memory, GPU usage gauges
 - **🔔 Notifications** - macOS notifications when downloads complete
 - **📜 Download History** - Browse and search past downloads
 
-## NEW: Auto-Update yt-dlp (v17.10)
+## Auto-Update yt-dlp
 
 **No more re-downloading the entire app when yt-dlp updates!**
 
-YouTube frequently changes their API, which requires yt-dlp updates to keep working. Previously, you had to download a new version of the entire app. Now you can update yt-dlp directly from within the app!
+YouTube frequently changes their API, which requires yt-dlp updates to keep working. Now you can update yt-dlp directly from within the app!
 
 ### How it works:
-1. Click the **"Update"** button in the header
+1. Click the **"🔄"** button in the header
 2. The app checks GitHub for the latest yt-dlp release
 3. If an update is available, click to download and install
 4. The new version is active immediately - no restart required!
@@ -52,7 +77,7 @@ YouTube frequently changes their API, which requires yt-dlp updates to keep work
 - **No admin required** - No need to re-download or reinstall the app
 - **Instant activation** - New version works immediately
 
-## Chapter Downloads (v17.8)
+## Chapter Downloads
 
 Download YouTube videos split by their chapters! Perfect for:
 - **Podcasts** - Download each topic as a separate file
@@ -62,7 +87,7 @@ Download YouTube videos split by their chapters! Perfect for:
 
 ### How to use:
 1. Analyze a YouTube video that has chapters
-2. A purple **"Download Chapters"** button will appear
+2. A purple **"📑 Chapters"** button will appear
 3. Select which chapters to download (or download all)
 4. Choose **Audio Only** if you just want the audio
 5. Click Download - each chapter becomes a separate file!
@@ -106,10 +131,10 @@ git clone https://github.com/bytePatrol/YT-DLP-GUI-for-MacOS.git
 cd YT-DLP-GUI-for-MacOS
 
 # Install dependencies
-pip install customtkinter pillow requests yt-dlp
+pip install customtkinter pillow requests yt-dlp psutil
 
 # Run the app
-python yt_dlp_gui_v17_10_0.py
+python yt_dlp_gui_v18_0_2.py
 ```
 
 ## Usage
@@ -118,7 +143,7 @@ python yt_dlp_gui_v17_10_0.py
 2. **Click Analyze** - View available formats and quality options
 3. **Select Quality** - Choose from 4K, 1080p, 720p, etc.
 4. **Click Download** - Watch the progress with real-time stats
-5. **For Chapters** - Click the purple "Download Chapters" button if available
+5. **For Chapters** - Click the purple "Chapters" button if available
 
 ### Keyboard Shortcuts
 
@@ -130,7 +155,7 @@ python yt_dlp_gui_v17_10_0.py
 
 ## Settings
 
-Access settings via the **Settings** button to configure:
+Access settings via the **⚙️** button to configure:
 
 - **SponsorBlock** - Enable/disable, select categories to remove
 - **Subtitles** - Languages, auto-generated, embedding
@@ -151,6 +176,7 @@ Access settings via the **Settings** button to configure:
 - **yt-dlp** - Video downloading engine (bundled, auto-updatable)
 - **ffmpeg** - Video processing and encoding (bundled)
 - **deno** - JavaScript runtime for yt-dlp (bundled)
+- **psutil** - System resource monitoring (optional)
 - **py2app** - macOS app bundling
 
 ## Building from Source
@@ -164,7 +190,7 @@ cd YT-DLP-GUI-for-MacOS
 ./build_app.sh
 
 # Or manually:
-pip install py2app customtkinter pillow requests yt-dlp
+pip install py2app customtkinter pillow requests yt-dlp psutil
 python setup.py py2app
 ```
 
@@ -187,7 +213,7 @@ Run this in Terminal to see the error:
 
 ### Downloads fail or no formats shown
 - Make sure you have an internet connection
-- **Try updating yt-dlp:** Click the "Update" button in the header to get the latest version
+- **Try updating yt-dlp:** Click the "🔄" button in the header to get the latest version
 - Some videos may be region-locked or private
 
 ### Chapter downloads not showing
@@ -199,6 +225,10 @@ Run this in Terminal to see the error:
 - Check your internet connection
 - The app downloads from GitHub releases - ensure github.com is accessible
 - Updates are stored in `~/Library/Application Support/YouTube 4K Downloader/`
+
+### System gauges showing 0%
+- Install psutil: `pip install psutil`
+- The bundled app includes psutil, but running from source requires it
 
 ## Contributing
 
