@@ -1,15 +1,62 @@
-# macOS
-.DS_Store
-
 # Python
 __pycache__/
-*.pyc
-*.egg-info/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
 .eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# py2app
 build/
 dist/
-venv/
-
-# Build artifacts
+*.app/
 setup.py
-*.app
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Thumbnails
+*.thumb
+*.thumbnail
+
+# Logs
+*.log
+
+# Local config (keep templates)
+.config/
+
+# Cache
+.cache/
+*.cache
