@@ -5,22 +5,12 @@ YouTube 4K Downloader v18 - 2026 Modern Design Edition
 Complete UI/UX overhaul with contemporary design standards:
 - 🎨 Glass morphism design with backdrop blur effects
 - 💫 Purple-blue gradient accents throughout
-- 📁 Responsive flexbox layout (no cut-off sections)
+- 📁 Responsive flexbox layout (no cut-off sections)
 - 🎯 Collapsible activity log panel (max 200px, scrollable)
-- 📁± Modern card-based interface with generous spacing
+- 📱 Modern card-based interface with generous spacing
 - ✨ Smooth animations and micro-interactions
 - 📘 Larger touch targets (56-60px buttons)
 - 💎 Softer corners (16-20px border radius)
-
-v18.0.3 Changes - AUDIO ONLY MODE:
-- NEW: Audio Only toggle switch in the download section
-- NEW: Downloads audio as M4A (AAC) - fully macOS/QuickTime compatible
-- NEW: Toggle shows "Audio Only (M4A)" with purple accent when enabled
-- NEW: Download button text changes to "Download Audio" when in audio mode
-- NEW: Audio-only preference is saved and persists across sessions
-- NEW: Skips video download entirely - faster downloads for music/podcasts
-- CHANGED: DownloadTask now includes audio_only field
-- CHANGED: DownloadManager.add_task() accepts audio_only parameter
 
 v18.0.5 Changes - DOWNLOAD BUTTON & SELECTION FIX:
 - FIXED: Download button now ALWAYS visible without needing fullscreen
@@ -34,7 +24,7 @@ v18.0.5 Changes - DOWNLOAD BUTTON & SELECTION FIX:
 
 v18.0.2 Changes - NO-SCROLL LAYOUT:
 - FIXED: Everything now fits without scrolling at any window size
-- FIXED: "Best" badge no longer overlaps resolution text (now inline: "⭐1080p")
+- FIXED: "Best" badge no longer overlaps resolution text (now inline: "⭐ 1080p")
 - FIXED: Progress bar and metrics always fully visible
 - CHANGED: Removed ScrollableFrame - using pure grid layout
 - CHANGED: Much more compact design throughout:
@@ -59,7 +49,7 @@ v18.0.1 Changes - LAYOUT FIX:
 v18.0.0 Changes - MAJOR UI REDESIGN:
 - NEW: Complete visual overhaul with 2026 design standards
 - NEW: Glass morphism effects with semi-transparent backgrounds
-- NEW: Purple-blue gradient color scheme (#667eea → #764ba2)
+- NEW: Purple-blue gradient color scheme (#667eea â†’ #764ba2)
 - NEW: Collapsible activity log (saves space, max 200px height)
 - NEW: Responsive layout with fixed header/footer, scrollable content
 - NEW: Larger, more modern buttons and inputs (56-60px height)
@@ -338,7 +328,7 @@ except ImportError:
 # ============================================================================
 
 APP_NAME = "YouTube 4K Downloader"
-APP_VERSION = "18.0.3"
+APP_VERSION = "18.0.6"
 
 # Configuration paths - using proper config directory
 CONFIG_DIR = Path.home() / ".config" / "yt-dlp-gui"
@@ -624,8 +614,8 @@ class AppUpdateChecker:
         
         # Clean up markdown formatting for display
         body = body.replace("**", "")
-        body = body.replace("###", "â€¢")
-        body = body.replace("##", "â€¢")
+        body = body.replace("###", "•")
+        body = body.replace("##", "•")
         body = body.replace("#", "")
         
         return body.strip()
@@ -638,141 +628,6 @@ class AppUpdateChecker:
             return dt.strftime("%B %d, %Y")
         except:
             return iso_date
-
-
-class UpdateNotificationDialog(ctk.CTkToplevel):
-    """Modern dialog to notify user about available app updates."""
-    
-    def __init__(self, parent, release_info: dict):
-        super().__init__(parent)
-        
-        self.release_info = release_info
-        
-        self.title("Update Available")
-        self.geometry("600x500")
-        self.transient(parent)
-        self.resizable(False, False)
-        
-        # Center on screen
-        self.update_idletasks()
-        x = (self.winfo_screenwidth() - 600) // 2
-        y = (self.winfo_screenheight() - 500) // 2
-        self.geometry(f"+{x}+{y}")
-        
-        self.configure(fg_color=COLORS["bg_primary"])
-        
-        self._create_ui()
-        
-        # Grab focus
-        self.lift()
-        self.focus_force()
-    
-    def _create_ui(self):
-        """Create the update notification UI."""
-        main_frame = ctk.CTkFrame(self, fg_color="transparent")
-        main_frame.pack(fill="both", expand=True, padx=30, pady=30)
-        
-        # Header with icon
-        header_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
-        header_frame.pack(fill="x", pady=(0, 20))
-        
-        # Large update icon
-        icon_label = ctk.CTkLabel(
-            header_frame,
-            text="🎉",
-            font=ctk.CTkFont(size=48)
-        )
-        icon_label.pack(pady=(0, 10))
-        
-        # Title
-        title_label = ctk.CTkLabel(
-            header_frame,
-            text="New Version Available!",
-            font=ctk.CTkFont(size=24, weight="bold"),
-            text_color=COLORS["text_primary"]
-        )
-        title_label.pack()
-        
-        # Version info
-        version_text = f"Version {self.release_info['version']} is now available"
-        if self.release_info.get('published_date'):
-            version_text += f" â€¢ Released {self.release_info['published_date']}"
-        
-        version_label = ctk.CTkLabel(
-            header_frame,
-            text=version_text,
-            font=ctk.CTkFont(size=13),
-            text_color=COLORS["text_secondary"]
-        )
-        version_label.pack(pady=(5, 0))
-        
-        # Separator
-        separator = ctk.CTkFrame(main_frame, fg_color=COLORS["border_light"], height=1)
-        separator.pack(fill="x", pady=20)
-        
-        # Changelog section
-        changelog_label = ctk.CTkLabel(
-            main_frame,
-            text="What's New:",
-            font=ctk.CTkFont(size=14, weight="bold"),
-            text_color=COLORS["text_primary"],
-            anchor="w"
-        )
-        changelog_label.pack(fill="x", pady=(0, 10))
-        
-        # Scrollable changelog
-        changelog_frame = ctk.CTkFrame(
-            main_frame,
-            fg_color=COLORS["bg_tertiary"],
-            corner_radius=12,
-            border_width=1,
-            border_color=COLORS["border_light"]
-        )
-        changelog_frame.pack(fill="both", expand=True, pady=(0, 20))
-        
-        changelog_text = ctk.CTkTextbox(
-            changelog_frame,
-            font=ctk.CTkFont(size=13),
-            fg_color="transparent",
-            text_color=COLORS["text_secondary"],
-            wrap="word",
-            activate_scrollbars=True
-        )
-        changelog_text.pack(fill="both", expand=True, padx=15, pady=15)
-        
-        # Insert changelog
-        changelog_text.insert("1.0", self.release_info.get('changelog', 'No changelog available.'))
-        changelog_text.configure(state="disabled")
-        
-        # Buttons
-        button_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
-        button_frame.pack(fill="x")
-        
-        # Download button (primary)
-        download_btn = ModernButton(
-            button_frame,
-            text="📁¥ Download Update",
-            style="primary",
-            width=200,
-            command=self._open_release_page
-        )
-        download_btn.pack(side="right")
-        
-        # Later button
-        later_btn = ModernButton(
-            button_frame,
-            text="Remind Me Later",
-            style="secondary",
-            width=150,
-            command=self.destroy
-        )
-        later_btn.pack(side="right", padx=(0, 10))
-    
-    def _open_release_page(self):
-        """Open the release page in browser."""
-        import webbrowser
-        webbrowser.open(self.release_info.get('url', APP_RELEASES_URL))
-        self.destroy()
 
 
 # ============================================================================
@@ -896,8 +751,8 @@ class AppUpdateChecker:
         
         # Clean up markdown for better display
         body = body.replace("**", "")
-        body = body.replace("###", "â€¢")
-        body = body.replace("##", "â€¢")
+        body = body.replace("###", "•")
+        body = body.replace("##", "•")
         body = body.replace("#", "")
         
         return body.strip()
@@ -977,7 +832,7 @@ class UpdateNotificationDialog(ctk.CTkToplevel):
         # Version info
         version_text = f"Version {self.release_info['version']} is now available"
         if self.release_info.get('published_date'):
-            version_text += f" â€¢ Released {self.release_info['published_date']}"
+            version_text += f" • Released {self.release_info['published_date']}"
         
         version_label = ctk.CTkLabel(
             header_content,
@@ -1000,22 +855,24 @@ class UpdateNotificationDialog(ctk.CTkToplevel):
         # Changelog section
         changelog_header = ctk.CTkLabel(
             main_frame,
-            text="📁 What's New:",
+            text="📋 What's New:",
             font=ctk.CTkFont(size=15, weight="bold"),
             text_color=COLORS["text_primary"],
             anchor="w"
         )
         changelog_header.pack(fill="x", pady=(0, 12))
         
-        # Scrollable changelog
+        # Scrollable changelog - FIXED HEIGHT to ensure buttons always visible
         changelog_frame = ctk.CTkFrame(
             main_frame,
             fg_color=COLORS["bg_secondary"],
             corner_radius=12,
             border_width=1,
-            border_color=COLORS["border_light"]
+            border_color=COLORS["border_light"],
+            height=180  # Fixed height
         )
-        changelog_frame.pack(fill="both", expand=True, pady=(0, 20))
+        changelog_frame.pack(fill="x", pady=(0, 20))
+        changelog_frame.pack_propagate(False)  # Maintain fixed height
         
         changelog_text = ctk.CTkTextbox(
             changelog_frame,
@@ -1032,20 +889,21 @@ class UpdateNotificationDialog(ctk.CTkToplevel):
         changelog_text.insert("1.0", changelog_content)
         changelog_text.configure(state="disabled")
         
-        # Buttons
-        button_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
-        button_frame.pack(fill="x")
+        # Buttons - ensure always visible at bottom
+        button_frame = ctk.CTkFrame(main_frame, fg_color="transparent", height=60)
+        button_frame.pack(fill="x", side="bottom")
+        button_frame.pack_propagate(False)
         
         # Download button (primary, prominent)
         download_btn = ModernButton(
             button_frame,
-            text="📁¥ Download Update",
+            text="Download Update",
             style="primary",
             width=220,
             height=48,
             command=self._open_release_page
         )
-        download_btn.pack(side="right")
+        download_btn.pack(side="right", pady=6)
         
         # Later button
         later_btn = ModernButton(
@@ -1056,7 +914,7 @@ class UpdateNotificationDialog(ctk.CTkToplevel):
             height=48,
             command=self.destroy
         )
-        later_btn.pack(side="right", padx=(0, 12))
+        later_btn.pack(side="right", padx=(0, 12), pady=6)
     
     def _open_release_page(self):
         """Open the release page in browser."""
@@ -1596,7 +1454,6 @@ class DownloadTask:
     video_info: VideoInfo
     selected_format: Optional[VideoFormat] = None
     output_path: Optional[str] = None
-    audio_only: bool = False  # v18.0.3: Audio-only download mode (M4A output)
     status: DownloadStatus = DownloadStatus.QUEUED
     progress: float = 0.0
     speed: Optional[str] = None
@@ -2569,20 +2426,12 @@ class DownloadManager:
             except Exception as e:
                 print(f"Callback error: {e}")
     
-    def add_task(self, video_info: VideoInfo, selected_format: Optional[VideoFormat] = None, 
-                 audio_only: bool = False) -> DownloadTask:
-        """Add a download task to the queue.
-        
-        Args:
-            video_info: Video metadata
-            selected_format: Selected video format (quality)
-            audio_only: If True, download audio only as M4A (macOS compatible)
-        """
+    def add_task(self, video_info: VideoInfo, selected_format: Optional[VideoFormat] = None) -> DownloadTask:
+        """Add a download task to the queue."""
         task = DownloadTask(
             id=f"{video_info.id}_{int(time.time())}",
             video_info=video_info,
             selected_format=selected_format,
-            audio_only=audio_only,
         )
         
         with self._lock:
@@ -2652,10 +2501,7 @@ class DownloadManager:
             self.current_task = None
         
     def _download_task(self, task: DownloadTask):
-        """Execute a single download task with ffmpeg conversion for QuickTime compatibility.
-        
-        v18.0.3: Added audio_only support - downloads only audio and converts to M4A.
-        """
+        """Execute a single download task with ffmpeg conversion for QuickTime compatibility."""
         task.status = DownloadStatus.DOWNLOADING
         task.started_at = datetime.now()
         self._notify("task_updated", task)
@@ -2669,13 +2515,7 @@ class DownloadManager:
             video_id = video_info.id
             temp_video = os.path.join(self.output_dir, f"{video_id}_temp_video.%(ext)s")
             temp_audio = os.path.join(self.output_dir, f"{video_id}_temp_audio.%(ext)s")
-            
-            # v18.0.3: Set output extension based on audio_only mode
-            if task.audio_only:
-                final_output = os.path.join(self.output_dir, f"{safe_title}.m4a")
-                self._notify("log", ("info", "Audio-only mode: downloading best audio stream"))
-            else:
-                final_output = os.path.join(self.output_dir, f"{safe_title}.mp4")
+            final_output = os.path.join(self.output_dir, f"{safe_title}.mp4")
             
             # Handle duplicate filenames
             counter = 1
@@ -2684,106 +2524,6 @@ class DownloadManager:
                 name, ext = os.path.splitext(base_output)
                 final_output = f"{name} ({counter}){ext}"
                 counter += 1
-            
-            # v18.0.3: Audio-only download path
-            if task.audio_only:
-                # Download best audio only
-                audio_cmd = self.ytdlp._build_command([
-                    "--newline",
-                    "--remote-components", "ejs:github",
-                    "--extractor-args", "youtube:player_client=android_sdkless",
-                    "-f", "bestaudio[ext=m4a]/bestaudio/best",
-                    "-o", temp_audio,
-                    video_info.url
-                ])
-                
-                self._run_subprocess_with_progress(audio_cmd, task, "Downloading audio", 0, 60, video_id)
-                
-                if task.status == DownloadStatus.FAILED:
-                    return
-                
-                # Find the downloaded audio file
-                audio_file = self._find_temp_file(self.output_dir, f"{video_id}_temp_audio")
-                
-                if not audio_file:
-                    self._notify("log", ("warning", f"Temp audio file not found, searching..."))
-                    for fname in os.listdir(self.output_dir):
-                        if video_id in fname and fname.endswith(('.m4a', '.webm', '.opus', '.mp3')):
-                            audio_file = os.path.join(self.output_dir, fname)
-                            self._notify("log", ("info", f"Found audio file: {fname}"))
-                            break
-                
-                if not audio_file:
-                    task.status = DownloadStatus.FAILED
-                    task.error_message = "Audio file not found after download"
-                    return
-                
-                # Convert to M4A (AAC) for macOS compatibility
-                task.status = DownloadStatus.CONVERTING
-                self._notify("task_updated", task)
-                
-                settings_mgr = SettingsManager(SETTINGS_PATH)
-                audio_bitrate = settings_mgr.get("audio_bitrate", 192)
-                
-                self._notify("log", ("info", f"Converting to M4A (AAC @ {audio_bitrate}kbps)"))
-                
-                ffmpeg_cmd = [
-                    FFMPEG_PATH,
-                    "-y",
-                    "-i", audio_file,
-                    "-c:a", "aac",
-                    "-b:a", f"{audio_bitrate}k",
-                    "-movflags", "+faststart",
-                    final_output
-                ]
-                
-                success = self._run_ffmpeg_with_progress(ffmpeg_cmd, task, "Converting audio", 60, 95, video_info.duration)
-                
-                # Cleanup temp files
-                try:
-                    if os.path.exists(audio_file):
-                        os.remove(audio_file)
-                        self._notify("log", ("info", f"Cleaned up temp file: {os.path.basename(audio_file)}"))
-                except Exception as e:
-                    self._notify("log", ("warning", f"Cleanup error: {e}"))
-                
-                if success and os.path.exists(final_output):
-                    task.status = DownloadStatus.COMPLETED
-                    task.progress = 100.0
-                    task.completed_at = datetime.now()
-                    task.output_path = final_output
-                    
-                    try:
-                        task.file_size = os.path.getsize(final_output)
-                    except:
-                        task.file_size = None
-                    
-                    # Save to history
-                    try:
-                        history_entry = {
-                            "id": video_info.id,
-                            "title": video_info.title,
-                            "url": video_info.url,
-                            "channel": video_info.channel,
-                            "downloaded_at": datetime.now().isoformat(),
-                            "output_path": final_output,
-                            "file_size": task.file_size,
-                            "duration": video_info.duration,
-                            "format": "Audio Only (M4A)"
-                        }
-                        hist_mgr = HistoryManager(HISTORY_PATH)
-                        hist_mgr.add(history_entry)
-                    except Exception:
-                        pass
-                    
-                    send_notification("Download Complete", f"🎵 {video_info.title}")
-                else:
-                    task.status = DownloadStatus.FAILED
-                    task.error_message = "Audio conversion failed"
-                
-                return  # End of audio-only path
-            
-            # === STANDARD VIDEO+AUDIO DOWNLOAD PATH ===
             
             # Step 1: Download best video (using working strategy from v17.1.7)
             if fmt and fmt.height:
@@ -3989,7 +3729,7 @@ class FormatCard(ctk.CTkFrame):
         # Resolution label - with star prefix if recommended
         res_text = f"{format_info.height}p" if format_info.height else "Audio"
         if recommended:
-            res_text = f"⭐ {res_text}"
+            res_text = f"⭐ {res_text}"
         
         self.res_label = ctk.CTkLabel(
             content,
@@ -5487,7 +5227,7 @@ class YtDlpGUI(ctk.CTk):
         # Settings button
         settings_btn = ModernButton(
             button_frame,
-            text="⚙️",
+            text="⚙️",
             style="icon",
             width=36,
             height=36,
@@ -5687,39 +5427,9 @@ class YtDlpGUI(ctk.CTk):
         self.formats_container = ctk.CTkFrame(formats_frame, fg_color="transparent")
         self.formats_container.pack(fill="both", expand=True)
         
-        # === BOTTOM ROW: Audio Only Toggle + Download Button - ALWAYS VISIBLE ===
+        # === BOTTOM ROW: Download Button - ALWAYS VISIBLE ===
         bottom_row = ctk.CTkFrame(self.video_frame, fg_color="transparent")
         bottom_row.grid(row=3, column=0, sticky="ew", padx=16, pady=(0, 12))
-        
-        # v18.0.3: Audio Only toggle (left side)
-        audio_only_frame = ctk.CTkFrame(bottom_row, fg_color="transparent")
-        audio_only_frame.pack(side="left")
-        
-        self.audio_only_var = ctk.BooleanVar(value=self.config.get("audio_only", False))
-        
-        self.audio_only_switch = ctk.CTkSwitch(
-            audio_only_frame,
-            text="🎵 Audio Only (M4A)",
-            variable=self.audio_only_var,
-            font=ctk.CTkFont(size=12),
-            text_color=COLORS["text_secondary"],
-            progress_color=COLORS["accent_purple"],
-            button_color=COLORS["accent_purple"],
-            button_hover_color=COLORS["accent_gradient_end"],
-            command=self._on_audio_only_toggle
-        )
-        self.audio_only_switch.pack(side="left")
-        
-        # Info label that appears when audio only is enabled
-        self.audio_only_info = ctk.CTkLabel(
-            audio_only_frame,
-            text="  macOS compatible",
-            font=ctk.CTkFont(size=10),
-            text_color=COLORS["text_tertiary"]
-        )
-        # Only show when toggle is on
-        if self.audio_only_var.get():
-            self.audio_only_info.pack(side="left")
         
         # Download button (right aligned)
         self.download_btn = ModernButton(
@@ -5761,7 +5471,7 @@ class YtDlpGUI(ctk.CTk):
         
         self.status_dot = ctk.CTkLabel(
             status_frame,
-            text="●",
+            text="●",
             font=ctk.CTkFont(size=12),
             text_color=COLORS["text_tertiary"]
         )
@@ -5915,7 +5625,7 @@ class YtDlpGUI(ctk.CTk):
         
         ctk.CTkLabel(
             path_row,
-            text="📁 Output:",
+            text="📁 Output:",
             font=ctk.CTkFont(size=12),
             text_color=COLORS["text_tertiary"]
         ).pack(side="left")
@@ -6182,36 +5892,6 @@ class YtDlpGUI(ctk.CTk):
         
         self.log_panel.log(f"Selected: {fmt.height}p {fmt.bitrate_str}", "info")
     
-    def _on_audio_only_toggle(self):
-        """Handle audio-only toggle switch change.
-        
-        v18.0.3: Updates UI to reflect audio-only mode and saves preference.
-        """
-        audio_only = self.audio_only_var.get()
-        
-        # Save preference to config
-        self.config["audio_only"] = audio_only
-        self._save_config()
-        
-        # Show/hide the info label
-        if audio_only:
-            self.audio_only_info.pack(side="left")
-            self.log_panel.log("Audio-only mode enabled - will download M4A (macOS compatible)", "info")
-            # Update download button text
-            self.download_btn.configure(text="🎵 Download Audio")
-            # Update selected format label to show audio mode
-            self.selected_format_label.configure(text="Mode: Audio Only (M4A)")
-        else:
-            self.audio_only_info.pack_forget()
-            self.log_panel.log("Audio-only mode disabled - will download video + audio", "info")
-            # Restore download button text
-            self.download_btn.configure(text="⚡ Download")
-            # Restore selected format label
-            if self.selected_format:
-                self._update_selected_format_label(self.selected_format)
-            else:
-                self.selected_format_label.configure(text="")
-    
     def _show_chapters_dialog(self):
         """Show the chapter selection dialog."""
         if not self.current_video or not self.current_video.has_chapters:
@@ -6250,7 +5930,7 @@ class YtDlpGUI(ctk.CTk):
         os.makedirs(chapter_folder, exist_ok=True)
         
         self.log_panel.log(f"Downloading {len(chapters)} chapters to: {chapter_folder}", "info")
-        self.log_panel.log("Strategy: Download once ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Encode once ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Split into chapters (fast)", "info")
+        self.log_panel.log("Strategy: Download once -> Encode once -> Split into chapters (fast)")
         
         # v17.8.7: Log that SponsorBlock is disabled for chapter downloads
         if self.settings_mgr.get('sponsorblock_enabled', False):
@@ -6590,20 +6270,13 @@ class YtDlpGUI(ctk.CTk):
             self._analyze()
             return
         
-        # v18.0.3: Get audio_only setting from toggle
-        audio_only = self.audio_only_var.get() if hasattr(self, 'audio_only_var') else False
-        
-        # Add to queue with audio_only flag
+        # Add to queue
         task = self.download_manager.add_task(
             self.current_video,
-            self.selected_format,
-            audio_only=audio_only
+            self.selected_format
         )
         
-        if audio_only:
-            self.log_panel.log(f"Added to queue (Audio Only): {self.current_video.title}", "info")
-        else:
-            self.log_panel.log(f"Added to queue: {self.current_video.title}", "info")
+        self.log_panel.log(f"Added to queue: {self.current_video.title}", "info")
         
         # Start download manager
         self.download_manager.start()
@@ -6645,7 +6318,7 @@ class YtDlpGUI(ctk.CTk):
                         
                 elif task.status == DownloadStatus.COMPLETED:
                     stage_name = "idle"
-                    stage_text = f"âœ“ Completed: {task.video_info.title[:50]}"
+                    stage_text = f"✅ Completed: {task.video_info.title[:50]}"
                 
                 # Update enhanced progress bar
                 self.main_progress.set_progress(task.progress, stage=stage_name)
@@ -6747,151 +6420,83 @@ class YtDlpGUI(ctk.CTk):
         help_text.pack(fill="both", expand=True, padx=20, pady=20)
         
         help_content = """
-YouTube 4K Downloader v18.0.3 - Help
+YouTube 4K Downloader v17.10 - Help
 
-═══════════════════════════════════════════════════════
 QUICK START
-═══════════════════════════════════════════════════════
-1. Paste a YouTube URL (auto-detected from clipboard)
+1. Paste a YouTube URL (or drag & drop)
 2. Click "Analyze" to see available formats
-3. Select your preferred quality (1080p recommended)
-4. Toggle "Audio Only" if you just want the audio
-5. Click "Download" or press Cmd+Return
+3. Select your preferred quality
+4. Click "Download" or press Cmd+Return
 
-═══════════════════════════════════════════════════════
-NEW IN V18 - MODERN REDESIGN
-═══════════════════════════════════════════════════════
-• Beautiful dark mode interface with purple accents
-• Two-column layout: video info + activity log
-• Real-time system resource monitoring (CPU/Memory)
-• Compact design - everything visible without scrolling
-• Smooth animations and progress tracking
+NEW IN V17.10 - AUTO-UPDATE YT-DLP
+- Click "Update" in the header to check for yt-dlp updates
+- Updates are downloaded from GitHub releases automatically
+- No need to re-download the entire app!
+- The Update button turns orange when an update is available
+- Updates are stored in ~/Library/Application Support/
 
-═══════════════════════════════════════════════════════
-AUDIO ONLY MODE (V18.0.3)
-═══════════════════════════════════════════════════════
-Perfect for music, podcasts, and audiobooks!
+CHAPTER DOWNLOADS (V17.8)
+- Download videos split by chapters!
+- Select individual chapters or download all
+- Supports both video and audio-only extraction
+- Files named with chapter number and title
+- 10-50x faster using stream copy (no re-encoding per chapter)
 
-• Toggle "Audio Only (M4A)" before downloading
-• Output is AAC audio in M4A container
-• Fully compatible with macOS, QuickTime, Music app
-• Faster downloads - skips video stream entirely
-• Configurable bitrate in Settings > Encoding
-
-═══════════════════════════════════════════════════════
-CHAPTER DOWNLOADS
-═══════════════════════════════════════════════════════
-Download videos split by their YouTube chapters!
-
-1. Analyze a video that has chapters
-2. Click the purple "Chapters" button
-3. Select which chapters to download
-4. Choose "Audio Only" for music compilations
-5. Each chapter becomes a separate file
-
-Output structure:
-  Video Title/
-    01 - Introduction.mp4
-    02 - Main Content.mp4
-    03 - Conclusion.mp4
-
-Performance: 10-50x faster than old methods!
-
-═══════════════════════════════════════════════════════
-AUTO-UPDATE YT-DLP
-═══════════════════════════════════════════════════════
-Keep yt-dlp current without re-downloading the app!
-
-• Click the "Update" button (🔄) in the header
-• Button turns orange when update available
-• Updates download from GitHub automatically
-• Stored in ~/Library/Application Support/
-• New version active immediately - no restart needed
-
-═══════════════════════════════════════════════════════
 100% SELF-CONTAINED
-═══════════════════════════════════════════════════════
-This app includes everything - no Homebrew needed:
-
-• yt-dlp - video downloading engine (auto-updatable)
-• ffmpeg - video/audio processing
-• deno - JavaScript runtime for yt-dlp
+This app includes everything needed - no manual installation required:
+- yt-dlp (bundled, auto-updates available)
+- ffmpeg (bundled)  
+- deno JavaScript runtime (bundled)
 
 Just download, drag to Applications, and run!
 
-═══════════════════════════════════════════════════════
 FEATURES
-═══════════════════════════════════════════════════════
-• 4K/1080p/720p Downloads - Select your quality
-• Audio Only Mode - M4A output for macOS
-• Chapter Downloads - Split by YouTube chapters
-• Auto-Update yt-dlp - Stay current easily
-• SponsorBlock - Remove sponsor segments
-• QuickTime Compatible - H.264 + AAC encoding
-• Playlist Support - Download entire playlists
-• History Browser - Search past downloads
-• Drag & Drop - Drop URLs onto the window
-• Real-time Progress - Speed, ETA, file size
+- Auto-Update yt-dlp - Keep yt-dlp current without app re-download
+- Chapter Downloads - Split videos into separate files per chapter
+- Settings window - Configure SponsorBlock, subtitles, encoding
+- SponsorBlock - Removes sponsor segments after download
+- History browser - Search and manage download history
+- Playlist support - Download entire playlists
+- Audio-only mode - M4A/MP3 with proper metadata
+- Drag & drop URLs - Drop a YouTube link onto the window
+- QuickTime Compatible - H.264 + AAC for native macOS playback
 
-═══════════════════════════════════════════════════════
 KEYBOARD SHORTCUTS
-═══════════════════════════════════════════════════════
-Cmd+V          Paste URL from clipboard
-Cmd+Return     Start download
-Return/Enter   Analyze URL
+- Cmd+V - Paste URL from clipboard
+- Cmd+Return - Start download
+- Enter - Analyze URL
 
-═══════════════════════════════════════════════════════
-SETTINGS (⚙️ button)
-═══════════════════════════════════════════════════════
-SponsorBlock:
-  • Enable/disable sponsor removal
-  • Choose categories (sponsor, intro, outro, etc.)
+CHAPTER DOWNLOADS
+When a video has chapters:
+1. Click "Analyze" to load video info
+2. A purple "Download Chapters" button appears
+3. Select which chapters to download
+4. Choose "Audio Only" for audio extraction
+5. Each chapter becomes a separate file!
 
-Encoding:
-  • GPU/CPU encoder selection
-  • Video bitrate (auto/per-resolution/custom)
-  • Audio bitrate (default: 192 kbps)
+Files are saved like:
+  Video Title/
+    01 - Introduction.mp4
+    02 - Getting Started.mp4
+    03 - Advanced Topics.mp4
 
-Subtitles:
-  • Download and embed subtitles
-  • Multiple language support
+OPTIONS
+- Video + Audio: Download complete video
+- Audio Only: Extract audio as M4A/MP3
+- QuickTime Compatible: Apple-optimized encoding
+- SponsorBlock: Remove sponsor segments
+- Subtitles: Download and embed multiple languages
+- Trim: Cut start/end of videos
 
-Trim:
-  • Set start/end times to clip videos
-
-Playlist:
-  • Download all or select videos
-  • Reverse order option
-
-═══════════════════════════════════════════════════════
 TROUBLESHOOTING
-═══════════════════════════════════════════════════════
 "App is damaged" error:
-  Run in Terminal:
-  xattr -cr /Applications/YouTube\\ 4K\\ Downloader.app
+  Run in Terminal: xattr -cr /Applications/YouTube\\ 4K\\ Downloader.app
 
 App won't open:
-  Right-click the app → Select "Open" → Click "Open"
+  Right-click the app > Select "Open" > Click "Open" in dialog
 
-Downloads failing:
-  • Click Update (🔄) to get latest yt-dlp
-  • Check your internet connection
-  • Some videos may be region-locked
-
-No formats showing:
-  • Try clicking Analyze again
-  • Update yt-dlp if formats still missing
-
-═══════════════════════════════════════════════════════
-SUPPORT & LINKS
-═══════════════════════════════════════════════════════
-GitHub Repository:
-  github.com/bytePatrol/YT-DLP-GUI-for-MacOS
-
-Report Issues:
-  Use the GitHub Issues page
-
-Made with ❤️ by bytePatrol
+For more information, visit:
+https://github.com/bytePatrol/YT-DLP-GUI-for-MacOS
         """
 
         
@@ -7176,7 +6781,7 @@ Made with ❤️ by bytePatrol
         """Show the update notification dialog."""
         try:
             self.log_panel.log(
-                f"🎉 App update available: v{APP_VERSION} → v{release_info['version']}", 
+                f"🎉 App update available: v{APP_VERSION} â†’ v{release_info['version']}", 
                 "success"
             )
             UpdateNotificationDialog(self, release_info)

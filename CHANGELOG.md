@@ -2,85 +2,18 @@
 
 All notable changes to YouTube 4K Downloader will be documented in this file.
 
-## [18.0.4] - 2026-01-22
-
-### Changed
-- **Redesigned video section layout** - Much cleaner, more modern appearance
-- Thumbnail and video info now properly aligned at the top
-- Quality selection cards below in a responsive grid layout
-- Added "Selected:" indicator showing current format choice
-- Format cards now have proper hover effects
-- Removed awkward gaps and spacing issues
-- Cards show codec and file size on separate lines for better readability
-- Download button properly aligned at bottom right
-- Layout adapts better to different window sizes
+## [18.0.6] - 2026-01-23
 
 ### Fixed
-- Fixed bullet character encoding (• was showing as â€¢)
-- Fixed layout gaps that appeared in previous version
-
-## [18.0.3] - 2026-01-22
-
-### Fixed
-- **Fixed broken emoji encoding** - All button labels and emojis now display correctly
-- Fixed UTF-8 mojibake issues that caused header buttons (Update, Settings, History, Help) to appear empty
-- Fixed Analyze button, Open Folder button, and other UI elements with emoji labels
-- Fixed fire icon (🔥), refresh icon (🔄), gear icon (⚙️), books icon (📚), question mark (❓), folder icon (📂), and others
-- All emoji characters properly encoded as UTF-8
+- **Update Available dialog now shows buttons** - "Download Update" and "Remind Me Later" buttons were being cut off at the bottom of the dialog
+- Removed duplicate `UpdateNotificationDialog` class that was causing issues
+- Fixed changelog frame height to ensure buttons are always visible
+- Cleaned up corrupted emoji characters in button text
 
 ### Changed
-- Updated version to 18.0.3
-
-## [18.0.2] - 2026-01-22
-
-### Changed
-- **NO-SCROLL LAYOUT**: Everything now fits without scrolling at any window size
-- Fixed "Best" badge overlapping resolution text (now inline: "⭐1080p")
-- Progress bar and metrics always fully visible
-- Removed ScrollableFrame - using pure grid layout
-- Much more compact design throughout:
-  - Header reduced from 72px to 56px
-  - URL input reduced from 64px to 48px  
-  - Thumbnail reduced from 180x101 to 160x90
-  - Format cards: smaller padding, single-line details
-  - Progress section: tighter spacing
-  - All fonts slightly smaller
-- Video section now uses grid row 0 (expands), progress uses row 1 (fixed)
-
-## [18.0.1] - 2026-01-22
-
-### Fixed
-- Resource gauges (CPU/Memory/GPU) now in footer - always visible without scrolling
-- Gauges no longer cut off even on smaller screens
-- Download metrics (Speed/FPS/ETA/Size) now always visible in compact inline row
-
-### Changed
-- More compact video card with smaller thumbnail and tighter spacing
-- More compact format cards (quality selection buttons)
-- More compact progress section with inline metrics bar
-- Footer shows system resources alongside output path
-- Overall ~30% reduction in vertical space usage
-
-## [18.0.0] - 2026-01-22
-
-### Added
-- **Complete visual overhaul** with 2026 design standards
-- Glass morphism effects with semi-transparent backgrounds
-- Purple-blue gradient color scheme (#667eea → #764ba2)
-- Collapsible activity log (saves space, max 200px height)
-- Responsive layout with fixed header/footer, scrollable content
-- Larger, more modern buttons and inputs (56-60px height)
-- Icon-first header design with circular icon buttons
-- Enhanced progress section with cleaner metrics display
-- Improved quality cards with better visual hierarchy
-- Smooth hover effects and transitions throughout
-- System resource monitoring (CPU, Memory, GPU gauges)
-- Two-column layout: main content on left, activity log on right
-
-### Changed
-- Better spacing and padding (20-24px standard)
-- Softer border radius (16-20px vs 8-10px)
-- All v17.10 features maintained (auto-update, chapters, SponsorBlock, etc.)
+- Updated README with correct first-launch instructions for macOS Gatekeeper
+- Installation instructions now explain the System Settings → Privacy & Security → "Open Anyway" workflow
+- Added `psutil` to the list of required dependencies in README
 
 ## [17.10.0] - 2026-01-21
 

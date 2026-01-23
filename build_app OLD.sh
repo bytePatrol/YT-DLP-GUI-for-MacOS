@@ -25,7 +25,7 @@
 # Auto-detect project directory (where this script is located)
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 VENV_DIR="$PROJECT_DIR/venv"
-MAIN_SCRIPT="yt_dlp_gui_v18_0_6.py"  # Default script name
+MAIN_SCRIPT="yt_dlp_gui_v18_0_4.py"  # Default script name
 APP_NAME="YouTube 4K Downloader"
 BUNDLE_ID="com.bytepatrol.youtube4kdownloader"
 INSTALL_DIR="/Applications"
@@ -415,231 +415,10 @@ bundle_dependencies() {
     TEMP_DIR=$(mktemp -d)
     cd "$TEMP_DIR"
     
-    # --- Bundle Tcl/Tk ---
-    # This is CRITICAL for standalone apps - without this, the app will fail
-    # on systems that don't have Homebrew's Tcl/Tk installed
-    print_info "Bundling Tcl/Tk libraries..."
-    
-    # Find where Python's tkinter expects Tcl/Tk
-    TCL_VERSION=""
-    TCL_LIB_DIR=""
-    
-    # Check Homebrew locations (Apple Silicon and Intel)
-    if [ -d "/opt/homebrew/opt/tcl-tk/lib" ]; then
-        TCL_LIB_DIR="/opt/homebrew/opt/tcl-tk/lib"
-        # Detect version (tcl9.0, tcl8.6, etc.)
-        if [ -d "$TCL_LIB_DIR/tcl9.0" ]; then
-            TCL_VERSION="9.0"
-        elif [ -d "$TCL_LIB_DIR/tcl8.6" ]; then
-            TCL_VERSION="8.6"
-        fi
-    elif [ -d "/usr/local/opt/tcl-tk/lib" ]; then
-        TCL_LIB_DIR="/usr/local/opt/tcl-tk/lib"
-        if [ -d "$TCL_LIB_DIR/tcl9.0" ]; then
-            TCL_VERSION="9.0"
-        elif [ -d "$TCL_LIB_DIR/tcl8.6" ]; then
-            TCL_VERSION="8.6"
-        fi
-    fi
-    
-    if [ -n "$TCL_VERSION" ] && [ -n "$TCL_LIB_DIR" ]; then
-        print_info "Found Tcl/Tk $TCL_VERSION at $TCL_LIB_DIR"
-        
-        # Create lib directory in app bundle
-        mkdir -p "$APP_PATH/Contents/lib"
-        
-        # Copy Tcl library folder
-        if [ -d "$TCL_LIB_DIR/tcl$TCL_VERSION" ]; then
-            cp -R "$TCL_LIB_DIR/tcl$TCL_VERSION" "$APP_PATH/Contents/lib/"
-            print_success "Copied tcl$TCL_VERSION library"
-        fi
-        
-        # Copy Tk library folder
-        if [ -d "$TCL_LIB_DIR/tk$TCL_VERSION" ]; then
-            cp -R "$TCL_LIB_DIR/tk$TCL_VERSION" "$APP_PATH/Contents/lib/"
-            print_success "Copied tk$TCL_VERSION library"
-        fi
-        
-        # Copy dynamic libraries (.dylib files)
-        mkdir -p "$FRAMEWORKS_DIR"
-        
-        # Copy Tcl dylib
-        for tcl_dylib in "$TCL_LIB_DIR"/libtcl*.dylib; do
-            if [ -f "$tcl_dylib" ]; then
-                cp "$tcl_dylib" "$FRAMEWORKS_DIR/"
-                print_success "Copied $(basename "$tcl_dylib")"
-            fi
-        done
-        
-        # Copy Tk dylib
-        for tk_dylib in "$TCL_LIB_DIR"/libtk*.dylib; do
-            if [ -f "$tk_dylib" ]; then
-                cp "$tk_dylib" "$FRAMEWORKS_DIR/"
-                print_success "Copied $(basename "$tk_dylib")"
-            fi
-        done
-        
-        # Also check for tcl9 and tk9 specific dylibs (Tcl 9.0 naming)
-        if [ -f "$TCL_LIB_DIR/libtcl9.0.dylib" ]; then
-            cp "$TCL_LIB_DIR/libtcl9.0.dylib" "$FRAMEWORKS_DIR/"
-        fi
-        if [ -f "$TCL_LIB_DIR/libtk9.0.dylib" ]; then
-            cp "$TCL_LIB_DIR/libtk9.0.dylib" "$FRAMEWORKS_DIR/"
-        fi
-        
-        # --- Bundle Tcl/Tk dependencies (libtommath, etc.) ---
-        # Tcl 9.0 depends on libtommath for big number support
-        print_info "Bundling Tcl/Tk dependencies..."
-        
-        # Find and copy libtommath
-        LIBTOMMATH_PATHS=(
-            "/opt/homebrew/opt/libtommath/lib/libtommath.1.dylib"
-            "/opt/homebrew/lib/libtommath.1.dylib"
-            "/usr/local/opt/libtommath/lib/libtommath.1.dylib"
-            "/usr/local/lib/libtommath.1.dylib"
-        )
-        
-        LIBTOMMATH_FOUND=false
-        for tommath_path in "${LIBTOMMATH_PATHS[@]}"; do
-            if [ -f "$tommath_path" ]; then
-                cp "$tommath_path" "$FRAMEWORKS_DIR/"
-                print_success "Copied libtommath.1.dylib"
-                LIBTOMMATH_FOUND=true
-                
-                # Also copy the unversioned symlink target if it exists
-                tommath_dir=$(dirname "$tommath_path")
-                if [ -f "$tommath_dir/libtommath.dylib" ]; then
-                    cp "$tommath_dir/libtommath.dylib" "$FRAMEWORKS_DIR/" 2>/dev/null || true
-                fi
-                break
-            fi
-        done
-        
-        if [ "$LIBTOMMATH_FOUND" = false ]; then
-            print_warning "libtommath not found - Tcl 9.0 may not work!"
-            print_info "Install with: brew install libtommath"
-        fi
-        
-        # Use otool to find ALL dependencies of bundled dylibs and copy them
-        print_info "Checking for additional Tcl/Tk dependencies..."
-        
-        for dylib in "$FRAMEWORKS_DIR"/*.dylib; do
-            if [ -f "$dylib" ]; then
-                # Get all dependencies
-                deps=$(otool -L "$dylib" 2>/dev/null | grep -E "^\s+/opt/homebrew|^\s+/usr/local" | awk '{print $1}')
-                
-                for dep in $deps; do
-                    dep_name=$(basename "$dep")
-                    
-                    # Skip if already copied
-                    if [ -f "$FRAMEWORKS_DIR/$dep_name" ]; then
-                        continue
-                    fi
-                    
-                    # Copy the dependency
-                    if [ -f "$dep" ]; then
-                        cp "$dep" "$FRAMEWORKS_DIR/"
-                        print_success "Copied dependency: $dep_name"
-                    fi
-                done
-            fi
-        done
-        
-        # --- Fix library paths using install_name_tool ---
-        # Change hardcoded Homebrew paths to use @executable_path/../Frameworks
-        print_info "Fixing library paths for standalone use..."
-        
-        for dylib in "$FRAMEWORKS_DIR"/*.dylib; do
-            if [ -f "$dylib" ]; then
-                dylib_name=$(basename "$dylib")
-                
-                # Change the install name of this library to use @rpath
-                install_name_tool -id "@rpath/$dylib_name" "$dylib" 2>/dev/null || true
-                
-                # Find and fix references to Homebrew paths
-                deps=$(otool -L "$dylib" 2>/dev/null | grep -E "^\s+/opt/homebrew|^\s+/usr/local" | awk '{print $1}')
-                
-                for dep in $deps; do
-                    dep_name=$(basename "$dep")
-                    # Change the path to use @rpath
-                    install_name_tool -change "$dep" "@rpath/$dep_name" "$dylib" 2>/dev/null || true
-                done
-            fi
-        done
-        
-        print_success "Library paths fixed for standalone deployment"
-        
-        # --- Also fix _tkinter.so in the app bundle ---
-        # The _tkinter Python module also has hardcoded paths
-        print_info "Fixing _tkinter.so library paths..."
-        
-        TKINTER_SO=$(find "$APP_PATH/Contents/Resources" -name "_tkinter*.so" -o -name "_tkinter*.dylib" 2>/dev/null | head -1)
-        
-        if [ -n "$TKINTER_SO" ] && [ -f "$TKINTER_SO" ]; then
-            print_info "Found _tkinter at: $TKINTER_SO"
-            
-            # Get dependencies and fix them
-            deps=$(otool -L "$TKINTER_SO" 2>/dev/null | grep -E "^\s+/opt/homebrew|^\s+/usr/local" | awk '{print $1}')
-            
-            for dep in $deps; do
-                dep_name=$(basename "$dep")
-                
-                # Make sure the dependency is in Frameworks
-                if [ ! -f "$FRAMEWORKS_DIR/$dep_name" ] && [ -f "$dep" ]; then
-                    cp "$dep" "$FRAMEWORKS_DIR/"
-                    print_success "Copied missing dependency: $dep_name"
-                fi
-                
-                # Fix the path in _tkinter.so
-                install_name_tool -change "$dep" "@rpath/$dep_name" "$TKINTER_SO" 2>/dev/null || true
-            done
-            
-            # Add rpath to _tkinter.so so it can find Frameworks
-            install_name_tool -add_rpath "@executable_path/../Frameworks" "$TKINTER_SO" 2>/dev/null || true
-            install_name_tool -add_rpath "@loader_path/../../Frameworks" "$TKINTER_SO" 2>/dev/null || true
-            
-            print_success "_tkinter.so paths fixed"
-        else
-            print_warning "_tkinter.so not found - may need manual fixing"
-        fi
-        
-        # --- Fix all .so files in lib-dynload ---
-        print_info "Fixing all Python extension modules..."
-        
-        LIB_DYNLOAD=$(find "$APP_PATH/Contents/Resources" -type d -name "lib-dynload" 2>/dev/null | head -1)
-        
-        if [ -n "$LIB_DYNLOAD" ] && [ -d "$LIB_DYNLOAD" ]; then
-            for so_file in "$LIB_DYNLOAD"/*.so; do
-                if [ -f "$so_file" ]; then
-                    # Add rpath
-                    install_name_tool -add_rpath "@executable_path/../Frameworks" "$so_file" 2>/dev/null || true
-                    
-                    # Fix any Homebrew dependencies
-                    deps=$(otool -L "$so_file" 2>/dev/null | grep -E "^\s+/opt/homebrew|^\s+/usr/local" | awk '{print $1}')
-                    
-                    for dep in $deps; do
-                        dep_name=$(basename "$dep")
-                        
-                        # Copy if not already in Frameworks
-                        if [ ! -f "$FRAMEWORKS_DIR/$dep_name" ] && [ -f "$dep" ]; then
-                            cp "$dep" "$FRAMEWORKS_DIR/"
-                            print_success "Copied: $dep_name"
-                        fi
-                        
-                        # Fix the reference
-                        install_name_tool -change "$dep" "@rpath/$dep_name" "$so_file" 2>/dev/null || true
-                    done
-                fi
-            done
-            print_success "All extension modules fixed"
-        fi
-        
-        print_info "Tcl/Tk bundled successfully"
-    else
-        print_warning "Could not find Homebrew Tcl/Tk installation"
-        print_warning "The app may not work on systems without Tcl/Tk installed"
-        print_info "Install with: brew install tcl-tk"
-    fi
+    # --- Tcl/Tk Bundling Skipped ---
+    # Python 3.14 ships with Tcl 9.0, but we need to let it use system Tcl/Tk
+    # to avoid version conflicts with CustomTkinter
+    print_info "Skipping Tcl/Tk bundling - using system/Python's Tcl/Tk"
     
     # --- Install FFmpeg ---
     echo ""
@@ -737,33 +516,6 @@ verify_app() {
         ERRORS=$((ERRORS + 1))
     fi
     
-    # Check for Tcl/Tk libraries
-    echo ""
-    echo "Checking Tcl/Tk libraries..."
-    if [ -d "$APP_PATH/Contents/lib/tcl9.0" ] || [ -d "$APP_PATH/Contents/lib/tcl8.6" ]; then
-        print_success "Tcl library present"
-    else
-        print_warning "Tcl library not found in Contents/lib/"
-    fi
-    
-    if [ -d "$APP_PATH/Contents/lib/tk9.0" ] || [ -d "$APP_PATH/Contents/lib/tk8.6" ]; then
-        print_success "Tk library present"
-    else
-        print_warning "Tk library not found in Contents/lib/"
-    fi
-    
-    if ls "$FRAMEWORKS_DIR"/libtcl*.dylib 1> /dev/null 2>&1; then
-        print_success "Tcl dylib present"
-    else
-        print_warning "Tcl dylib not found in Frameworks/"
-    fi
-    
-    if ls "$FRAMEWORKS_DIR"/libtk*.dylib 1> /dev/null 2>&1; then
-        print_success "Tk dylib present"
-    else
-        print_warning "Tk dylib not found in Frameworks/"
-    fi
-    
     # Check for Python packages in site-packages
     echo ""
     echo "Checking Python packages..."
@@ -856,89 +608,6 @@ codesign_app() {
 }
 
 # ============================================================================
-# SETUP TCL/TK ENVIRONMENT
-# ============================================================================
-
-setup_tcltk_environment() {
-    local APP_PATH="$1"
-    local RESOURCES_DIR="$APP_PATH/Contents/Resources"
-    local MACOS_DIR="$APP_PATH/Contents/MacOS"
-    
-    print_header "Setting up Tcl/Tk Environment"
-    
-    # Detect which Tcl/Tk version was bundled
-    TCL_VERSION=""
-    if [ -d "$APP_PATH/Contents/lib/tcl9.0" ]; then
-        TCL_VERSION="9.0"
-    elif [ -d "$APP_PATH/Contents/lib/tcl8.6" ]; then
-        TCL_VERSION="8.6"
-    fi
-    
-    if [ -z "$TCL_VERSION" ]; then
-        print_warning "No bundled Tcl/Tk found - skipping environment setup"
-        return 0
-    fi
-    
-    print_info "Found bundled Tcl/Tk $TCL_VERSION"
-    
-    # Find the main executable
-    MAIN_EXECUTABLE=$(find "$MACOS_DIR" -type f -perm +111 ! -name "*.dylib" | head -1)
-    
-    if [ -z "$MAIN_EXECUTABLE" ]; then
-        print_error "Could not find main executable in $MACOS_DIR"
-        return 1
-    fi
-    
-    EXECUTABLE_NAME=$(basename "$MAIN_EXECUTABLE")
-    print_info "Main executable: $EXECUTABLE_NAME"
-    
-    # Rename original executable
-    mv "$MAIN_EXECUTABLE" "${MAIN_EXECUTABLE}_real"
-    
-    # Create wrapper script that sets environment variables
-    cat > "$MAIN_EXECUTABLE" << 'WRAPPER_SCRIPT'
-#!/bin/bash
-# Wrapper script to set Tcl/Tk environment variables
-# Auto-generated by build_app.sh
-
-# Get the directory where this script is located
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-APP_DIR="$(dirname "$SCRIPT_DIR")"
-
-# Set Tcl/Tk library paths to the bundled versions
-WRAPPER_SCRIPT
-
-    # Add version-specific paths
-    cat >> "$MAIN_EXECUTABLE" << WRAPPER_VARS
-export TCL_LIBRARY="\$APP_DIR/lib/tcl$TCL_VERSION"
-export TK_LIBRARY="\$APP_DIR/lib/tk$TCL_VERSION"
-WRAPPER_VARS
-
-    # Add the rest of the wrapper
-    cat >> "$MAIN_EXECUTABLE" << 'WRAPPER_END'
-
-# Set library paths for bundled dylibs (libtommath, etc.)
-export DYLD_LIBRARY_PATH="$APP_DIR/Frameworks:$DYLD_LIBRARY_PATH"
-export DYLD_FRAMEWORK_PATH="$APP_DIR/Frameworks:$DYLD_FRAMEWORK_PATH"
-
-# Also set DYLD_FALLBACK_LIBRARY_PATH as a backup
-export DYLD_FALLBACK_LIBRARY_PATH="$APP_DIR/Frameworks:/usr/lib:/usr/local/lib"
-
-# Execute the real application
-exec "$SCRIPT_DIR/$(basename "$0")_real" "$@"
-WRAPPER_END
-
-    # Make wrapper executable
-    chmod +x "$MAIN_EXECUTABLE"
-    
-    print_success "Created launcher wrapper with Tcl/Tk environment"
-    print_info "TCL_LIBRARY will be set to: Contents/lib/tcl$TCL_VERSION"
-    print_info "TK_LIBRARY will be set to: Contents/lib/tk$TCL_VERSION"
-    
-    return 0
-}
-
-# ============================================================================
 # BUILD APP
 # ============================================================================
 
@@ -1021,11 +690,6 @@ build_app() {
     if ! bundle_dependencies "$BUILT_APP_PATH"; then
         print_error "Failed to bundle dependencies"
         exit 1
-    fi
-    
-    # Setup Tcl/Tk environment for the bundled libraries
-    if ! setup_tcltk_environment "$BUILT_APP_PATH"; then
-        print_warning "Tcl/Tk environment setup had issues"
     fi
     
     # Verify the built app
