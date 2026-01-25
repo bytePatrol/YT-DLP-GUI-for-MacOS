@@ -18,29 +18,43 @@ A modern, fully self-contained YouTube video downloader with a beautiful dark mo
 
 ## Features
 
-- **🔄 Auto-Update yt-dlp** - Keep yt-dlp current without re-downloading the app *(NEW in v17.10)*
-- **🎬 4K/1080p/720p Downloads** - Select your preferred quality
-- **📚 Chapter Downloads** - Split videos into separate files per chapter
-- **🎨 Modern Dark Mode UI** - Beautiful iOS-inspired interface
-- **📦 100% Self-Contained** - No Homebrew, no Python, no dependencies
-- **⚡ Fast Downloads** - Separate video+audio download with smart merging
-- **🎵 Audio Only Mode** - Extract audio as M4A or MP3
-- **📋 Playlist Support** - Download entire playlists
-- **✂️ SponsorBlock Integration** - Automatically remove sponsor segments
-- **📝 Subtitles** - Download and embed subtitles
-- **🎬 QuickTime Compatible** - H.264 + AAC encoding for native macOS playback
-- **📊 Progress Tracking** - Real-time speed, ETA, and progress display
-- **🔔 Notifications** - macOS notifications when downloads complete
-- **📜 Download History** - Browse and search past downloads
+- 🔄 **Auto-Update yt-dlp** - Keep yt-dlp current without re-downloading the app
+- 🎬 **4K/1080p/720p Downloads** - Select your preferred quality
+- 📚 **Chapter Downloads** - Split videos into separate files per chapter
+- 🎨 **Modern Dark Mode UI** - Beautiful iOS-inspired interface with emojis
+- 📦 **100% Self-Contained** - No Homebrew, no Python, no dependencies
+- ⚡ **Fast Downloads** - Separate video+audio download with smart merging
+- 🎵 **Audio Only Mode** - Extract audio as M4A or MP3
+- 📋 **Playlist Support** - Download entire playlists
+- ✂️ **SponsorBlock Integration** - Automatically remove sponsor segments
+- 📝 **Subtitles** - Download and embed subtitles
+- 🎬 **QuickTime Compatible** - H.264 + AAC encoding for native macOS playback
+- 📊 **Progress Tracking** - Real-time speed, ETA, and progress display
+- 🔔 **Notifications** - macOS notifications when downloads complete
+- 📜 **Download History** - Browse and search past downloads
 
-## NEW: Auto-Update yt-dlp (v17.10)
+## NEW in v18.0.8: Smart Error Detection
+
+The app now intelligently detects and explains why certain videos can't be downloaded:
+
+- **🔞 Age-Restricted Videos** - Clear instructions on how to use browser cookies
+- **🔒 Private Videos** - Explains the video is not publicly accessible  
+- **🚫 Unavailable Videos** - Handles deleted, region-blocked, and copyright-claimed content
+- **👤 Login Required** - Identifies members-only and subscription content
+
+When you try to analyze a problematic video, you'll see:
+- A helpful dialog explaining the issue
+- Detailed instructions in the Activity Log
+- Specific workaround commands you can use
+
+## Auto-Update yt-dlp
 
 **No more re-downloading the entire app when yt-dlp updates!**
 
-YouTube frequently changes their API, which requires yt-dlp updates to keep working. Previously, you had to download a new version of the entire app. Now you can update yt-dlp directly from within the app!
+YouTube frequently changes their API, which requires yt-dlp updates to keep working. Now you can update yt-dlp directly from within the app!
 
 ### How it works:
-1. Click the **"Update"** button in the header
+1. Click the 🔄 **Update** button in the header
 2. The app checks GitHub for the latest yt-dlp release
 3. If an update is available, click to download and install
 4. The new version is active immediately - no restart required!
@@ -52,7 +66,7 @@ YouTube frequently changes their API, which requires yt-dlp updates to keep work
 - **No admin required** - No need to re-download or reinstall the app
 - **Instant activation** - New version works immediately
 
-## Chapter Downloads (v17.8)
+## Chapter Downloads
 
 Download YouTube videos split by their chapters! Perfect for:
 - **Podcasts** - Download each topic as a separate file
@@ -62,7 +76,7 @@ Download YouTube videos split by their chapters! Perfect for:
 
 ### How to use:
 1. Analyze a YouTube video that has chapters
-2. A purple **"Download Chapters"** button will appear
+2. A purple **"📑 Chapters"** button will appear
 3. Select which chapters to download (or download all)
 4. Choose **Audio Only** if you just want the audio
 5. Click Download - each chapter becomes a separate file!
@@ -121,16 +135,16 @@ cd YT-DLP-GUI-for-MacOS
 pip install customtkinter pillow requests yt-dlp psutil
 
 # Run the app
-python yt_dlp_gui_v18_0_6.py
+python yt_dlp_gui_v18_0_8.py
 ```
 
 ## Usage
 
 1. **Paste a YouTube URL** - Copy a YouTube link and it will auto-detect, or paste manually
-2. **Click Analyze** - View available formats and quality options
+2. **Click ⚡ Analyze** - View available formats and quality options
 3. **Select Quality** - Choose from 4K, 1080p, 720p, etc.
-4. **Click Download** - Watch the progress with real-time stats
-5. **For Chapters** - Click the purple "Download Chapters" button if available
+4. **Click ⚡ Download** - Watch the progress with real-time stats
+5. **For Chapters** - Click the purple "📑 Chapters" button if available
 
 ### Keyboard Shortcuts
 
@@ -142,7 +156,7 @@ python yt_dlp_gui_v18_0_6.py
 
 ## Settings
 
-Access settings via the **Settings** button to configure:
+Access settings via the ⚙️ **Settings** button to configure:
 
 - **SponsorBlock** - Enable/disable, select categories to remove
 - **Subtitles** - Languages, auto-generated, embedding
@@ -176,8 +190,20 @@ cd YT-DLP-GUI-for-MacOS
 ./build_app.sh
 
 # Or manually:
-pip install py2app customtkinter pillow requests yt-dlp
+pip install py2app customtkinter pillow requests yt-dlp psutil
 python setup.py py2app
+```
+
+### Build Note for Python 3.14
+
+If you encounter tkinter errors during build, you may need to use Python 3.13:
+
+```bash
+# Create venv with Python 3.13 specifically
+/opt/homebrew/opt/python@3.13/bin/python3.13 -m venv venv
+source venv/bin/activate
+pip install py2app customtkinter pillow requests yt-dlp psutil
+./build_app.sh
 ```
 
 ## Troubleshooting
@@ -197,9 +223,14 @@ Run this in Terminal to see the error:
 /Applications/YouTube\ 4K\ Downloader.app/Contents/MacOS/YouTube\ 4K\ Downloader
 ```
 
+### "Age-restricted video" error
+The app will show you instructions. You need to:
+1. Export cookies from your browser while logged into YouTube
+2. Use yt-dlp from command line with: `yt-dlp --cookies-from-browser chrome URL`
+
 ### Downloads fail or no formats shown
 - Make sure you have an internet connection
-- **Try updating yt-dlp:** Click the "Update" button in the header to get the latest version
+- **Try updating yt-dlp:** Click the 🔄 Update button in the header
 - Some videos may be region-locked or private
 
 ### Chapter downloads not showing

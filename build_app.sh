@@ -25,7 +25,7 @@
 # Auto-detect project directory (where this script is located)
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 VENV_DIR="$PROJECT_DIR/venv"
-MAIN_SCRIPT="yt_dlp_gui_v18_0_6.py"  # Default script name
+MAIN_SCRIPT="yt_dlp_gui_v18_0_7.py"  # Default script name
 APP_NAME="YouTube 4K Downloader"
 BUNDLE_ID="com.bytepatrol.youtube4kdownloader"
 INSTALL_DIR="/Applications"
@@ -92,7 +92,7 @@ activate_venv() {
         print_warning "Virtual environment not found at $VENV_DIR"
         print_info "Creating virtual environment..."
         
-        python3 -m venv "$VENV_DIR"
+        /opt/homebrew/opt/python@3.13/bin/python3.13 -m venv "$VENV_DIR"
         
         if [ $? -ne 0 ]; then
             print_error "Failed to create virtual environment"

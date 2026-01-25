@@ -3,14 +3,14 @@
 YouTube 4K Downloader v18 - 2026 Modern Design Edition
 
 Complete UI/UX overhaul with contemporary design standards:
-- 🎨 Glass morphism design with backdrop blur effects
-- 💫 Purple-blue gradient accents throughout
-- 📁 Responsive flexbox layout (no cut-off sections)
-- 🎯 Collapsible activity log panel (max 200px, scrollable)
-- 📱 Modern card-based interface with generous spacing
-- ✨ Smooth animations and micro-interactions
-- 📘 Larger touch targets (56-60px buttons)
-- 💎 Softer corners (16-20px border radius)
+-  Glass morphism design with backdrop blur effects
+- ðŸ’« Purple-blue gradient accents throughout
+-  Responsive flexbox layout (no cut-off sections)
+-  Collapsible activity log panel (max 200px, scrollable)
+- ± Modern card-based interface with generous spacing
+- âœ¨ Smooth animations and micro-interactions
+- ˜ Larger touch targets (56-60px buttons)
+- ðŸ’Ž Softer corners (16-20px border radius)
 
 v18.0.5 Changes - DOWNLOAD BUTTON & SELECTION FIX:
 - FIXED: Download button now ALWAYS visible without needing fullscreen
@@ -24,7 +24,7 @@ v18.0.5 Changes - DOWNLOAD BUTTON & SELECTION FIX:
 
 v18.0.2 Changes - NO-SCROLL LAYOUT:
 - FIXED: Everything now fits without scrolling at any window size
-- FIXED: "Best" badge no longer overlaps resolution text (now inline: "⭐ 1080p")
+- FIXED: "Best" badge no longer overlaps resolution text (now inline: "\xe2\x98\x85 1080p")
 - FIXED: Progress bar and metrics always fully visible
 - CHANGED: Removed ScrollableFrame - using pure grid layout
 - CHANGED: Much more compact design throughout:
@@ -49,7 +49,7 @@ v18.0.1 Changes - LAYOUT FIX:
 v18.0.0 Changes - MAJOR UI REDESIGN:
 - NEW: Complete visual overhaul with 2026 design standards
 - NEW: Glass morphism effects with semi-transparent backgrounds
-- NEW: Purple-blue gradient color scheme (#667eea â†’ #764ba2)
+- NEW: Purple-blue gradient color scheme (#667eea -> #764ba2)
 - NEW: Collapsible activity log (saves space, max 200px height)
 - NEW: Responsive layout with fixed header/footer, scrollable content
 - NEW: Larger, more modern buttons and inputs (56-60px height)
@@ -113,7 +113,7 @@ v17.8.3 Changes:
 v17.8.2 Changes:
 - MAJOR FIX: App no longer appears frozen during long merge/conversion operations
 - NEW: Chapter downloads restored! Download videos split by chapters
-- Detects YouTube chapters automatically and shows "Download Chapters" button
+- Detects YouTube chapters automatically and shows "📑 Download Chapters" button
 - Select individual chapters or download all at once
 - Supports both video and audio-only chapter extraction
 - Added file size monitoring during stalls - shows "Merging... 1.2 GB written (45s elapsed)"
@@ -328,7 +328,7 @@ except ImportError:
 # ============================================================================
 
 APP_NAME = "YouTube 4K Downloader"
-APP_VERSION = "18.0.6"
+APP_VERSION = "18.0.8"
 
 # Configuration paths - using proper config directory
 CONFIG_DIR = Path.home() / ".config" / "yt-dlp-gui"
@@ -379,7 +379,6 @@ def find_executable(name: str) -> str:
         if USER_YTDLP_PATH.is_file():
             # Verify it's executable
             if os.access(USER_YTDLP_PATH, os.X_OK):
-                print(f"DEBUG find_executable: Found user-installed yt-dlp at {USER_YTDLP_PATH}")
                 return str(USER_YTDLP_PATH)
     
     # Check if we're running from a .app bundle - prefer bundled executables
@@ -388,7 +387,6 @@ def find_executable(name: str) -> str:
         resources_dir = os.path.join(bundle_dir, 'Resources')
         bundled_path = os.path.join(resources_dir, name)
         if os.path.isfile(bundled_path):
-            print(f"DEBUG find_executable: Found bundled {name} at {bundled_path}")
             return bundled_path
     
     # Special handling for yt-dlp: prefer Python module method
@@ -396,10 +394,8 @@ def find_executable(name: str) -> str:
         # Try to import yt-dlp as a Python module first (most reliable)
         try:
             import yt_dlp
-            print(f"DEBUG find_executable: yt_dlp module found, using python-module method")
             return "python-module"
         except ImportError as e:
-            print(f"DEBUG find_executable: yt_dlp module NOT found ({e}), falling back to paths")
             pass
         
         # Check Homebrew paths
@@ -409,7 +405,6 @@ def find_executable(name: str) -> str:
         ]
         for p in homebrew_paths:
             if os.path.isfile(p):
-                print(f"DEBUG find_executable: Found yt-dlp at {p}")
                 return p
     
     # Check if it's available in PATH (includes venv)
@@ -614,8 +609,8 @@ class AppUpdateChecker:
         
         # Clean up markdown formatting for display
         body = body.replace("**", "")
-        body = body.replace("###", "•")
-        body = body.replace("##", "•")
+        body = body.replace("###", "*")
+        body = body.replace("##", "*")
         body = body.replace("#", "")
         
         return body.strip()
@@ -751,8 +746,8 @@ class AppUpdateChecker:
         
         # Clean up markdown for better display
         body = body.replace("**", "")
-        body = body.replace("###", "•")
-        body = body.replace("##", "•")
+        body = body.replace("###", "*")
+        body = body.replace("##", "*")
         body = body.replace("#", "")
         
         return body.strip()
@@ -775,7 +770,7 @@ class UpdateNotificationDialog(ctk.CTkToplevel):
         
         self.release_info = release_info
         
-        self.title("🎉 Update Available")
+        self.title("NEW Update Available")
         self.geometry("620x550")
         self.transient(parent)
         self.resizable(False, False)
@@ -815,7 +810,7 @@ class UpdateNotificationDialog(ctk.CTkToplevel):
         # Large update icon
         icon_label = ctk.CTkLabel(
             header_content,
-            text="🎉",
+            text="NEW",
             font=ctk.CTkFont(size=56)
         )
         icon_label.pack(pady=(0, 12))
@@ -823,7 +818,7 @@ class UpdateNotificationDialog(ctk.CTkToplevel):
         # Title
         title_label = ctk.CTkLabel(
             header_content,
-            text="New Version Available!",
+            text="🎉 New Version Available!",
             font=ctk.CTkFont(size=26, weight="bold"),
             text_color=COLORS["text_primary"]
         )
@@ -832,7 +827,7 @@ class UpdateNotificationDialog(ctk.CTkToplevel):
         # Version info
         version_text = f"Version {self.release_info['version']} is now available"
         if self.release_info.get('published_date'):
-            version_text += f" • Released {self.release_info['published_date']}"
+            version_text += f" * Released {self.release_info['published_date']}"
         
         version_label = ctk.CTkLabel(
             header_content,
@@ -855,7 +850,7 @@ class UpdateNotificationDialog(ctk.CTkToplevel):
         # Changelog section
         changelog_header = ctk.CTkLabel(
             main_frame,
-            text="📋 What's New:",
+            text=" What's New:",
             font=ctk.CTkFont(size=15, weight="bold"),
             text_color=COLORS["text_primary"],
             anchor="w"
@@ -897,7 +892,7 @@ class UpdateNotificationDialog(ctk.CTkToplevel):
         # Download button (primary, prominent)
         download_btn = ModernButton(
             button_frame,
-            text="Download Update",
+            text="⬇️ Download Update",
             style="primary",
             width=220,
             height=48,
@@ -1305,6 +1300,61 @@ class YtDlpUpdater:
 # ============================================================================
 # DATA CLASSES
 # ============================================================================
+
+# ============================================================================
+# CUSTOM EXCEPTIONS
+# ============================================================================
+
+class YtDlpError(Exception):
+    """Base exception for yt-dlp related errors."""
+    pass
+
+
+class AgeRestrictedError(YtDlpError):
+    """Raised when a video is age-restricted and requires authentication."""
+    
+    def __init__(self, video_id: str = None, message: str = None):
+        self.video_id = video_id
+        self.message = message or "This video is age-restricted and requires authentication."
+        super().__init__(self.message)
+    
+    def get_help_text(self) -> str:
+        """Return helpful instructions for the user."""
+        return (
+            "This video is age-restricted by YouTube.\n\n"
+            "To download age-restricted videos, you need to:\n"
+            "1. Export cookies from your browser while logged into YouTube\n"
+            "2. Use the cookies file with yt-dlp\n\n"
+            "For detailed instructions, visit:\n"
+            "https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp"
+        )
+
+
+class PrivateVideoError(YtDlpError):
+    """Raised when a video is private."""
+    
+    def __init__(self, video_id: str = None):
+        self.video_id = video_id
+        super().__init__("This video is private and cannot be accessed.")
+
+
+class VideoUnavailableError(YtDlpError):
+    """Raised when a video is unavailable (deleted, region-locked, etc.)."""
+    
+    def __init__(self, video_id: str = None, reason: str = None):
+        self.video_id = video_id
+        self.reason = reason or "This video is unavailable."
+        super().__init__(self.reason)
+
+
+class LoginRequiredError(YtDlpError):
+    """Raised when authentication is required but not provided."""
+    
+    def __init__(self, video_id: str = None, reason: str = None):
+        self.video_id = video_id
+        self.reason = reason or "This video requires authentication to access."
+        super().__init__(self.reason)
+
 
 class DownloadStatus(Enum):
     QUEUED = auto()
@@ -1781,7 +1831,15 @@ class YtDlpInterface:
             raise RuntimeError(f"Failed to parse yt-dlp output: {e}")
     
     def fetch_full_info(self, url: str) -> VideoInfo:
-        """Fetch full video info including all formats using --list-formats."""
+        """Fetch full video info including all formats using --list-formats.
+        
+        Raises:
+            AgeRestrictedError: If the video is age-restricted
+            PrivateVideoError: If the video is private
+            VideoUnavailableError: If the video is unavailable
+            LoginRequiredError: If login is required for other reasons
+            RuntimeError: For other errors
+        """
         try:
             # First get basic metadata with -J (this works for basic info)
             result_info = subprocess.run(
@@ -1790,8 +1848,13 @@ class YtDlpInterface:
                 encoding='utf-8', errors='replace'
             )
             
+            # Check for specific error conditions in stderr
+            stderr_text = result_info.stderr.strip() if result_info.stderr else ""
+            
             if result_info.returncode != 0:
-                raise RuntimeError(f"yt-dlp error: {result_info.stderr.strip()}")
+                # Parse the error to provide specific feedback
+                error_info = self._parse_ytdlp_error(stderr_text, url)
+                raise error_info
             
             data = json.loads(result_info.stdout)
             info = self._parse_video_info(data, url, include_formats=False)
@@ -1807,6 +1870,14 @@ class YtDlpInterface:
                 encoding='utf-8', errors='replace'
             )
             
+            # Check for errors in format listing too
+            if result_formats.returncode != 0:
+                format_stderr = result_formats.stderr.strip() if result_formats.stderr else ""
+                # Check if this is an age-restriction or other specific error
+                error_info = self._parse_ytdlp_error(format_stderr, url)
+                if isinstance(error_info, (AgeRestrictedError, PrivateVideoError, VideoUnavailableError, LoginRequiredError)):
+                    raise error_info
+            
             if result_formats.returncode == 0:
                 # Parse the format table output
                 info.formats = self._parse_format_table(result_formats.stdout)
@@ -1817,6 +1888,86 @@ class YtDlpInterface:
             raise RuntimeError(f"Failed to parse yt-dlp output: {e}")
         except subprocess.TimeoutExpired:
             raise RuntimeError("yt-dlp took too long to respond")
+        except (AgeRestrictedError, PrivateVideoError, VideoUnavailableError, LoginRequiredError):
+            # Re-raise our custom exceptions
+            raise
+    
+    def _parse_ytdlp_error(self, stderr: str, url: str) -> Exception:
+        """Parse yt-dlp stderr to identify specific error types.
+        
+        Args:
+            stderr: The stderr output from yt-dlp
+            url: The URL being processed (for extracting video ID)
+            
+        Returns:
+            An appropriate exception based on the error type
+        """
+        stderr_lower = stderr.lower()
+        
+        # Extract video ID from URL if possible
+        video_id = None
+        if "youtube.com" in url or "youtu.be" in url:
+            # Try to extract video ID
+            import re
+            match = re.search(r'(?:v=|youtu\.be/)([a-zA-Z0-9_-]{11})', url)
+            if match:
+                video_id = match.group(1)
+        
+        # Check for age-restriction errors
+        age_restriction_patterns = [
+            "sign in to confirm your age",
+            "age-restricted",
+            "this video may be inappropriate for some users",
+            "confirm your age",
+            "age verification required",
+        ]
+        
+        for pattern in age_restriction_patterns:
+            if pattern in stderr_lower:
+                return AgeRestrictedError(video_id=video_id, message=stderr)
+        
+        # Check for private video errors
+        private_patterns = [
+            "private video",
+            "video is private",
+            "this video is private",
+        ]
+        
+        for pattern in private_patterns:
+            if pattern in stderr_lower:
+                return PrivateVideoError(video_id=video_id)
+        
+        # Check for login required errors (not age-related)
+        login_patterns = [
+            "login_required",
+            "sign in to view this video",
+            "members-only",
+            "this video is available to this channel's members",
+        ]
+        
+        for pattern in login_patterns:
+            if pattern in stderr_lower:
+                return LoginRequiredError(video_id=video_id, reason=stderr)
+        
+        # Check for video unavailable errors
+        unavailable_patterns = [
+            "video unavailable",
+            "this video is not available",
+            "video has been removed",
+            "video is no longer available",
+            "this video has been removed",
+            "copyright claim",
+            "blocked in your country",
+            "not available in your country",
+            "geo restriction",
+        ]
+        
+        for pattern in unavailable_patterns:
+            if pattern in stderr_lower:
+                return VideoUnavailableError(video_id=video_id, reason=stderr)
+        
+        # Default to RuntimeError for unknown errors
+        return RuntimeError(f"yt-dlp error: {stderr}")
     
     def _parse_format_table(self, table_output: str) -> List[VideoFormat]:
         """Parse yt-dlp --list-formats table output into VideoFormat objects."""
@@ -2546,7 +2697,7 @@ class DownloadManager:
             # See _apply_sponsorblock_postprocess() method
             
             video_cmd = self.ytdlp._build_command(video_cmd_args)
-            self._run_subprocess_with_progress(video_cmd, task, "Downloading video", 0, 40, video_id)
+            self._run_subprocess_with_progress(video_cmd, task, "📥 Downloading video", 0, 40, video_id)
             
             if task.status == DownloadStatus.FAILED:
                 return
@@ -2577,7 +2728,7 @@ class DownloadManager:
                 video_info.url
             ])
             
-            self._run_subprocess_with_progress(audio_cmd, task, "Downloading audio", 40, 60, video_id)
+            self._run_subprocess_with_progress(audio_cmd, task, "🎵 Downloading audio", 40, 60, video_id)
             
             if task.status == DownloadStatus.FAILED:
                 return
@@ -2710,7 +2861,7 @@ class DownloadManager:
             # If GPU encoding fails, fall back to CPU
             # Progress: 60-85% if no SponsorBlock, 60-75% if SponsorBlock enabled
             progress_end = 75 if self.settings_mgr.get('sponsorblock_enabled', False) else 85
-            success = self._run_ffmpeg_with_progress(ffmpeg_cmd, task, "Converting", 60, progress_end, video_info.duration)
+            success = self._run_ffmpeg_with_progress(ffmpeg_cmd, task, "⚙️ Converting", 60, progress_end, video_info.duration)
             
             if not success and video_codec == "h264_videotoolbox":
                 # Try CPU encoding as fallback
@@ -2778,7 +2929,7 @@ class DownloadManager:
                 except Exception:
                     pass  # Don't fail download if history fails
                 
-                send_notification("Download Complete", f"{video_info.title}")
+                send_notification("✅ Download Complete", f"{video_info.title}")
             else:
                 task.status = DownloadStatus.FAILED
                 task.error_message = "Conversion failed"
@@ -3729,7 +3880,7 @@ class FormatCard(ctk.CTkFrame):
         # Resolution label - with star prefix if recommended
         res_text = f"{format_info.height}p" if format_info.height else "Audio"
         if recommended:
-            res_text = f"⭐ {res_text}"
+            res_text = f"★ {res_text}"
         
         self.res_label = ctk.CTkLabel(
             content,
@@ -3923,7 +4074,7 @@ class LogPanel(ctk.CTkFrame):
         # Title
         title_label = ctk.CTkLabel(
             self.header,
-            text="📋 Activity Log",
+            text=" Activity Log",
             font=ctk.CTkFont(size=14, weight="bold"),
             text_color=COLORS["text_primary"]
         )
@@ -4721,7 +4872,7 @@ class ChapterSelectionWindow(ctk.CTkToplevel):
         
         ctk.CTkLabel(
             sb_notice,
-            text="⚠️ SponsorBlock is disabled for chapter downloads",
+            text="[!] SponsorBlock is disabled for chapter downloads",
             font=ctk.CTkFont(size=11),
             text_color="#d4d4a0",
             anchor="w"
@@ -4756,7 +4907,7 @@ class ChapterSelectionWindow(ctk.CTkToplevel):
         # Download button
         ModernButton(
             footer,
-            text="Download Selected Chapters",
+            text="📑 Download Selected Chapters",
             style="primary",
             width=200,
             command=self._download_chapters
@@ -5328,7 +5479,7 @@ class YtDlpGUI(ctk.CTk):
         
         self.thumb_label = ctk.CTkLabel(
             self.thumb_frame,
-            text="📹",
+            text="",
             font=ctk.CTkFont(size=32),
             text_color=COLORS["text_tertiary"]
         )
@@ -5354,7 +5505,7 @@ class YtDlpGUI(ctk.CTk):
         # Title - single line with ellipsis
         self.title_label = ctk.CTkLabel(
             info_container,
-            text="Video Title",
+            text="🎬 Video Title",
             font=ctk.CTkFont(size=14, weight="bold"),
             text_color=COLORS["text_primary"],
             anchor="w"
@@ -5367,7 +5518,7 @@ class YtDlpGUI(ctk.CTk):
         
         self.channel_label = ctk.CTkLabel(
             meta_frame,
-            text="👤 Channel",
+            text=" Channel",
             font=ctk.CTkFont(size=11),
             text_color=COLORS["text_secondary"]
         )
@@ -5375,7 +5526,7 @@ class YtDlpGUI(ctk.CTk):
         
         self.views_label = ctk.CTkLabel(
             meta_frame,
-            text="👁 Views",
+            text=" Views",
             font=ctk.CTkFont(size=11),
             text_color=COLORS["text_secondary"]
         )
@@ -5392,7 +5543,7 @@ class YtDlpGUI(ctk.CTk):
         # Chapters button (hidden initially)
         self.chapters_button = ModernButton(
             meta_frame,
-            text="📑 Chapters",
+            text=" Chapters",
             style="secondary",
             width=90,
             height=24,
@@ -5405,7 +5556,7 @@ class YtDlpGUI(ctk.CTk):
         
         ctk.CTkLabel(
             quality_row,
-            text="SELECT QUALITY",
+            text="🎯 SELECT QUALITY",
             font=ctk.CTkFont(size=10, weight="bold"),
             text_color=COLORS["text_tertiary"]
         ).pack(side="left")
@@ -5460,7 +5611,7 @@ class YtDlpGUI(ctk.CTk):
         
         ctk.CTkLabel(
             prog_header,
-            text="Download Progress",
+            text="📥 Download Progress",
             font=ctk.CTkFont(size=12, weight="bold"),
             text_color=COLORS["text_primary"]
         ).pack(side="left")
@@ -5471,7 +5622,7 @@ class YtDlpGUI(ctk.CTk):
         
         self.status_dot = ctk.CTkLabel(
             status_frame,
-            text="●",
+            text="*",
             font=ctk.CTkFont(size=12),
             text_color=COLORS["text_tertiary"]
         )
@@ -5495,7 +5646,7 @@ class YtDlpGUI(ctk.CTk):
         
         self.progress_label = ctk.CTkLabel(
             stage_row,
-            text="Ready to download",
+            text="⏳ Ready to download",
             font=ctk.CTkFont(size=11),
             text_color=COLORS["text_secondary"]
         )
@@ -5521,7 +5672,7 @@ class YtDlpGUI(ctk.CTk):
         speed_frame.pack(side="left", padx=(0, 16))
         ctk.CTkLabel(speed_frame, text="SPEED", font=ctk.CTkFont(size=8, weight="bold"),
                     text_color=COLORS["text_tertiary"]).pack(side="left", padx=(0, 4))
-        self.speed_label = ctk.CTkLabel(speed_frame, text="—", font=ctk.CTkFont(size=11, weight="bold"),
+        self.speed_label = ctk.CTkLabel(speed_frame, text="--", font=ctk.CTkFont(size=11, weight="bold"),
                     text_color=COLORS["accent_gradient_start"])
         self.speed_label.pack(side="left")
         
@@ -5530,7 +5681,7 @@ class YtDlpGUI(ctk.CTk):
         fps_frame.pack(side="left", padx=(0, 16))
         ctk.CTkLabel(fps_frame, text="FPS", font=ctk.CTkFont(size=8, weight="bold"),
                     text_color=COLORS["text_tertiary"]).pack(side="left", padx=(0, 4))
-        self.fps_label = ctk.CTkLabel(fps_frame, text="—", font=ctk.CTkFont(size=11, weight="bold"),
+        self.fps_label = ctk.CTkLabel(fps_frame, text="--", font=ctk.CTkFont(size=11, weight="bold"),
                     text_color=COLORS["accent_green"])
         self.fps_label.pack(side="left")
         
@@ -5539,7 +5690,7 @@ class YtDlpGUI(ctk.CTk):
         eta_frame.pack(side="left", padx=(0, 16))
         ctk.CTkLabel(eta_frame, text="ETA", font=ctk.CTkFont(size=8, weight="bold"),
                     text_color=COLORS["text_tertiary"]).pack(side="left", padx=(0, 4))
-        self.eta_label = ctk.CTkLabel(eta_frame, text="—", font=ctk.CTkFont(size=11, weight="bold"),
+        self.eta_label = ctk.CTkLabel(eta_frame, text="--", font=ctk.CTkFont(size=11, weight="bold"),
                     text_color=COLORS["text_secondary"])
         self.eta_label.pack(side="left")
         
@@ -5548,7 +5699,7 @@ class YtDlpGUI(ctk.CTk):
         size_frame.pack(side="left")
         ctk.CTkLabel(size_frame, text="SIZE", font=ctk.CTkFont(size=8, weight="bold"),
                     text_color=COLORS["text_tertiary"]).pack(side="left", padx=(0, 4))
-        self.size_label = ctk.CTkLabel(size_frame, text="—", font=ctk.CTkFont(size=11, weight="bold"),
+        self.size_label = ctk.CTkLabel(size_frame, text="--", font=ctk.CTkFont(size=11, weight="bold"),
                     text_color=COLORS["text_secondary"])
         self.size_label.pack(side="left")
     
@@ -5564,7 +5715,7 @@ class YtDlpGUI(ctk.CTk):
         
         # Welcome messages
         self.log_panel.log(f"Welcome to {APP_NAME} v{APP_VERSION}", "info")
-        self.log_panel.log(f"yt-dlp version: {self.ytdlp.get_version()}", "info")
+        self.log_panel.log(f"📦 yt-dlp version: {self.ytdlp.get_version()}", "info")
     
     def _create_footer(self):
         """Create modern footer with resource gauges, output path and action buttons."""
@@ -5625,7 +5776,7 @@ class YtDlpGUI(ctk.CTk):
         
         ctk.CTkLabel(
             path_row,
-            text="📁 Output:",
+            text=" Output:",
             font=ctk.CTkFont(size=12),
             text_color=COLORS["text_tertiary"]
         ).pack(side="left")
@@ -5644,7 +5795,7 @@ class YtDlpGUI(ctk.CTk):
         
         ModernButton(
             btn_frame,
-            text="📂 Open Folder",
+            text=" Open Folder",
             style="secondary",
             width=130,
             height=36,
@@ -5735,7 +5886,7 @@ class YtDlpGUI(ctk.CTk):
             messagebox.showwarning("No URL", "Please enter a YouTube URL")
             return
         
-        self.log_panel.log(f"Analyzing: {url}", "info")
+        self.log_panel.log(f"🔍 Analyzing: {url}", "info")
         
         # BUGFIX v16.1: Clear previous state to fix empty format box
         self.current_video = None
@@ -5756,11 +5907,131 @@ class YtDlpGUI(ctk.CTk):
         def analyze_thread():
             try:
                 info = self.ytdlp.fetch_full_info(url)
-                self.after(0, lambda: self._display_video_info(info))
+                self.after(0, lambda i=info: self._display_video_info(i))
+            except AgeRestrictedError as e:
+                error = e
+                self.after(0, lambda err=error: self._handle_age_restricted_error(err))
+            except PrivateVideoError as e:
+                error = e
+                self.after(0, lambda err=error: self._handle_private_video_error(err))
+            except VideoUnavailableError as e:
+                error = e
+                self.after(0, lambda err=error: self._handle_video_unavailable_error(err))
+            except LoginRequiredError as e:
+                error = e
+                self.after(0, lambda err=error: self._handle_login_required_error(err))
             except Exception as e:
-                self.after(0, lambda: self._handle_error(f"Analysis failed: {e}"))
+                error_msg = str(e)
+                self.after(0, lambda msg=error_msg: self._handle_error(f"❌ Analysis failed: {msg}"))
         
         threading.Thread(target=analyze_thread, daemon=True).start()
+    
+    def _handle_age_restricted_error(self, error: 'AgeRestrictedError'):
+        """Handle age-restricted video errors with detailed user feedback."""
+        video_id = error.video_id or "unknown"
+        
+        # Log detailed error
+        self.log_panel.log("=" * 50, "error")
+        self.log_panel.log("AGE-RESTRICTED VIDEO DETECTED", "error")
+        self.log_panel.log("=" * 50, "error")
+        self.log_panel.log(f"Video ID: {video_id}", "error")
+        self.log_panel.log("", "info")
+        self.log_panel.log("This video requires age verification from YouTube.", "warning")
+        self.log_panel.log("YouTube requires you to be signed in to view this content.", "warning")
+        self.log_panel.log("", "info")
+        self.log_panel.log("TO DOWNLOAD AGE-RESTRICTED VIDEOS:", "info")
+        self.log_panel.log("1. Export cookies from your browser while logged into YouTube", "info")
+        self.log_panel.log("2. Use yt-dlp directly with: --cookies-from-browser BROWSER", "info")
+        self.log_panel.log("   Example: yt-dlp --cookies-from-browser chrome URL", "info")
+        self.log_panel.log("", "info")
+        self.log_panel.log("For detailed instructions, see:", "info")
+        self.log_panel.log("https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp", "info")
+        self.log_panel.log("=" * 50, "error")
+        
+        # Show dialog with helpful information
+        messagebox.showwarning(
+            "Age-Restricted Video",
+            f"This video is age-restricted and requires authentication.\n\n"
+            f"Video ID: {video_id}\n\n"
+            f"To download age-restricted videos, you need to:\n"
+            f"1. Export cookies from your browser while logged into YouTube\n"
+            f"2. Run yt-dlp from the command line with cookies\n\n"
+            f"Example command:\n"
+            f"yt-dlp --cookies-from-browser chrome \"{self.url_entry.get()}\"\n\n"
+            f"See the Activity Log for more details."
+        )
+    
+    def _handle_private_video_error(self, error: 'PrivateVideoError'):
+        """Handle private video errors."""
+        video_id = error.video_id or "unknown"
+        
+        self.log_panel.log("=" * 50, "error")
+        self.log_panel.log("PRIVATE VIDEO", "error")
+        self.log_panel.log("=" * 50, "error")
+        self.log_panel.log(f"Video ID: {video_id}", "error")
+        self.log_panel.log("This video is set to private by the owner.", "warning")
+        self.log_panel.log("Private videos can only be viewed by people the owner has shared them with.", "info")
+        self.log_panel.log("=" * 50, "error")
+        
+        messagebox.showwarning(
+            "Private Video",
+            f"This video is private.\n\n"
+            f"Video ID: {video_id}\n\n"
+            f"Private videos cannot be downloaded unless you have access "
+            f"and use authentication (cookies)."
+        )
+    
+    def _handle_video_unavailable_error(self, error: 'VideoUnavailableError'):
+        """Handle unavailable video errors (deleted, region-locked, etc.)."""
+        video_id = error.video_id or "unknown"
+        reason = error.reason
+        
+        self.log_panel.log("=" * 50, "error")
+        self.log_panel.log("VIDEO UNAVAILABLE", "error")
+        self.log_panel.log("=" * 50, "error")
+        self.log_panel.log(f"Video ID: {video_id}", "error")
+        self.log_panel.log(f"Reason: {reason[:200] if reason else 'Unknown'}", "warning")
+        self.log_panel.log("", "info")
+        self.log_panel.log("Possible causes:", "info")
+        self.log_panel.log("- Video has been deleted by the owner", "info")
+        self.log_panel.log("- Video is blocked in your country/region", "info")
+        self.log_panel.log("- Video has been removed due to copyright claim", "info")
+        self.log_panel.log("- Video has been removed for violating YouTube's policies", "info")
+        self.log_panel.log("=" * 50, "error")
+        
+        messagebox.showwarning(
+            "Video Unavailable",
+            f"This video is not available.\n\n"
+            f"Video ID: {video_id}\n\n"
+            f"The video may have been deleted, removed, or blocked in your region."
+        )
+    
+    def _handle_login_required_error(self, error: 'LoginRequiredError'):
+        """Handle login required errors (members-only content, etc.)."""
+        video_id = error.video_id or "unknown"
+        reason = error.reason
+        
+        self.log_panel.log("=" * 50, "error")
+        self.log_panel.log("LOGIN REQUIRED", "error")
+        self.log_panel.log("=" * 50, "error")
+        self.log_panel.log(f"Video ID: {video_id}", "error")
+        self.log_panel.log(f"Reason: {reason[:200] if reason else 'Unknown'}", "warning")
+        self.log_panel.log("", "info")
+        self.log_panel.log("This video requires authentication to access.", "info")
+        self.log_panel.log("It may be members-only content or require a YouTube subscription.", "info")
+        self.log_panel.log("", "info")
+        self.log_panel.log("To access, use yt-dlp with cookies:", "info")
+        self.log_panel.log("yt-dlp --cookies-from-browser chrome URL", "info")
+        self.log_panel.log("=" * 50, "error")
+        
+        messagebox.showwarning(
+            "Login Required",
+            f"This video requires authentication.\n\n"
+            f"Video ID: {video_id}\n\n"
+            f"This may be members-only content or require a subscription.\n\n"
+            f"To download, use yt-dlp from the command line with cookies:\n"
+            f"yt-dlp --cookies-from-browser chrome \"{self.url_entry.get()}\""
+        )
     
     def _display_video_info(self, info: VideoInfo):
         """Display video information in the modern UI."""
@@ -5771,13 +6042,13 @@ class YtDlpGUI(ctk.CTk):
         
         # Update labels
         self.title_label.configure(text=info.title)
-        self.channel_label.configure(text=f"👤 {info.channel or 'Unknown'}")
-        self.views_label.configure(text=f"👁 {info.views_str}")
+        self.channel_label.configure(text=f" {info.channel or 'Unknown'}")
+        self.views_label.configure(text=f" {info.views_str}")
         self.duration_badge.configure(text=info.duration_str)
         
         # Update chapters info
         if info.has_chapters:
-            self.chapters_label.configure(text=f"📑 {len(info.chapters)}")
+            self.chapters_label.configure(text=f" {len(info.chapters)}")
             self.chapters_button.pack(side="left")
             self.log_panel.log(f"Found {len(info.chapters)} chapters", "success")
         else:
@@ -5877,7 +6148,7 @@ class YtDlpGUI(ctk.CTk):
             codec_names = {"avc1": "H.264", "avc": "H.264", "h264": "H.264", "vp9": "VP9", "vp09": "VP9", "av01": "AV1"}
             codec_display = codec_names.get(codec_base, codec_base.upper() if codec_base else "")
             self.selected_format_label.configure(
-                text=f"Selected: {fmt.height}p • {codec_display} • {fmt.size_str}"
+                text=f"Selected: {fmt.height}p * {codec_display} * {fmt.size_str}"
             )
     
     def _select_format(self, fmt: VideoFormat):
@@ -6252,7 +6523,7 @@ class YtDlpGUI(ctk.CTk):
         """Called when all chapters are downloaded."""
         self.main_progress.set_progress(100, stage="idle")
         self.main_progress.stop_animation()
-        self.progress_label.configure(text=f"Completed: {count} chapters extracted")
+        self.progress_label.configure(text=f"✅ Completed: {count} chapters extracted")
         self.percentage_label.configure(text="100%")
         self.queue_status.configure(text="Idle")
         self.log_panel.log(f"All {count} chapters downloaded to: {folder}", "success")
@@ -6289,7 +6560,7 @@ class YtDlpGUI(ctk.CTk):
                 
                 # Determine stage for color coding
                 stage_name = "idle"
-                stage_text = "Ready to download"
+                stage_text = "⏳ Ready to download"
                 
                 if task.status == DownloadStatus.DOWNLOADING:
                     if task.progress < 40:
@@ -6318,7 +6589,7 @@ class YtDlpGUI(ctk.CTk):
                         
                 elif task.status == DownloadStatus.COMPLETED:
                     stage_name = "idle"
-                    stage_text = f"✅ Completed: {task.video_info.title[:50]}"
+                    stage_text = f"âœ… Completed: {task.video_info.title[:50]}"
                 
                 # Update enhanced progress bar
                 self.main_progress.set_progress(task.progress, stage=stage_name)
@@ -6342,7 +6613,7 @@ class YtDlpGUI(ctk.CTk):
                 self.percentage_label.configure(text=f"{task.progress:.0f}%")
                 
                 # Speed metric
-                speed_text = "—"
+                speed_text = "--"
                 if task.download_speed:
                     speed_text = task.download_speed
                 elif task.current_file_size and task.current_file_size > 0:
@@ -6359,13 +6630,13 @@ class YtDlpGUI(ctk.CTk):
                 if task.conversion_fps:
                     self.fps_label.configure(text=task.conversion_fps)
                 else:
-                    self.fps_label.configure(text="—")
+                    self.fps_label.configure(text="--")
                 
                 # ETA metric
                 if task.eta:
                     self.eta_label.configure(text=task.eta)
                 else:
-                    self.eta_label.configure(text="—")
+                    self.eta_label.configure(text="--")
                 
                 # Size metric (new for v18)
                 if task.file_size:
@@ -6377,16 +6648,16 @@ class YtDlpGUI(ctk.CTk):
                         size_str = f"{task.file_size / 1024:.0f} KB"
                     self.size_label.configure(text=size_str)
                 else:
-                    self.size_label.configure(text="—")
+                    self.size_label.configure(text="--")
                 
                 # Log stage changes
                 if task.status == DownloadStatus.CONVERTING and event == "task_updated":
                     self.log_panel.log("Converting to QuickTime-compatible format...", "info")
                 elif task.status == DownloadStatus.COMPLETED:
-                    self.log_panel.log(f"Completed: {task.video_info.title}", "success")
+                    self.log_panel.log(f"✅ Completed: {task.video_info.title}", "success")
                     self.main_progress.set_progress(100, stage="idle")
                 elif task.status == DownloadStatus.FAILED:
-                    self.log_panel.log(f"Failed: {task.error_message}", "error")
+                    self.log_panel.log(f"❌ Failed: {task.error_message}", "error")
                     self.progress_label.configure(text="Download failed")
                     self.queue_status.configure(text="Failed")
             
@@ -6469,7 +6740,7 @@ KEYBOARD SHORTCUTS
 CHAPTER DOWNLOADS
 When a video has chapters:
 1. Click "Analyze" to load video info
-2. A purple "Download Chapters" button appears
+2. A purple "📑 Download Chapters" button appears
 3. Select which chapters to download
 4. Choose "Audio Only" for audio extraction
 5. Each chapter becomes a separate file!
@@ -6709,7 +6980,7 @@ https://github.com/bytePatrol/YT-DLP-GUI-for-MacOS
         self.update_btn.configure(state="normal", text="Update")
         self.main_progress.set_progress(100 if success else 0, stage="idle")
         self.main_progress.stop_animation()
-        self.progress_label.configure(text="Ready to download")
+        self.progress_label.configure(text="⏳ Ready to download")
         self.queue_status.configure(text="Idle")
         self.percentage_label.configure(text="")
         
@@ -6769,7 +7040,7 @@ https://github.com/bytePatrol/YT-DLP-GUI-for-MacOS
                 else:
                     # Log quietly that we're up to date
                     self.after(0, lambda: self.log_panel.log(
-                        f"App is up to date (v{APP_VERSION})", "info"
+                        f"✅ App is up to date (v{APP_VERSION})", "info"
                     ))
             except Exception as e:
                 print(f"Startup app update check failed: {e}")
@@ -6781,7 +7052,7 @@ https://github.com/bytePatrol/YT-DLP-GUI-for-MacOS
         """Show the update notification dialog."""
         try:
             self.log_panel.log(
-                f"🎉 App update available: v{APP_VERSION} â†’ v{release_info['version']}", 
+                f"NEW App update available: v{APP_VERSION} -> v{release_info['version']}", 
                 "success"
             )
             UpdateNotificationDialog(self, release_info)

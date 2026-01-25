@@ -2,6 +2,52 @@
 
 All notable changes to YouTube 4K Downloader will be documented in this file.
 
+## [18.0.8] - 2026-01-24
+
+### Added
+- **Smart Error Detection** - App now intelligently detects and explains why certain videos can't be downloaded:
+  - **Age-restricted videos** - Clear instructions on using browser cookies for authentication
+  - **Private videos** - Explains the video is not publicly accessible
+  - **Unavailable videos** - Handles deleted, region-blocked, and copyright-claimed content
+  - **Login required** - Identifies members-only and subscription content
+- Custom exception classes (`AgeRestrictedError`, `PrivateVideoError`, `VideoUnavailableError`, `LoginRequiredError`) for specific YouTube error types
+- Detailed Activity Log output with step-by-step workaround instructions
+- User-friendly dialog boxes with specific guidance for each error type
+
+### Fixed
+- **Restored all emoji icons** - UI emojis now display correctly (🔥, ⚡, ⚙️, 📚, ❓, ✅, ❌, etc.)
+- **Fixed lambda closure bug** - Exception handlers in threaded analysis now properly capture error objects
+- **Removed duplicate exception classes** - Cleaned up duplicate `YtDlpError` class definitions
+- App no longer appears frozen when analyzing problematic videos - proper error feedback is shown immediately
+
+### Changed
+- All UI elements now use proper UTF-8 emoji encoding
+- Activity Log messages include status emojis for better visual feedback
+- Error dialogs provide specific instructions based on the type of error encountered
+- `_parse_ytdlp_error()` method intelligently categorizes yt-dlp failures
+
+## [18.0.7] - 2026-01-24
+
+### Added
+- **Age-restricted video detection** - App now properly detects and reports age-restricted videos instead of appearing frozen
+- Custom exception classes for specific YouTube errors:
+  - `AgeRestrictedError` - For videos requiring age verification
+  - `PrivateVideoError` - For private videos
+  - `VideoUnavailableError` - For deleted, removed, or region-blocked videos
+  - `LoginRequiredError` - For members-only or subscription content
+- Detailed error messages in the Activity Log explaining why a video cannot be downloaded
+- User-friendly dialog boxes with specific instructions for each error type
+- Instructions for using `--cookies-from-browser` workaround for age-restricted content
+
+### Changed
+- `fetch_full_info()` now parses yt-dlp errors to identify specific failure reasons
+- `_analyze()` method now handles each error type with appropriate user feedback
+- Error logging now includes visual separators and step-by-step instructions
+
+### Fixed
+- App no longer appears frozen when analyzing age-restricted videos
+- Users now receive clear feedback about why certain videos cannot be downloaded
+
 ## [18.0.6] - 2026-01-23
 
 ### Fixed
@@ -111,7 +157,7 @@ All notable changes to YouTube 4K Downloader will be documented in this file.
 
 ### Changed
 - **MAJOR PERFORMANCE FIX: Chapter downloads are now 10-50x faster!**
-- New strategy: Download once Ã¢â€ â€™ Encode once Ã¢â€ â€™ Split into chapters
+- New strategy: Download once → Encode once → Split into chapters
 - Old method downloaded and encoded the ENTIRE video for EACH chapter (extremely slow)
 - New method uses ffmpeg stream copy to split chapters (instant, no re-encoding)
 
@@ -149,7 +195,7 @@ All notable changes to YouTube 4K Downloader will be documented in this file.
 ### Added
 - **Chapter Downloads Restored** - Download videos split by chapters!
   - Automatically detects YouTube chapters from video metadata
-  - Shows chapter count in video info (e.g., "Ã°Å¸â€œÅ¡ 37 chapters")
+  - Shows chapter count in video info (e.g., "📑 37 chapters")
   - Purple "Download Chapters" button appears when chapters are available
   - Chapter selection dialog with Select All/Deselect All options
   - Support for both video and audio-only chapter extraction
