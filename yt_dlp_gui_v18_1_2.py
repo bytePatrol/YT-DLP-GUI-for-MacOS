@@ -6321,7 +6321,7 @@ class YtDlpGUI(ctk.CTk):
         
         self.progress_label = ctk.CTkLabel(
             stage_row,
-            text="â³ Ready to download",
+            text="⏳ Ready to download",
             font=ctk.CTkFont(size=11),
             text_color=COLORS["text_secondary"]
         )
@@ -7618,7 +7618,7 @@ class YtDlpGUI(ctk.CTk):
                 
                 # Determine stage for color coding
                 stage_name = "idle"
-                stage_text = "â³ Ready to download"
+                stage_text = "⏳ Ready to download"
                 
                 if task.status == DownloadStatus.DOWNLOADING:
                     if task.progress < 40:
@@ -8057,7 +8057,7 @@ https://github.com/bytePatrol/YT-DLP-GUI-for-MacOS
         self.update_btn.configure(state="normal", text="Update")
         self.main_progress.set_progress(100 if success else 0, stage="idle")
         self.main_progress.stop_animation()
-        self.progress_label.configure(text="â³ Ready to download")
+        self.progress_label.configure(text="⏳ Ready to download")
         self.queue_status.configure(text="Idle")
         self.percentage_label.configure(text="")
         
