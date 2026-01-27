@@ -7,12 +7,14 @@
 #   - Updating yt-dlp to the latest version
 #   - Building the macOS app with py2app
 #   - Bundling ffmpeg and deno for a self-contained app
+#   - Creating DMG installer with background and icons
 #   - Installing to Applications folder
 #
 # Usage:
 #   ./build_app.sh                      # Build with current .py file
 #   ./build_app.sh yt_dlp_gui_v18.py    # Build with a new version
 #   ./build_app.sh --update-ytdlp       # Just update yt-dlp, no build
+#   ./build_app.sh --dmg                # Just create DMG (skip build)
 #   ./build_app.sh --help               # Show help
 #
 # Author: bytePatrol
@@ -25,7 +27,18 @@
 # Auto-detect project directory (where this script is located)
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 VENV_DIR="$PROJECT_DIR/venv"
-MAIN_SCRIPT="yt_dlp_gui_v18_0_7.py"  # Default script name
+# Auto-detect latest yt_dlp_gui script or use default
+_detect_main_script() {
+    # Find the highest version yt_dlp_gui_v*.py file
+    local latest=$(ls -1 "$PROJECT_DIR"/yt_dlp_gui_v*.py 2>/dev/null | sort -V | tail -1)
+    if [ -n "$latest" ]; then
+        echo "$(basename "$latest")"
+    else
+        echo "yt_dlp_gui_v18_0_8.py"
+    fi
+}
+
+MAIN_SCRIPT="$(_detect_main_script)"  # Auto-detect latest script
 APP_NAME="YouTube 4K Downloader"
 BUNDLE_ID="com.bytepatrol.youtube4kdownloader"
 INSTALL_DIR="/Applications"
@@ -78,12 +91,14 @@ show_help() {
     echo "  ./build_app.sh <file.py>            Build with a new Python file"
     echo "  ./build_app.sh --update-ytdlp       Just update yt-dlp (no build)"
     echo "  ./build_app.sh --check-updates      Check for yt-dlp updates"
+    echo "  ./build_app.sh --dmg                Just create DMG (skip build)"
     echo "  ./build_app.sh --clean              Clean build artifacts"
     echo "  ./build_app.sh --help               Show this help"
     echo ""
     echo "Examples:"
     echo "  ./build_app.sh yt_dlp_gui_v18.py    Build new version"
     echo "  ./build_app.sh --update-ytdlp       Update yt-dlp before building"
+    echo "  ./build_app.sh --dmg                Create DMG from existing build"
     echo ""
 }
 
@@ -1091,6 +1106,334 @@ install_app() {
 }
 
 # ============================================================================
+# CREATE DMG INSTALLER
+# ============================================================================
+
+create_dmg() {
+    local SOURCE_APP="$1"
+    local VERSION="$2"
+    
+    print_header "Creating DMG Installer"
+    
+    if [ ! -d "$SOURCE_APP" ]; then
+        print_error "App not found: $SOURCE_APP"
+        return 1
+    fi
+    
+    local DMG_NAME="${APP_NAME// /_}_v${VERSION}.dmg"
+    local VOLUME_NAME="$APP_NAME"
+    local ICON_PATH="$PROJECT_DIR/assets/icon.icns"
+    local BG_IMAGE="$PROJECT_DIR/assets/dmg_background.png"
+    
+    print_info "Creating: $DMG_NAME"
+    
+    # Install fileicon if needed
+    if ! command -v fileicon &> /dev/null; then
+        print_info "Installing fileicon..."
+        brew install fileicon --quiet
+    fi
+    
+    # Get Applications folder icon path
+    local APPS_ICON="/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/ApplicationsFolderIcon.icns"
+    if [ ! -f "$APPS_ICON" ]; then
+        print_warning "System Applications icon not found, trying alternatives..."
+        for alt in \
+            "/System/Library/CoreServices/Finder.app/Contents/Resources/ApplicationsFolderIcon.icns" \
+            "/System/Library/CoreServices/CoreTypes.bundle/Contents/Resources/GenericFolderIcon.icns"
+        do
+            if [ -f "$alt" ]; then
+                APPS_ICON="$alt"
+                print_info "Found: $APPS_ICON"
+                break
+            fi
+        done
+    fi
+    
+    # Cleanup previous attempts
+    print_info "Cleaning up previous DMG files..."
+    rm -f "$PROJECT_DIR/$DMG_NAME" "$PROJECT_DIR/temp_rw.dmg"
+    rm -rf "$PROJECT_DIR/dmg_staging"
+    
+    # Unmount any existing volume with same name
+    hdiutil detach "/Volumes/$VOLUME_NAME" 2>/dev/null || true
+    
+    # Create staging directory
+    print_info "Creating staging directory..."
+    mkdir -p "$PROJECT_DIR/dmg_staging"
+    
+    # Copy app
+    print_info "Copying app to staging..."
+    cp -R "$SOURCE_APP" "$PROJECT_DIR/dmg_staging/$APP_NAME.app"
+    
+    # Create README
+    cat > "$PROJECT_DIR/dmg_staging/README.txt" << 'READMEEOF'
+Installation: Drag app to Applications folder.
+
+First Launch (macOS Security):
+  System Settings → Privacy & Security → Open Anyway
+  
+Or run in Terminal:
+  xattr -cr /Applications/YouTube\ 4K\ Downloader.app
+
+github.com/bytePatrol/YT-DLP-GUI-for-MacOS
+READMEEOF
+    
+    # Calculate size
+    local APP_SIZE=$(du -sm "$PROJECT_DIR/dmg_staging" | cut -f1)
+    local DMG_SIZE=$((APP_SIZE + 60))
+    print_info "Staging size: ${APP_SIZE}MB, DMG size: ${DMG_SIZE}MB"
+    
+    # Create read-write DMG
+    print_info "Creating read-write DMG..."
+    hdiutil create -size "${DMG_SIZE}m" -fs HFS+ -volname "$VOLUME_NAME" -type UDIF -layout SPUD "$PROJECT_DIR/temp_rw.dmg"
+    
+    # Mount it read-write
+    print_info "Mounting read-write..."
+    local MOUNT_OUTPUT=$(hdiutil attach -readwrite -noverify -noautoopen "$PROJECT_DIR/temp_rw.dmg")
+    local MOUNT_DIR=$(echo "$MOUNT_OUTPUT" | grep "/Volumes/" | sed 's/.*\(\/Volumes\/.*\)/\1/' | head -1)
+    print_info "Mounted at: $MOUNT_DIR"
+    
+    if [ -z "$MOUNT_DIR" ] || [ ! -d "$MOUNT_DIR" ]; then
+        print_error "Failed to mount DMG"
+        return 1
+    fi
+    
+    sleep 2
+    
+    # Copy contents to mounted DMG
+    print_info "Copying contents to DMG..."
+    cp -R "$PROJECT_DIR/dmg_staging/$APP_NAME.app" "$MOUNT_DIR/"
+    cp "$PROJECT_DIR/dmg_staging/README.txt" "$MOUNT_DIR/"
+    
+    # Create Applications symlink (CRITICAL: must be actual symlink, not folder)
+    print_info "Creating Applications symlink..."
+    
+    # Remove any existing Applications item first
+    rm -rf "$MOUNT_DIR/Applications" 2>/dev/null || true
+    
+    # Create the symlink
+    ln -s /Applications "$MOUNT_DIR/Applications"
+    
+    # Verify it's actually a symlink
+    if [ -L "$MOUNT_DIR/Applications" ]; then
+        print_success "Applications symlink created"
+        print_info "  -> $(readlink "$MOUNT_DIR/Applications")"
+    else
+        print_error "Failed to create symlink - it's a $(file "$MOUNT_DIR/Applications")"
+        # Try again with explicit removal
+        rm -rf "$MOUNT_DIR/Applications"
+        ln -s /Applications "$MOUNT_DIR/Applications"
+    fi
+    
+    # Set icon on symlink while DMG is read-write
+    print_info "Setting Applications folder icon..."
+    if [ -f "$APPS_ICON" ]; then
+        if fileicon set "$MOUNT_DIR/Applications" "$APPS_ICON" 2>/dev/null; then
+            print_success "Icon set with fileicon"
+        else
+            print_warning "fileicon failed, trying SetFile..."
+            if command -v SetFile &> /dev/null; then
+                cp "$APPS_ICON" "$MOUNT_DIR/Applications/Icon"$'\r' 2>/dev/null || true
+                SetFile -a C "$MOUNT_DIR/Applications" 2>/dev/null || true
+            fi
+        fi
+    fi
+    
+    # Create .background folder and copy background image
+    mkdir -p "$MOUNT_DIR/.background"
+    if [ -f "$BG_IMAGE" ]; then
+        cp "$BG_IMAGE" "$MOUNT_DIR/.background/background.png"
+        print_success "Background image copied"
+    else
+        print_warning "No background image found at $BG_IMAGE"
+        print_info "Creating default background..."
+        _create_default_dmg_background "$MOUNT_DIR/.background/background.png"
+    fi
+    
+    # Set volume icon
+    if [ -f "$ICON_PATH" ]; then
+        print_info "Setting volume icon..."
+        cp "$ICON_PATH" "$MOUNT_DIR/.VolumeIcon.icns"
+        SetFile -a C "$MOUNT_DIR"
+    fi
+    
+    # Configure Finder window appearance
+    print_info "Configuring Finder window..."
+    osascript << ENDSCRIPT
+tell application "Finder"
+    tell disk "$VOLUME_NAME"
+        open
+        delay 2
+        
+        -- Window settings (600x400 - compact to avoid cutoff issues)
+        set current view of container window to icon view
+        set toolbar visible of container window to false
+        set statusbar visible of container window to false
+        set the bounds of container window to {300, 100, 900, 500}
+        
+        -- Icon view settings
+        set viewOptions to the icon view options of container window
+        set arrangement of viewOptions to not arranged
+        set icon size of viewOptions to 100
+        
+        -- Set background image
+        try
+            set background picture of viewOptions to file ".background:background.png"
+        end try
+        
+        -- Position icons (compact layout)
+        set position of item "$APP_NAME.app" of container window to {140, 140}
+        set position of item "Applications" of container window to {460, 140}
+        set position of item "README.txt" of container window to {300, 260}
+        
+        -- Refresh to ensure settings take effect
+        close
+        delay 1
+        open
+        delay 2
+        close
+    end tell
+end tell
+ENDSCRIPT
+    
+    print_success "Finder window configured"
+    
+    # Sync and unmount
+    print_info "Syncing and unmounting..."
+    sync
+    sleep 2
+    hdiutil detach "$MOUNT_DIR" -force
+    
+    # Convert to compressed read-only DMG
+    print_info "Converting to compressed DMG..."
+    hdiutil convert "$PROJECT_DIR/temp_rw.dmg" -format UDZO -imagekey zlib-level=9 -o "$PROJECT_DIR/$DMG_NAME"
+    
+    # Cleanup temp DMG
+    rm -f "$PROJECT_DIR/temp_rw.dmg"
+    
+    # Set icon on the DMG file itself (AFTER conversion)
+    if [ -f "$ICON_PATH" ]; then
+        print_info "Setting DMG file icon..."
+        fileicon set "$PROJECT_DIR/$DMG_NAME" "$ICON_PATH"
+    fi
+    
+    # Cleanup staging
+    rm -rf "$PROJECT_DIR/dmg_staging"
+    
+    # Final output
+    local DMG_SIZE_FINAL=$(du -h "$PROJECT_DIR/$DMG_NAME" | cut -f1)
+    print_success "DMG created: $DMG_NAME ($DMG_SIZE_FINAL)"
+    
+    # Store path for later use
+    BUILT_DMG_PATH="$PROJECT_DIR/$DMG_NAME"
+}
+
+_create_default_dmg_background() {
+    # Create a background image for the DMG
+    # Try PIL first, fall back to sips/ImageMagick, or create minimal PNG
+    local OUTPUT_PATH="$1"
+    
+    # Method 1: Try PIL (best quality)
+    if python3 -c "from PIL import Image" 2>/dev/null; then
+        print_info "Creating background with PIL..."
+        python3 << PYEOF
+from PIL import Image, ImageDraw, ImageFont
+
+width, height = 600, 400
+img = Image.new('RGB', (width, height), color='#4a4a4a')
+draw = ImageDraw.Draw(img)
+
+# Arrow at y=130 (between icons)
+arrow_y = 130
+draw.line([(230, arrow_y), (350, arrow_y)], fill='#2a2a2a', width=5)
+draw.polygon([(350, arrow_y - 14), (370, arrow_y), (350, arrow_y + 14)], fill='#2a2a2a')
+
+# Text below arrow
+try:
+    font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 16)
+except:
+    font = ImageFont.load_default()
+
+text = "Drag to Install"
+bbox = draw.textbbox((0, 0), text, font=font)
+text_x = (width - (bbox[2] - bbox[0])) // 2
+draw.text((text_x, arrow_y + 35), text, fill='#1a1a1a', font=font)
+
+img.save("$OUTPUT_PATH", 'PNG')
+print("Created background with PIL")
+PYEOF
+        if [ -f "$OUTPUT_PATH" ]; then
+            print_success "Background created with PIL"
+            return 0
+        fi
+    fi
+    
+    # Method 2: Try ImageMagick (if installed)
+    if command -v convert &> /dev/null; then
+        print_info "Creating background with ImageMagick..."
+        convert -size 600x400 xc:'#4a4a4a' \
+            -fill '#2a2a2a' -draw "line 230,130 350,130" \
+            -fill '#2a2a2a' -draw "polygon 350,116 370,130 350,144" \
+            -font Helvetica -pointsize 16 -fill '#1a1a1a' \
+            -gravity center -annotate +0+35 "Drag to Install" \
+            "$OUTPUT_PATH" 2>/dev/null
+        if [ -f "$OUTPUT_PATH" ]; then
+            print_success "Background created with ImageMagick"
+            return 0
+        fi
+    fi
+    
+    # Method 3: Create a minimal solid color PNG using base64
+    # This is a 600x400 gray (#4a4a4a) PNG encoded in base64
+    print_info "Creating minimal background (no PIL/ImageMagick)..."
+    python3 << PYEOF
+import zlib
+import struct
+
+def create_png(width, height, r, g, b, filename):
+    def png_chunk(chunk_type, data):
+        chunk_len = struct.pack('>I', len(data))
+        chunk_crc = struct.pack('>I', zlib.crc32(chunk_type + data) & 0xffffffff)
+        return chunk_len + chunk_type + data + chunk_crc
+    
+    # PNG signature
+    signature = b'\x89PNG\r\n\x1a\n'
+    
+    # IHDR chunk
+    ihdr_data = struct.pack('>IIBBBBB', width, height, 8, 2, 0, 0, 0)
+    ihdr = png_chunk(b'IHDR', ihdr_data)
+    
+    # IDAT chunk (image data)
+    raw_data = b''
+    for y in range(height):
+        raw_data += b'\x00'  # filter byte
+        for x in range(width):
+            raw_data += bytes([r, g, b])
+    
+    compressed = zlib.compress(raw_data, 9)
+    idat = png_chunk(b'IDAT', compressed)
+    
+    # IEND chunk
+    iend = png_chunk(b'IEND', b'')
+    
+    with open(filename, 'wb') as f:
+        f.write(signature + ihdr + idat + iend)
+
+# Create 600x400 gray background (#4a4a4a = 74, 74, 74)
+create_png(600, 400, 74, 74, 74, "$OUTPUT_PATH")
+print("Created minimal gray background")
+PYEOF
+    
+    if [ -f "$OUTPUT_PATH" ]; then
+        print_success "Minimal background created"
+        return 0
+    fi
+    
+    print_warning "Could not create background image"
+    return 1
+}
+
+# ============================================================================
 # MAIN
 # ============================================================================
 
@@ -1099,6 +1442,10 @@ main() {
     echo -e "${CYAN}+------------------------------------------+${NC}"
     echo -e "${CYAN}|   YouTube 4K Downloader Build System     |${NC}"
     echo -e "${CYAN}+------------------------------------------+${NC}"
+    
+    # Global variable for version (extracted during build)
+    VERSION=""
+    BUILT_DMG_PATH=""
     
     # Parse arguments
     case "${1:-}" in
@@ -1116,6 +1463,43 @@ main() {
             ;;
         --clean)
             clean_build
+            exit 0
+            ;;
+        --dmg)
+            # Just create DMG from existing build
+            print_info "Creating DMG from existing build..."
+            
+            # Find the app in dist/
+            BUILT_APP_PATH=$(find "$PROJECT_DIR/dist" -maxdepth 1 -name "*.app" -type d 2>/dev/null | head -1)
+            
+            if [ -z "$BUILT_APP_PATH" ]; then
+                print_error "No .app found in dist/. Run a build first."
+                exit 1
+            fi
+            
+            # Extract version from the Python file
+            VERSION=$(grep -E "^APP_VERSION\s*=" "$PROJECT_DIR/$MAIN_SCRIPT" 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+            if [ -z "$VERSION" ]; then
+                VERSION="1.0.0"
+            fi
+            
+            print_info "Found app: $BUILT_APP_PATH"
+            print_info "Version: $VERSION"
+            
+            create_dmg "$BUILT_APP_PATH" "$VERSION"
+            
+            print_header "DMG Creation Complete!"
+            echo "  DMG: $BUILT_DMG_PATH"
+            echo ""
+            
+            # Ask to mount and verify
+            read -p "Mount DMG to verify? (y/n) " -n 1 -r
+            echo ""
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                hdiutil attach "$BUILT_DMG_PATH"
+                open "/Volumes/$APP_NAME"
+            fi
+            
             exit 0
             ;;
         *.py)
@@ -1163,6 +1547,20 @@ main() {
     cd "$PROJECT_DIR"
     build_app "$MAIN_SCRIPT"
     
+    # Extract version for DMG naming
+    VERSION=$(grep -E "^APP_VERSION\s*=" "$PROJECT_DIR/$MAIN_SCRIPT" 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    if [ -z "$VERSION" ]; then
+        VERSION="1.0.0"
+    fi
+    
+    # Ask to create DMG
+    echo ""
+    read -p "Create DMG installer? (y/n) " -n 1 -r
+    echo ""
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        create_dmg "$BUILT_APP_PATH" "$VERSION"
+    fi
+    
     # Ask to install
     echo ""
     read -p "Install to $INSTALL_DIR? (y/n) " -n 1 -r
@@ -1177,6 +1575,10 @@ main() {
     echo "Your app is ready:"
     echo ""
     echo "  Built app:  $BUILT_APP_PATH"
+    
+    if [ -n "$BUILT_DMG_PATH" ] && [ -f "$BUILT_DMG_PATH" ]; then
+        echo "  DMG:        $BUILT_DMG_PATH"
+    fi
     
     APP_BASENAME=$(basename "$BUILT_APP_PATH")
     if [ -d "$INSTALL_DIR/$APP_BASENAME" ]; then

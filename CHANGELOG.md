@@ -2,29 +2,112 @@
 
 All notable changes to YouTube 4K Downloader will be documented in this file.
 
+## [18.1.2] - 2026-01-26
+
+### Added
+- **Automatic Retry for Playlist Downloads** - Failed videos are automatically retried once before marking as failed
+- **Detailed Error Reporting for Playlists** - Activity log now shows specific reasons for failed downloads:
+  - Age-restricted videos
+  - Private videos
+  - Region-locked content
+  - Copyright-removed videos
+  - Videos requiring authentication
+- **Temp File Cleanup Before Retry** - Leftover temp files are cleaned up before each retry attempt
+
+### Fixed
+- **Help Button Encoding** - Fixed broken ❓ emoji in the Help button
+- **Help Window Toggle** - Clicking Help twice now closes the window instead of opening duplicates
+- **Updated Help Content** - Help now reflects v18.1 features including playlist support, YouTube Mix handling, and troubleshooting tips
+
+### Changed
+- Playlist download loop now uses new `_download_single_playlist_item_with_error()` that returns error details
+- Added `_extract_ytdlp_error()` helper to parse meaningful error messages from yt-dlp stderr
+- Added `_cleanup_temp_files()` helper to remove partial downloads before retry
+- Help window made taller (700px) to accommodate more content
+
+## [18.1.1] - 2026-01-26
+
+### Added
+- **YouTube Mix/Radio Playlist Detection** - App now properly detects auto-generated playlists that cannot be enumerated
+  - Playlists starting with `RD` prefix (YouTube Mix/Radio) are detected early
+  - Clear error message explaining why Mix playlists can't be downloaded as playlists
+  - Automatic fallback to single-video mode when a Mix URL contains a video ID
+- **New Exception Class** - `UnviewablePlaylistError` for handling special playlist types
+
+### Fixed
+- **"This playlist type is unviewable" error** - No longer shows cryptic yt-dlp error message
+- URLs like `watch?v=xxx&list=RDxxx` now automatically switch to single-video mode
+- Improved error handling for other unviewable/private playlists
+
+### Changed
+- Playlist mode toggle automatically disabled when falling back from Mix playlists
+- Activity log shows detailed explanation of why Mix playlists aren't supported
+- URL entry is updated to clean single-video URL when falling back
+
+## [18.1.0] - 2026-01-26
+
+### Added
+- **Full Playlist Download Support** - Download entire YouTube playlists with video selection
+  - Smart URL detection: Explicit playlist URLs auto-enable playlist mode
+  - Toggle switch appears for URLs with both video and playlist context (e.g., `watch?v=xxx&list=yyy`)
+  - Playlist selection dialog shows all videos with checkboxes, durations, and channels
+  - Select All / Deselect All buttons for quick selection
+  - Quality dropdown (Best/4K/1440p/1080p/720p/480p) for batch downloads
+  - Audio-only mode for extracting audio from all selected videos
+  - Downloads saved to organized folder: `PlaylistTitle/01 - VideoTitle.mp4`
+  - Progress tracking shows current video and overall playlist progress
+- **New Data Structures**
+  - `ParsedYouTubeURL` - Smart URL parsing to extract video ID, playlist ID, and URL type
+  - `PlaylistItem` - Represents individual videos in a playlist with metadata
+  - `PlaylistSelectionWindow` - Modern dialog for selecting playlist videos to download
+- **Playlist Settings Integration** - Existing settings now functional:
+  - "Download all videos by default" - Pre-selects all videos in playlist dialog
+  - "Reverse order (oldest first)" - Reverses video order in selection
+  - "Max videos" - Limits number of videos shown/downloaded
+
+### Changed
+- URL input now shows playlist toggle when URL contains playlist context
+- Analysis detects explicit playlist URLs vs video-in-playlist URLs
+- `clean_youtube_url()` uses new `ParsedYouTubeURL` for smarter URL handling
+
+### Technical Details
+- `fetch_playlist_info()` uses `--flat-playlist` for fast metadata fetch (60s timeout)
+- Batch download processes videos sequentially with per-video error handling
+- Failed videos don't stop the batch - summary shows success/failure counts
+- Timeout protection: 300s for downloads, 600s for ffmpeg merge operations
+
+## [18.0.9] - 2026-01-26
+
+### Fixed
+- **Fixed timeout when analyzing URLs with playlist parameters** - URLs like `watch?v=xxx&list=yyy&index=5` no longer cause "yt-dlp took too long to respond" errors
+- Playlist/index parameters are now stripped from URLs when analyzing single videos
+- Added `--no-playlist` flag to yt-dlp commands to prevent playlist metadata fetching
+- Added `clean_youtube_url()` helper function to sanitize URLs before processing
+
+### Changed
+- Replaced `--flat-playlist` with `--no-playlist` for faster single-video analysis
+- URLs with playlist parameters now work the same as clean video URLs
+
 ## [18.0.8] - 2026-01-24
 
 ### Added
-- **Smart Error Detection** - App now intelligently detects and explains why certain videos can't be downloaded:
-  - **Age-restricted videos** - Clear instructions on using browser cookies for authentication
-  - **Private videos** - Explains the video is not publicly accessible
-  - **Unavailable videos** - Handles deleted, region-blocked, and copyright-claimed content
-  - **Login required** - Identifies members-only and subscription content
-- Custom exception classes (`AgeRestrictedError`, `PrivateVideoError`, `VideoUnavailableError`, `LoginRequiredError`) for specific YouTube error types
-- Detailed Activity Log output with step-by-step workaround instructions
-- User-friendly dialog boxes with specific guidance for each error type
+- **Age-restricted video detection** - App now properly detects and reports age-restricted videos with helpful instructions
+- **Private video detection** - Clear error message when attempting to download private videos
+- **Video unavailable detection** - Handles deleted, region-blocked, and copyright-claimed videos
+- **Login required detection** - Identifies members-only and subscription content
+- Custom exception classes for specific YouTube error types with user-friendly messages
+- Detailed Activity Log output with step-by-step instructions for workarounds
 
 ### Fixed
-- **Restored all emoji icons** - UI emojis now display correctly (🔥, ⚡, ⚙️, 📚, ❓, ✅, ❌, etc.)
+- **Restored all emoji icons** - UI emojis now display correctly (🔥, ⚡, ⚙️, 📚, â“, 🔥, âœ…, âŒ, etc.)
 - **Fixed lambda closure bug** - Exception handlers in threaded analysis now properly capture error objects
-- **Removed duplicate exception classes** - Cleaned up duplicate `YtDlpError` class definitions
-- App no longer appears frozen when analyzing problematic videos - proper error feedback is shown immediately
+- **Removed duplicate exception classes** - Cleaned up duplicate YtDlpError class definitions that were causing issues
+- App no longer appears frozen when analyzing problematic videos - proper error feedback is shown
 
 ### Changed
 - All UI elements now use proper UTF-8 emoji encoding
 - Activity Log messages include status emojis for better visual feedback
 - Error dialogs provide specific instructions based on the type of error encountered
-- `_parse_ytdlp_error()` method intelligently categorizes yt-dlp failures
 
 ## [18.0.7] - 2026-01-24
 
@@ -157,7 +240,7 @@ All notable changes to YouTube 4K Downloader will be documented in this file.
 
 ### Changed
 - **MAJOR PERFORMANCE FIX: Chapter downloads are now 10-50x faster!**
-- New strategy: Download once → Encode once → Split into chapters
+- New strategy: Download once  →  Encode once  →  Split into chapters
 - Old method downloaded and encoded the ENTIRE video for EACH chapter (extremely slow)
 - New method uses ffmpeg stream copy to split chapters (instant, no re-encoding)
 
@@ -195,7 +278,7 @@ All notable changes to YouTube 4K Downloader will be documented in this file.
 ### Added
 - **Chapter Downloads Restored** - Download videos split by chapters!
   - Automatically detects YouTube chapters from video metadata
-  - Shows chapter count in video info (e.g., "📑 37 chapters")
+  - Shows chapter count in video info (e.g., "f09f9391 37 chapters")
   - Purple "Download Chapters" button appears when chapters are available
   - Chapter selection dialog with Select All/Deselect All options
   - Support for both video and audio-only chapter extraction

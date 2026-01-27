@@ -4,13 +4,13 @@ YouTube 4K Downloader v18 - 2026 Modern Design Edition
 
 Complete UI/UX overhaul with contemporary design standards:
 -  Glass morphism design with backdrop blur effects
-- ðŸ’« Purple-blue gradient accents throughout
+- 💫 Purple-blue gradient accents throughout
 -  Responsive flexbox layout (no cut-off sections)
 -  Collapsible activity log panel (max 200px, scrollable)
-- ± Modern card-based interface with generous spacing
-- âœ¨ Smooth animations and micro-interactions
-- ˜ Larger touch targets (56-60px buttons)
-- ðŸ’Ž Softer corners (16-20px border radius)
+- Â± Modern card-based interface with generous spacing
+- ✨ Smooth animations and micro-interactions
+- Ëœ Larger touch targets (56-60px buttons)
+- 💎 Softer corners (16-20px border radius)
 
 v18.0.5 Changes - DOWNLOAD BUTTON & SELECTION FIX:
 - FIXED: Download button now ALWAYS visible without needing fullscreen
@@ -328,7 +328,7 @@ except ImportError:
 # ============================================================================
 
 APP_NAME = "YouTube 4K Downloader"
-APP_VERSION = "18.0.8"
+APP_VERSION = "18.1.2"
 
 # Configuration paths - using proper config directory
 CONFIG_DIR = Path.home() / ".config" / "yt-dlp-gui"
@@ -892,7 +892,7 @@ class UpdateNotificationDialog(ctk.CTkToplevel):
         # Download button (primary, prominent)
         download_btn = ModernButton(
             button_frame,
-            text="⬇️ Download Update",
+            text="â¬‡ï¸ Download Update",
             style="primary",
             width=220,
             height=48,
@@ -1356,6 +1356,33 @@ class LoginRequiredError(YtDlpError):
         super().__init__(self.reason)
 
 
+class UnviewablePlaylistError(YtDlpError):
+    """Raised when a playlist cannot be enumerated (e.g., YouTube Mix/Radio playlists)."""
+    
+    def __init__(self, playlist_id: str = None, reason: str = None, video_id: str = None):
+        self.playlist_id = playlist_id
+        self.video_id = video_id  # The seed video if available
+        self.reason = reason or "This playlist type cannot be viewed."
+        
+        # Determine playlist type for better messaging
+        if playlist_id and playlist_id.startswith('RD'):
+            self.playlist_type = "YouTube Mix"
+            self.message = (
+                f"This is a YouTube Mix (auto-generated playlist) which cannot be downloaded as a playlist.\n\n"
+                f"YouTube Mixes are dynamically generated based on your viewing history and the seed video - "
+                f"they don't have a fixed list of videos that can be enumerated.\n\n"
+                f"You can still download the individual video from this URL."
+            )
+        else:
+            self.playlist_type = "Special Playlist"
+            self.message = (
+                f"This playlist type ({reason}) cannot be accessed.\n\n"
+                f"It may be private, deleted, or a special YouTube-generated playlist."
+            )
+        
+        super().__init__(self.message)
+
+
 class DownloadStatus(Enum):
     QUEUED = auto()
     ANALYZING = auto()
@@ -1453,6 +1480,28 @@ class Chapter:
 
 
 @dataclass
+class PlaylistItem:
+    """Represents a single video in a playlist."""
+    id: str
+    title: str
+    url: str
+    index: int  # Position in playlist (1-based)
+    duration: Optional[int] = None
+    channel: Optional[str] = None
+    thumbnail: Optional[str] = None
+    
+    @property
+    def duration_str(self) -> str:
+        if not self.duration:
+            return "Unknown"
+        hours, remainder = divmod(self.duration, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        if hours:
+            return f"{hours}:{minutes:02d}:{seconds:02d}"
+        return f"{minutes}:{seconds:02d}"
+
+
+@dataclass
 class VideoInfo:
     """Represents video metadata."""
     id: str
@@ -1468,6 +1517,8 @@ class VideoInfo:
     chapters: List[Chapter] = field(default_factory=list)  # v17.8.0: Chapter support
     is_playlist: bool = False
     playlist_count: Optional[int] = None
+    playlist_title: Optional[str] = None  # v18.1.0: Playlist title
+    playlist_items: List[PlaylistItem] = field(default_factory=list)  # v18.1.0: Playlist videos
     
     @property
     def duration_str(self) -> str:
@@ -1495,6 +1546,28 @@ class VideoInfo:
     def has_chapters(self) -> bool:
         """Check if video has chapters."""
         return len(self.chapters) > 0
+    
+    @property
+    def has_playlist_items(self) -> bool:
+        """Check if this contains playlist items."""
+        return len(self.playlist_items) > 0
+    
+    @property
+    def total_playlist_duration(self) -> int:
+        """Get total duration of all playlist items in seconds."""
+        return sum(item.duration or 0 for item in self.playlist_items)
+    
+    @property
+    def total_playlist_duration_str(self) -> str:
+        """Get formatted total playlist duration."""
+        total = self.total_playlist_duration
+        if total == 0:
+            return "Unknown"
+        hours, remainder = divmod(total, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        if hours:
+            return f"{hours}h {minutes}m"
+        return f"{minutes}m {seconds}s"
 
 
 @dataclass
@@ -1633,6 +1706,121 @@ class SponsorBlockAPI:
 # ============================================================================
 # UTILITY FUNCTIONS
 # ============================================================================
+
+@dataclass
+class ParsedYouTubeURL:
+    """
+    Parsed YouTube URL with extracted components.
+    
+    Attributes:
+        original_url: The original URL as provided
+        video_id: The video ID (11 characters) if present
+        playlist_id: The playlist ID if present
+        is_playlist_url: True if this is explicitly a playlist URL (youtube.com/playlist)
+        has_video_and_playlist: True if URL has both video ID and playlist context
+    """
+    original_url: str
+    video_id: Optional[str] = None
+    playlist_id: Optional[str] = None
+    is_playlist_url: bool = False
+    has_video_and_playlist: bool = False
+    
+    @property
+    def single_video_url(self) -> str:
+        """Get URL for just the single video (no playlist context)."""
+        if self.video_id:
+            return f"https://www.youtube.com/watch?v={self.video_id}"
+        return self.original_url
+    
+    @property
+    def playlist_url(self) -> str:
+        """Get URL for the playlist."""
+        if self.playlist_id:
+            return f"https://www.youtube.com/playlist?list={self.playlist_id}"
+        return self.original_url
+    
+    @property
+    def is_valid(self) -> bool:
+        """Check if this is a valid YouTube URL with content to download."""
+        return self.video_id is not None or self.playlist_id is not None
+
+
+def parse_youtube_url(url: str) -> ParsedYouTubeURL:
+    """
+    Parse a YouTube URL and extract video ID, playlist ID, and URL type.
+    
+    Args:
+        url: Any YouTube URL
+        
+    Returns:
+        ParsedYouTubeURL with extracted components
+        
+    Examples:
+        "watch?v=abc&list=PLxyz" -> video_id="abc", playlist_id="PLxyz", has_video_and_playlist=True
+        "playlist?list=PLxyz" -> playlist_id="PLxyz", is_playlist_url=True
+        "watch?v=abc" -> video_id="abc"
+        "youtu.be/abc" -> video_id="abc"
+    """
+    result = ParsedYouTubeURL(original_url=url)
+    
+    # Extract video ID
+    # Pattern 1: youtube.com/watch?v=VIDEO_ID
+    video_match = re.search(r'[?&]v=([a-zA-Z0-9_-]{11})', url)
+    if video_match:
+        result.video_id = video_match.group(1)
+    else:
+        # Pattern 2: youtu.be/VIDEO_ID
+        video_match = re.search(r'youtu\.be/([a-zA-Z0-9_-]{11})', url)
+        if video_match:
+            result.video_id = video_match.group(1)
+    
+    # Extract playlist ID
+    playlist_match = re.search(r'[?&]list=([a-zA-Z0-9_-]+)', url)
+    if playlist_match:
+        result.playlist_id = playlist_match.group(1)
+    
+    # Determine URL type
+    result.is_playlist_url = "youtube.com/playlist" in url
+    result.has_video_and_playlist = (result.video_id is not None and result.playlist_id is not None)
+    
+    return result
+
+
+def clean_youtube_url(url: str) -> str:
+    """
+    Clean a YouTube URL by removing playlist and index parameters.
+    
+    This prevents yt-dlp from trying to process playlist metadata when
+    the user only wants to download a single video, which can cause
+    timeouts.
+    
+    Args:
+        url: The original YouTube URL (may contain &list=, &index=, etc.)
+        
+    Returns:
+        A cleaned URL with only the video ID, or the original URL if
+        it's not a standard YouTube video URL.
+        
+    Examples:
+        Input:  https://www.youtube.com/watch?v=abc123&list=PLxyz&index=5
+        Output: https://www.youtube.com/watch?v=abc123
+        
+        Input:  https://youtu.be/abc123?list=PLxyz
+        Output: https://youtu.be/abc123
+    """
+    parsed = parse_youtube_url(url)
+    
+    # If it's explicitly a playlist URL (no video), return as-is
+    if parsed.is_playlist_url and not parsed.video_id:
+        return url
+    
+    # If we have a video ID, return clean single-video URL
+    if parsed.video_id:
+        return parsed.single_video_url
+    
+    # Return original URL if we can't parse it
+    return url
+
 
 def sanitize_filename(name: str, max_length: int = 200) -> str:
     """Create a filesystem-safe filename, removing problematic characters and emoji."""
@@ -1815,9 +2003,12 @@ class YtDlpInterface:
     def fetch_video_info(self, url: str) -> VideoInfo:
         """Fetch video metadata using yt-dlp -J."""
         try:
+            # Clean the URL to remove playlist parameters
+            cleaned_url = clean_youtube_url(url)
+            
             result = subprocess.run(
-                self._build_command(["-J", "--flat-playlist", url]),
-                capture_output=True, text=True, check=False,
+                self._build_command(["-J", "--no-playlist", cleaned_url]),
+                capture_output=True, text=True, check=False, timeout=30,
                 encoding='utf-8', errors='replace'
             )
             
@@ -1825,10 +2016,12 @@ class YtDlpInterface:
                 raise RuntimeError(f"yt-dlp error: {result.stderr.strip()}")
             
             data = json.loads(result.stdout)
-            return self._parse_video_info(data, url)
+            return self._parse_video_info(data, cleaned_url)
             
         except json.JSONDecodeError as e:
             raise RuntimeError(f"Failed to parse yt-dlp output: {e}")
+        except subprocess.TimeoutExpired:
+            raise RuntimeError("yt-dlp took too long to respond")
     
     def fetch_full_info(self, url: str) -> VideoInfo:
         """Fetch full video info including all formats using --list-formats.
@@ -1841,9 +2034,15 @@ class YtDlpInterface:
             RuntimeError: For other errors
         """
         try:
-            # First get basic metadata with -J (this works for basic info)
+            # Clean the URL to remove playlist parameters that cause slowdowns
+            # URLs like "watch?v=abc&list=xyz&index=5" become "watch?v=abc"
+            # This prevents yt-dlp from trying to fetch playlist metadata
+            cleaned_url = clean_youtube_url(url)
+            
+            # First get basic metadata with -J
+            # --no-playlist ensures we only get info for the single video
             result_info = subprocess.run(
-                self._build_command(["-J", "--flat-playlist", url]),
+                self._build_command(["-J", "--no-playlist", cleaned_url]),
                 capture_output=True, text=True, check=False, timeout=30,
                 encoding='utf-8', errors='replace'
             )
@@ -1857,14 +2056,16 @@ class YtDlpInterface:
                 raise error_info
             
             data = json.loads(result_info.stdout)
-            info = self._parse_video_info(data, url, include_formats=False)
+            info = self._parse_video_info(data, cleaned_url, include_formats=False)
             
             # Now get formats using --list-formats (this shows ALL formats)
+            # --no-playlist ensures we only get formats for the single video
             result_formats = subprocess.run(
                 self._build_command([
                     "--list-formats",
+                    "--no-playlist",
                     "--remote-components", "ejs:github",
-                    url
+                    cleaned_url
                 ]),
                 capture_output=True, text=True, check=False, timeout=30,
                 encoding='utf-8', errors='replace'
@@ -1891,6 +2092,115 @@ class YtDlpInterface:
         except (AgeRestrictedError, PrivateVideoError, VideoUnavailableError, LoginRequiredError):
             # Re-raise our custom exceptions
             raise
+    
+    def fetch_playlist_info(self, url: str) -> VideoInfo:
+        """
+        Fetch playlist metadata including all video entries.
+        
+        Args:
+            url: YouTube playlist URL or video URL with playlist context
+            
+        Returns:
+            VideoInfo with is_playlist=True and populated playlist_items
+            
+        Raises:
+            RuntimeError: For various errors
+            UnviewablePlaylistError: For YouTube Mixes and other non-enumerable playlists
+        """
+        try:
+            # Parse the URL to get playlist ID
+            parsed = parse_youtube_url(url)
+            
+            if not parsed.playlist_id:
+                raise RuntimeError("No playlist ID found in URL")
+            
+            # Check for YouTube Mix playlists (auto-generated, cannot be enumerated)
+            # These have IDs starting with 'RD' (Radio/Mix based on a seed video)
+            if parsed.playlist_id.startswith('RD'):
+                raise UnviewablePlaylistError(
+                    playlist_id=parsed.playlist_id,
+                    reason="YouTube Mix",
+                    video_id=parsed.video_id
+                )
+            
+            # Use --flat-playlist to get playlist entries without downloading each video's info
+            # This is MUCH faster than fetching full info for each video
+            result = subprocess.run(
+                self._build_command([
+                    "-J",
+                    "--flat-playlist",
+                    "--extractor-args", "youtube:player_client=android_sdkless",
+                    parsed.playlist_url
+                ]),
+                capture_output=True, text=True, check=False, timeout=60,  # Longer timeout for playlists
+                encoding='utf-8', errors='replace'
+            )
+            
+            if result.returncode != 0:
+                stderr_text = result.stderr.strip() if result.stderr else ""
+                
+                # Check for "unviewable" playlist error
+                if "unviewable" in stderr_text.lower() or "unavailable" in stderr_text.lower():
+                    raise UnviewablePlaylistError(
+                        playlist_id=parsed.playlist_id,
+                        reason="unviewable or private",
+                        video_id=parsed.video_id
+                    )
+                
+                raise RuntimeError(f"Failed to fetch playlist: {stderr_text[:200]}")
+            
+            data = json.loads(result.stdout)
+            
+            # Parse playlist metadata
+            playlist_id = data.get("id", parsed.playlist_id)
+            playlist_title = data.get("title", "Unknown Playlist")
+            playlist_channel = data.get("channel") or data.get("uploader", "Unknown")
+            playlist_thumbnail = data.get("thumbnail")
+            
+            # Parse playlist entries
+            entries = data.get("entries", [])
+            playlist_items = []
+            
+            for idx, entry in enumerate(entries, start=1):
+                if entry is None:
+                    continue  # Skip unavailable videos
+                
+                video_id = entry.get("id")
+                if not video_id:
+                    continue
+                
+                item = PlaylistItem(
+                    id=video_id,
+                    title=entry.get("title", f"Video {idx}"),
+                    url=f"https://www.youtube.com/watch?v={video_id}",
+                    index=idx,
+                    duration=entry.get("duration"),
+                    channel=entry.get("channel") or entry.get("uploader"),
+                    thumbnail=entry.get("thumbnail")
+                )
+                playlist_items.append(item)
+            
+            # Create VideoInfo representing the playlist
+            info = VideoInfo(
+                id=playlist_id,
+                title=playlist_title,
+                url=parsed.playlist_url,
+                thumbnail=playlist_thumbnail,
+                duration=None,  # Playlists don't have a single duration
+                channel=playlist_channel,
+                view_count=data.get("view_count"),
+                is_playlist=True,
+                playlist_count=len(playlist_items),
+                playlist_title=playlist_title,
+                playlist_items=playlist_items
+            )
+            
+            return info
+            
+        except json.JSONDecodeError as e:
+            raise RuntimeError(f"Failed to parse playlist data: {e}")
+        except subprocess.TimeoutExpired:
+            raise RuntimeError("Playlist fetch timed out (playlist may be too large)")
     
     def _parse_ytdlp_error(self, stderr: str, url: str) -> Exception:
         """Parse yt-dlp stderr to identify specific error types.
@@ -2697,7 +3007,7 @@ class DownloadManager:
             # See _apply_sponsorblock_postprocess() method
             
             video_cmd = self.ytdlp._build_command(video_cmd_args)
-            self._run_subprocess_with_progress(video_cmd, task, "📥 Downloading video", 0, 40, video_id)
+            self._run_subprocess_with_progress(video_cmd, task, "🔥 Downloading video", 0, 40, video_id)
             
             if task.status == DownloadStatus.FAILED:
                 return
@@ -2861,7 +3171,7 @@ class DownloadManager:
             # If GPU encoding fails, fall back to CPU
             # Progress: 60-85% if no SponsorBlock, 60-75% if SponsorBlock enabled
             progress_end = 75 if self.settings_mgr.get('sponsorblock_enabled', False) else 85
-            success = self._run_ffmpeg_with_progress(ffmpeg_cmd, task, "⚙️ Converting", 60, progress_end, video_info.duration)
+            success = self._run_ffmpeg_with_progress(ffmpeg_cmd, task, "⚙️ Converting", 60, progress_end, video_info.duration)
             
             if not success and video_codec == "h264_videotoolbox":
                 # Try CPU encoding as fallback
@@ -5000,9 +5310,323 @@ class ChapterSelectionWindow(ctk.CTkToplevel):
         self.destroy()
 
 
-# ============================================================================
-# MAIN APPLICATION
-# ============================================================================
+class PlaylistSelectionWindow(ctk.CTkToplevel):
+    """Window for selecting videos from a playlist to download."""
+    
+    def __init__(self, parent, playlist_info: VideoInfo, settings_mgr: SettingsManager,
+                 on_download: Callable[[List[PlaylistItem], Optional[VideoFormat], bool], None]):
+        super().__init__(parent)
+        
+        self.playlist_info = playlist_info
+        self.settings_mgr = settings_mgr
+        self.on_download = on_download
+        self.video_vars = []  # List of (PlaylistItem, BooleanVar) tuples
+        
+        self.title(f"Playlist - {playlist_info.title[:50]}...")
+        self.geometry("850x650")
+        self.transient(parent)
+        self.resizable(True, True)
+        self.minsize(600, 450)
+        
+        # Configure colors
+        self.configure(fg_color=COLORS["bg_primary"])
+        
+        # Main container
+        main_frame = ctk.CTkFrame(self, fg_color="transparent")
+        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
+        
+        # Header
+        self._create_header(main_frame)
+        
+        # Video list (scrollable)
+        self._create_video_list(main_frame)
+        
+        # Footer with options and download button
+        self._create_footer(main_frame)
+        
+        # Apply settings (reverse order, max items)
+        self._apply_settings()
+    
+    def _create_header(self, parent):
+        """Create the header section with playlist info."""
+        header = ctk.CTkFrame(parent, fg_color="transparent")
+        header.pack(fill="x", pady=(0, 15))
+        
+        # Playlist title and stats
+        title_frame = ctk.CTkFrame(header, fg_color="transparent")
+        title_frame.pack(side="left", fill="x", expand=True)
+        
+        ctk.CTkLabel(
+            title_frame,
+            text=f"📋 {self.playlist_info.title}",
+            font=ctk.CTkFont(size=18, weight="bold"),
+            text_color=COLORS["text_primary"],
+            anchor="w"
+        ).pack(anchor="w")
+        
+        stats_text = f"{self.playlist_info.playlist_count} videos"
+        if self.playlist_info.total_playlist_duration > 0:
+            stats_text += f" • {self.playlist_info.total_playlist_duration_str} total"
+        if self.playlist_info.channel:
+            stats_text += f" • {self.playlist_info.channel}"
+        
+        ctk.CTkLabel(
+            title_frame,
+            text=stats_text,
+            font=ctk.CTkFont(size=12),
+            text_color=COLORS["text_secondary"],
+            anchor="w"
+        ).pack(anchor="w", pady=(4, 0))
+        
+        # Select all / Deselect all buttons
+        btn_frame = ctk.CTkFrame(header, fg_color="transparent")
+        btn_frame.pack(side="right")
+        
+        ctk.CTkButton(
+            btn_frame,
+            text="Select All",
+            width=90,
+            height=30,
+            font=ctk.CTkFont(size=12),
+            fg_color=COLORS["bg_elevated"],
+            hover_color=COLORS["bg_hover"],
+            command=self._select_all
+        ).pack(side="left", padx=(0, 8))
+        
+        ctk.CTkButton(
+            btn_frame,
+            text="Deselect All",
+            width=90,
+            height=30,
+            font=ctk.CTkFont(size=12),
+            fg_color=COLORS["bg_elevated"],
+            hover_color=COLORS["bg_hover"],
+            command=self._deselect_all
+        ).pack(side="left")
+    
+    def _create_video_list(self, parent):
+        """Create the scrollable video list."""
+        self.videos_frame = ctk.CTkScrollableFrame(
+            parent,
+            fg_color=COLORS["bg_secondary"],
+            corner_radius=10
+        )
+        self.videos_frame.pack(fill="both", expand=True, pady=(0, 15))
+        
+        # Create video rows
+        for item in self.playlist_info.playlist_items:
+            self._create_video_row(item)
+    
+    def _create_video_row(self, item: PlaylistItem):
+        """Create a row for a single playlist video."""
+        row = ctk.CTkFrame(self.videos_frame, fg_color="transparent")
+        row.pack(fill="x", padx=10, pady=5)
+        
+        # Checkbox
+        var = ctk.BooleanVar(value=True)  # Selected by default
+        self.video_vars.append((item, var))
+        
+        cb = ctk.CTkCheckBox(
+            row,
+            text="",
+            variable=var,
+            width=24,
+            checkbox_width=20,
+            checkbox_height=20
+        )
+        cb.pack(side="left", padx=(0, 10))
+        
+        # Video number
+        ctk.CTkLabel(
+            row,
+            text=f"{item.index:02d}",
+            font=ctk.CTkFont(size=12, weight="bold"),
+            text_color=COLORS["accent_blue"],
+            width=30
+        ).pack(side="left", padx=(0, 10))
+        
+        # Video title
+        ctk.CTkLabel(
+            row,
+            text=item.title[:55] + ("..." if len(item.title) > 55 else ""),
+            font=ctk.CTkFont(size=13),
+            text_color=COLORS["text_primary"],
+            anchor="w"
+        ).pack(side="left", fill="x", expand=True)
+        
+        # Channel (if different from playlist owner)
+        if item.channel and item.channel != self.playlist_info.channel:
+            ctk.CTkLabel(
+                row,
+                text=item.channel[:20],
+                font=ctk.CTkFont(size=10),
+                text_color=COLORS["text_tertiary"],
+                width=100
+            ).pack(side="right", padx=(10, 0))
+        
+        # Duration
+        ctk.CTkLabel(
+            row,
+            text=item.duration_str,
+            font=ctk.CTkFont(size=12),
+            text_color=COLORS["text_secondary"],
+            width=60
+        ).pack(side="right", padx=(10, 0))
+    
+    def _create_footer(self, parent):
+        """Create the footer with options and download button."""
+        footer = ctk.CTkFrame(parent, fg_color="transparent")
+        footer.pack(fill="x")
+        
+        # Options frame (left side)
+        options_frame = ctk.CTkFrame(footer, fg_color="transparent")
+        options_frame.pack(side="left")
+        
+        # Audio only option
+        self.audio_only_var = ctk.BooleanVar(value=False)
+        ctk.CTkCheckBox(
+            options_frame,
+            text="Audio Only (M4A)",
+            variable=self.audio_only_var,
+            font=ctk.CTkFont(size=13),
+            text_color=COLORS["text_secondary"]
+        ).pack(side="left", padx=(0, 20))
+        
+        # Quality selection
+        ctk.CTkLabel(
+            options_frame,
+            text="Quality:",
+            font=ctk.CTkFont(size=12),
+            text_color=COLORS["text_secondary"]
+        ).pack(side="left", padx=(0, 8))
+        
+        self.quality_var = ctk.StringVar(value="1080p")
+        quality_menu = ctk.CTkOptionMenu(
+            options_frame,
+            variable=self.quality_var,
+            values=["Best", "2160p (4K)", "1440p", "1080p", "720p", "480p"],
+            width=120,
+            height=30,
+            font=ctk.CTkFont(size=12)
+        )
+        quality_menu.pack(side="left")
+        
+        # Selected count label
+        self.selected_label = ctk.CTkLabel(
+            footer,
+            text="",
+            font=ctk.CTkFont(size=12),
+            text_color=COLORS["text_secondary"]
+        )
+        self.selected_label.pack(side="left", padx=(30, 0))
+        self._update_selected_count()
+        
+        # Buttons (right side)
+        btn_frame = ctk.CTkFrame(footer, fg_color="transparent")
+        btn_frame.pack(side="right")
+        
+        # Cancel button
+        ModernButton(
+            btn_frame,
+            text="Cancel",
+            style="secondary",
+            width=80,
+            height=40,
+            command=self.destroy
+        ).pack(side="left", padx=(0, 10))
+        
+        # Download button
+        ModernButton(
+            btn_frame,
+            text="⚡ Download Selected",
+            style="primary",
+            width=160,
+            height=40,
+            command=self._start_download
+        ).pack(side="left")
+    
+    def _apply_settings(self):
+        """Apply playlist settings from settings manager."""
+        # Check if we should reverse order
+        if self.settings_mgr.get("playlist_reverse", False):
+            # Reverse the display order (but keep original indices)
+            for widget in self.videos_frame.winfo_children():
+                widget.pack_forget()
+            
+            for item, var in reversed(self.video_vars):
+                # Re-create the row in reverse order
+                # (Actually, we'll just re-pack them)
+                pass  # TODO: Implement if needed
+        
+        # Check max items limit
+        max_items = self.settings_mgr.get("playlist_max_items", 0)
+        if max_items > 0:
+            # Deselect items beyond the limit
+            for i, (item, var) in enumerate(self.video_vars):
+                if i >= max_items:
+                    var.set(False)
+        
+        # Check if "download all by default" is disabled
+        if not self.settings_mgr.get("playlist_download_all", True):
+            # Deselect all by default
+            for _, var in self.video_vars:
+                var.set(False)
+        
+        self._update_selected_count()
+    
+    def _update_selected_count(self):
+        """Update the selected count label."""
+        selected = sum(1 for _, var in self.video_vars if var.get())
+        total = len(self.video_vars)
+        self.selected_label.configure(text=f"{selected}/{total} selected")
+    
+    def _select_all(self):
+        """Select all videos."""
+        for _, var in self.video_vars:
+            var.set(True)
+        self._update_selected_count()
+    
+    def _deselect_all(self):
+        """Deselect all videos."""
+        for _, var in self.video_vars:
+            var.set(False)
+        self._update_selected_count()
+    
+    def _get_selected_quality_height(self) -> Optional[int]:
+        """Convert quality selection to height value."""
+        quality_map = {
+            "Best": None,
+            "2160p (4K)": 2160,
+            "1440p": 1440,
+            "1080p": 1080,
+            "720p": 720,
+            "480p": 480
+        }
+        return quality_map.get(self.quality_var.get())
+    
+    def _start_download(self):
+        """Start downloading selected videos."""
+        selected_items = [item for item, var in self.video_vars if var.get()]
+        
+        if not selected_items:
+            messagebox.showwarning("No Selection", "Please select at least one video to download.")
+            return
+        
+        # Create a VideoFormat with the selected quality
+        quality_height = self._get_selected_quality_height()
+        selected_format = None
+        if quality_height:
+            selected_format = VideoFormat(
+                format_id="",
+                ext="mp4",
+                height=quality_height,
+                resolution=f"{quality_height}p"
+            )
+        
+        audio_only = self.audio_only_var.get()
+        
+        self.on_download(selected_items, selected_format, audio_only)
+        self.destroy()
 
 class SystemMonitor:
     """Monitor system resources (CPU, Memory, GPU) in real-time."""
@@ -5378,7 +6002,7 @@ class YtDlpGUI(ctk.CTk):
         # Settings button
         settings_btn = ModernButton(
             button_frame,
-            text="⚙️",
+            text="⚙️",
             style="icon",
             width=36,
             height=36,
@@ -5412,7 +6036,7 @@ class YtDlpGUI(ctk.CTk):
         ToolTip(help_btn, "Help")
     
     def _create_url_section(self):
-        """Create compact URL input section."""
+        """Create compact URL input section with playlist toggle."""
         url_frame = ctk.CTkFrame(self.main_container, fg_color="transparent", height=48)
         url_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(0, 10))
         url_frame.grid_propagate(False)
@@ -5432,6 +6056,27 @@ class YtDlpGUI(ctk.CTk):
         )
         self.url_entry.pack(side="left", fill="x", expand=True, padx=(0, 8))
         self.url_entry.bind("<Return>", lambda e: self._analyze())
+        self.url_entry.bind("<KeyRelease>", self._on_url_changed)
+        
+        # Playlist toggle (hidden by default, shown when URL has playlist)
+        self.playlist_toggle_frame = ctk.CTkFrame(url_frame, fg_color="transparent")
+        # Don't pack yet - will be shown when URL contains playlist
+        
+        self.playlist_mode_var = ctk.BooleanVar(value=False)
+        self.playlist_toggle = ctk.CTkSwitch(
+            self.playlist_toggle_frame,
+            text="📋 Playlist",
+            variable=self.playlist_mode_var,
+            font=ctk.CTkFont(size=12),
+            width=40,
+            height=20,
+            switch_width=36,
+            switch_height=18,
+            onvalue=True,
+            offvalue=False,
+            command=self._on_playlist_toggle
+        )
+        self.playlist_toggle.pack(side="left", padx=(0, 8))
         
         # Analyze button
         ModernButton(
@@ -5442,6 +6087,36 @@ class YtDlpGUI(ctk.CTk):
             height=40,
             command=self._analyze
         ).pack(side="left")
+    
+    def _on_url_changed(self, event=None):
+        """Handle URL entry changes - show/hide playlist toggle."""
+        url = self.url_entry.get().strip()
+        parsed = parse_youtube_url(url)
+        
+        # Show playlist toggle if URL has playlist context
+        if parsed.playlist_id:
+            if not self.playlist_toggle_frame.winfo_ismapped():
+                self.playlist_toggle_frame.pack(side="left", padx=(0, 8))
+            
+            # If it's explicitly a playlist URL (no video), enable playlist mode by default
+            if parsed.is_playlist_url and not parsed.video_id:
+                self.playlist_mode_var.set(True)
+            # If it has both video and playlist, default to single video
+            elif parsed.has_video_and_playlist:
+                # Keep current state or default to False
+                pass
+        else:
+            # Hide toggle if no playlist in URL
+            if self.playlist_toggle_frame.winfo_ismapped():
+                self.playlist_toggle_frame.pack_forget()
+            self.playlist_mode_var.set(False)
+    
+    def _on_playlist_toggle(self):
+        """Handle playlist toggle state change."""
+        if self.playlist_mode_var.get():
+            self.log_panel.log("📋 Playlist mode enabled - will fetch all videos", "info")
+        else:
+            self.log_panel.log("🎬 Single video mode - will download only this video", "info")
     
     def _create_video_section(self):
         """Create a compact video preview card that always shows download button."""
@@ -5611,7 +6286,7 @@ class YtDlpGUI(ctk.CTk):
         
         ctk.CTkLabel(
             prog_header,
-            text="📥 Download Progress",
+            text="🔥 Download Progress",
             font=ctk.CTkFont(size=12, weight="bold"),
             text_color=COLORS["text_primary"]
         ).pack(side="left")
@@ -5646,7 +6321,7 @@ class YtDlpGUI(ctk.CTk):
         
         self.progress_label = ctk.CTkLabel(
             stage_row,
-            text="⏳ Ready to download",
+            text="â³ Ready to download",
             font=ctk.CTkFont(size=11),
             text_color=COLORS["text_secondary"]
         )
@@ -5880,15 +6555,38 @@ class YtDlpGUI(ctk.CTk):
             # Could toggle advanced options panel here
     
     def _analyze(self):
-        """Analyze the URL and show video info."""
+        """Analyze the URL and show video info or playlist."""
         url = self.url_entry.get().strip()
         if not url:
             messagebox.showwarning("No URL", "Please enter a YouTube URL")
             return
         
-        self.log_panel.log(f"🔍 Analyzing: {url}", "info")
+        # Parse the URL to determine what we're dealing with
+        parsed = parse_youtube_url(url)
         
-        # BUGFIX v16.1: Clear previous state to fix empty format box
+        # Update the playlist toggle visibility
+        self._on_url_changed()
+        
+        # Determine if we should fetch playlist or single video
+        fetch_playlist = False
+        
+        if parsed.is_playlist_url and not parsed.video_id:
+            # Explicit playlist URL with no video - always fetch playlist
+            fetch_playlist = True
+            self.playlist_mode_var.set(True)
+        elif parsed.has_video_and_playlist and self.playlist_mode_var.get():
+            # URL has both video and playlist, and user enabled playlist mode
+            fetch_playlist = True
+        elif parsed.playlist_id and self.playlist_mode_var.get():
+            # Has playlist ID and playlist mode is on
+            fetch_playlist = True
+        
+        if fetch_playlist:
+            self.log_panel.log(f"Analyzing playlist: {url}", "info")
+        else:
+            self.log_panel.log(f"Analyzing: {url}", "info")
+        
+        # Clear previous state
         self.current_video = None
         self.selected_format = None
         
@@ -5906,8 +6604,14 @@ class YtDlpGUI(ctk.CTk):
         # Run analysis in thread
         def analyze_thread():
             try:
-                info = self.ytdlp.fetch_full_info(url)
-                self.after(0, lambda i=info: self._display_video_info(i))
+                if fetch_playlist:
+                    # Fetch playlist info
+                    info = self.ytdlp.fetch_playlist_info(url)
+                    self.after(0, lambda i=info: self._display_playlist_info(i))
+                else:
+                    # Fetch single video info
+                    info = self.ytdlp.fetch_full_info(url)
+                    self.after(0, lambda i=info: self._display_video_info(i))
             except AgeRestrictedError as e:
                 error = e
                 self.after(0, lambda err=error: self._handle_age_restricted_error(err))
@@ -5920,11 +6624,319 @@ class YtDlpGUI(ctk.CTk):
             except LoginRequiredError as e:
                 error = e
                 self.after(0, lambda err=error: self._handle_login_required_error(err))
+            except UnviewablePlaylistError as e:
+                error = e
+                self.after(0, lambda err=error: self._handle_unviewable_playlist_error(err))
             except Exception as e:
                 error_msg = str(e)
-                self.after(0, lambda msg=error_msg: self._handle_error(f"❌ Analysis failed: {msg}"))
+                self.after(0, lambda msg=error_msg: self._handle_error(f"Analysis failed: {msg}"))
         
         threading.Thread(target=analyze_thread, daemon=True).start()
+    
+    def _display_playlist_info(self, info: VideoInfo):
+        """Display playlist information and open selection dialog."""
+        self.current_video = info
+        
+        self.log_panel.log(f"Playlist: {info.title}", "success")
+        self.log_panel.log(f"   {info.playlist_count} videos - {info.total_playlist_duration_str} total", "info")
+        if info.channel:
+            self.log_panel.log(f"   Channel: {info.channel}", "info")
+        
+        # Open playlist selection dialog
+        PlaylistSelectionWindow(
+            self,
+            info,
+            self.settings_mgr,
+            on_download=self._download_playlist_items
+        )
+    
+    def _download_playlist_items(self, items: List[PlaylistItem], 
+                                  selected_format: Optional[VideoFormat],
+                                  audio_only: bool):
+        """Download selected playlist items."""
+        if not items:
+            return
+        
+        self.log_panel.log(f"Starting download of {len(items)} videos...", "info")
+        
+        # Create a folder for the playlist
+        output_dir = self.config.get("output_dir", str(Path.home() / "Desktop"))
+        playlist_title = sanitize_filename(self.current_video.title, max_length=100)
+        playlist_folder = os.path.join(output_dir, playlist_title)
+        os.makedirs(playlist_folder, exist_ok=True)
+        
+        self.log_panel.log(f"Saving to: {playlist_folder}", "info")
+        
+        # Download each item
+        def download_playlist_thread():
+            total = len(items)
+            successful = 0
+            failed = 0
+            max_retries = 2  # Try up to 2 times per video
+            
+            for idx, item in enumerate(items, start=1):
+                self.after(0, lambda i=idx, t=total, it=item: 
+                    self.log_panel.log(f"[{i}/{t}] Downloading: {it.title[:50]}...", "info"))
+                
+                # Update progress
+                self.after(0, lambda i=idx, t=total: self._update_playlist_progress(i, t, 0))
+                
+                # Try downloading with retries
+                success = False
+                last_error = None
+                
+                for attempt in range(1, max_retries + 1):
+                    try:
+                        # Clean up any leftover temp files from previous attempt
+                        if attempt > 1:
+                            self._cleanup_temp_files(playlist_folder, item.id)
+                            self.after(0, lambda i=idx, a=attempt: 
+                                self.log_panel.log(f"  Retry attempt {a} for video {i}...", "warning"))
+                        
+                        # Download this video
+                        success, error_msg = self._download_single_playlist_item_with_error(
+                            item, playlist_folder, selected_format, audio_only, idx, total
+                        )
+                        
+                        if success:
+                            break
+                        else:
+                            last_error = error_msg
+                            if attempt < max_retries:
+                                # Wait a bit before retry
+                                time.sleep(2)
+                            
+                    except Exception as e:
+                        last_error = str(e)[:150]
+                        if attempt < max_retries:
+                            time.sleep(2)
+                
+                if success:
+                    successful += 1
+                    self.after(0, lambda it=item: 
+                        self.log_panel.log(f"  ✅ Done: {it.title[:40]}", "success"))
+                else:
+                    failed += 1
+                    error_display = last_error if last_error else "Unknown error"
+                    self.after(0, lambda it=item, err=error_display: 
+                        self.log_panel.log(f"  ❌ Failed: {it.title[:40]}", "error"))
+                    self.after(0, lambda err=error_display: 
+                        self.log_panel.log(f"     Reason: {err}", "warning"))
+            
+            # Summary
+            self.after(0, lambda s=successful, f=failed, t=total, folder=playlist_folder: 
+                self._playlist_download_complete(s, f, t, folder))
+        
+        threading.Thread(target=download_playlist_thread, daemon=True).start()
+    
+    def _cleanup_temp_files(self, folder: str, video_id: str):
+        """Clean up temp files for a video before retry."""
+        try:
+            for fname in os.listdir(folder):
+                if video_id in fname and ('_temp_video' in fname or '_temp_audio' in fname):
+                    try:
+                        os.remove(os.path.join(folder, fname))
+                    except:
+                        pass
+        except:
+            pass
+    
+    def _download_single_playlist_item_with_error(self, item: PlaylistItem, output_folder: str,
+                                                   selected_format: Optional[VideoFormat],
+                                                   audio_only: bool, current_idx: int, total: int) -> tuple:
+        """Download a single playlist item. Returns (success: bool, error_msg: str or None)."""
+        safe_title = sanitize_filename(item.title, max_length=150)
+        
+        if audio_only:
+            # Audio only download
+            output_path = os.path.join(output_folder, f"{current_idx:02d} - {safe_title}.m4a")
+            
+            cmd = self.ytdlp._build_command([
+                "--newline",
+                "--no-playlist",
+                "--remote-components", "ejs:github",
+                "--extractor-args", "youtube:player_client=android_sdkless",
+                "-f", "bestaudio[ext=m4a]/bestaudio/best",
+                "-o", output_path,
+                item.url
+            ])
+            
+            result = subprocess.run(cmd, capture_output=True, text=True, 
+                                   encoding='utf-8', errors='replace', timeout=300)
+            
+            if result.returncode == 0 or os.path.exists(output_path):
+                return True, None
+            else:
+                # Extract error from stderr
+                error_msg = self._extract_ytdlp_error(result.stderr)
+                return False, error_msg
+        
+        else:
+            # Video download with conversion
+            video_id = item.id
+            temp_video = os.path.join(output_folder, f"{video_id}_temp_video.%(ext)s")
+            temp_audio = os.path.join(output_folder, f"{video_id}_temp_audio.%(ext)s")
+            final_output = os.path.join(output_folder, f"{current_idx:02d} - {safe_title}.mp4")
+            
+            # Determine quality
+            if selected_format and selected_format.height:
+                video_format = f"bestvideo[height<={selected_format.height}][ext=mp4]/bestvideo[height<={selected_format.height}]/bestvideo"
+            else:
+                video_format = "bestvideo[ext=mp4]/bestvideo/best"
+            
+            try:
+                # Download video stream
+                video_cmd = self.ytdlp._build_command([
+                    "--newline",
+                    "--no-playlist",
+                    "--remote-components", "ejs:github",
+                    "--extractor-args", "youtube:player_client=android_sdkless",
+                    "-f", video_format,
+                    "-o", temp_video,
+                    item.url
+                ])
+                
+                video_result = subprocess.run(video_cmd, capture_output=True, text=True, 
+                              encoding='utf-8', errors='replace', timeout=300)
+                
+                # Find downloaded video file
+                video_file = None
+                for fname in os.listdir(output_folder):
+                    if fname.startswith(f"{video_id}_temp_video"):
+                        video_file = os.path.join(output_folder, fname)
+                        break
+                
+                if not video_file:
+                    error_msg = self._extract_ytdlp_error(video_result.stderr)
+                    return False, f"Video download failed: {error_msg}"
+                
+                # Download audio stream
+                audio_cmd = self.ytdlp._build_command([
+                    "--newline",
+                    "--no-playlist",
+                    "--remote-components", "ejs:github",
+                    "--extractor-args", "youtube:player_client=android_sdkless",
+                    "-f", "bestaudio[ext=m4a]/bestaudio/best",
+                    "-o", temp_audio,
+                    item.url
+                ])
+                
+                audio_result = subprocess.run(audio_cmd, capture_output=True, text=True,
+                              encoding='utf-8', errors='replace', timeout=300)
+                
+                # Find downloaded audio file
+                audio_file = None
+                for fname in os.listdir(output_folder):
+                    if fname.startswith(f"{video_id}_temp_audio"):
+                        audio_file = os.path.join(output_folder, fname)
+                        break
+                
+                if not audio_file:
+                    # Cleanup video file
+                    if video_file and os.path.exists(video_file):
+                        os.remove(video_file)
+                    error_msg = self._extract_ytdlp_error(audio_result.stderr)
+                    return False, f"Audio download failed: {error_msg}"
+                
+                # Merge with ffmpeg
+                ffmpeg_cmd = [
+                    FFMPEG_PATH,
+                    "-y",
+                    "-i", video_file,
+                    "-i", audio_file,
+                    "-map", "0:v:0",
+                    "-map", "1:a:0",
+                    "-c:v", "h264_videotoolbox",
+                    "-b:v", "6M",
+                    "-pix_fmt", "yuv420p",
+                    "-c:a", "aac",
+                    "-b:a", "192k",
+                    "-movflags", "+faststart",
+                    "-shortest",
+                    final_output
+                ]
+                
+                ffmpeg_result = subprocess.run(ffmpeg_cmd, capture_output=True, text=True,
+                                       encoding='utf-8', errors='replace', timeout=600)
+                
+                # Cleanup temp files
+                if os.path.exists(video_file):
+                    os.remove(video_file)
+                if os.path.exists(audio_file):
+                    os.remove(audio_file)
+                
+                if os.path.exists(final_output):
+                    return True, None
+                else:
+                    # Extract ffmpeg error
+                    stderr_lines = ffmpeg_result.stderr.split('\n') if ffmpeg_result.stderr else []
+                    error_lines = [l for l in stderr_lines if 'error' in l.lower()]
+                    error_msg = error_lines[-1] if error_lines else "FFmpeg conversion failed"
+                    return False, error_msg
+                
+            except subprocess.TimeoutExpired:
+                # Cleanup on timeout
+                self._cleanup_temp_files(output_folder, video_id)
+                return False, "Download timed out"
+            except Exception as e:
+                self._cleanup_temp_files(output_folder, video_id)
+                return False, str(e)[:100]
+    
+    def _extract_ytdlp_error(self, stderr: str) -> str:
+        """Extract meaningful error message from yt-dlp stderr."""
+        if not stderr:
+            return "Unknown error"
+        
+        stderr_lower = stderr.lower()
+        
+        # Check for common errors
+        if "age" in stderr_lower and ("restrict" in stderr_lower or "verify" in stderr_lower):
+            return "Age-restricted video (requires authentication)"
+        if "private" in stderr_lower:
+            return "Private video"
+        if "unavailable" in stderr_lower or "not available" in stderr_lower:
+            return "Video unavailable (deleted or region-locked)"
+        if "copyright" in stderr_lower:
+            return "Removed due to copyright"
+        if "sign in" in stderr_lower or "login" in stderr_lower:
+            return "Requires login/authentication"
+        if "geo" in stderr_lower or "country" in stderr_lower:
+            return "Geo-restricted (blocked in your region)"
+        
+        # Try to find ERROR: line
+        for line in stderr.split('\n'):
+            if line.strip().startswith('ERROR:'):
+                return line.strip()[7:100]  # Remove "ERROR: " prefix, limit length
+        
+        # Return last non-empty line
+        lines = [l.strip() for l in stderr.split('\n') if l.strip()]
+        return lines[-1][:100] if lines else "Unknown error"
+    
+    def _update_playlist_progress(self, current_idx: int, total: int, item_progress: float):
+        """Update progress display for playlist download."""
+        overall_progress = ((current_idx - 1) + item_progress) / total * 100
+        self.main_progress.set_progress(overall_progress, stage="downloading_video")
+        self.main_progress.start_animation()
+        self.progress_label.configure(text=f"Downloading video {current_idx}/{total}...")
+        self.percentage_label.configure(text=f"{overall_progress:.0f}%")
+        self.queue_status.configure(text="Downloading Playlist")
+    
+    def _playlist_download_complete(self, successful: int, failed: int, total: int, folder: str):
+        """Handle playlist download completion."""
+        self.main_progress.set_progress(100, stage="idle")
+        self.main_progress.stop_animation()
+        
+        if failed == 0:
+            self.log_panel.log(f"Playlist download complete! {successful}/{total} videos downloaded", "success")
+            send_notification("Playlist Complete", f"Downloaded {successful} videos successfully")
+        else:
+            self.log_panel.log(f"Playlist download finished: {successful} succeeded, {failed} failed", "warning")
+            send_notification("Playlist Complete", f"{successful} succeeded, {failed} failed")
+        
+        self.log_panel.log(f"Saved to: {folder}", "info")
+        self.progress_label.configure(text=f"Completed: {successful}/{total} videos")
+        self.percentage_label.configure(text="100%")
+        self.queue_status.configure(text="Idle")
     
     def _handle_age_restricted_error(self, error: 'AgeRestrictedError'):
         """Handle age-restricted video errors with detailed user feedback."""
@@ -6032,6 +7044,52 @@ class YtDlpGUI(ctk.CTk):
             f"To download, use yt-dlp from the command line with cookies:\n"
             f"yt-dlp --cookies-from-browser chrome \"{self.url_entry.get()}\""
         )
+    
+    def _handle_unviewable_playlist_error(self, error: 'UnviewablePlaylistError'):
+        """Handle unviewable playlist errors (YouTube Mix, etc.) with automatic fallback."""
+        playlist_id = error.playlist_id or "unknown"
+        video_id = error.video_id
+        playlist_type = error.playlist_type
+        
+        # Log the error
+        self.log_panel.log("=" * 50, "warning")
+        self.log_panel.log(f"⚠️ {playlist_type.upper()} PLAYLIST DETECTED", "warning")
+        self.log_panel.log("=" * 50, "warning")
+        self.log_panel.log(f"Playlist ID: {playlist_id}", "info")
+        self.log_panel.log("", "info")
+        
+        if playlist_type == "YouTube Mix":
+            self.log_panel.log("YouTube Mixes are auto-generated playlists that cannot be enumerated.", "info")
+            self.log_panel.log("They are dynamically created based on the seed video and your history.", "info")
+        else:
+            self.log_panel.log("This playlist type cannot be accessed as a playlist.", "info")
+        
+        # If we have a video ID, offer to download just that video
+        if video_id:
+            self.log_panel.log("", "info")
+            self.log_panel.log(f"✅ Switching to single video mode for video: {video_id}", "success")
+            self.log_panel.log("=" * 50, "warning")
+            
+            # Disable playlist mode
+            self.playlist_mode_var.set(False)
+            
+            # Automatically analyze the single video
+            single_url = f"https://www.youtube.com/watch?v={video_id}"
+            self.url_entry.delete(0, "end")
+            self.url_entry.insert(0, single_url)
+            
+            # Re-analyze as single video
+            self.after(100, self._analyze)
+        else:
+            self.log_panel.log("", "info")
+            self.log_panel.log("No video ID found - cannot fall back to single video mode.", "error")
+            self.log_panel.log("=" * 50, "warning")
+            
+            messagebox.showwarning(
+                f"{playlist_type} Not Supported",
+                f"This is a {playlist_type} which cannot be downloaded as a playlist.\n\n"
+                f"{error.message}"
+            )
     
     def _display_video_info(self, info: VideoInfo):
         """Display video information in the modern UI."""
@@ -6560,7 +7618,7 @@ class YtDlpGUI(ctk.CTk):
                 
                 # Determine stage for color coding
                 stage_name = "idle"
-                stage_text = "⏳ Ready to download"
+                stage_text = "â³ Ready to download"
                 
                 if task.status == DownloadStatus.DOWNLOADING:
                     if task.progress < 40:
@@ -6589,7 +7647,7 @@ class YtDlpGUI(ctk.CTk):
                         
                 elif task.status == DownloadStatus.COMPLETED:
                     stage_name = "idle"
-                    stage_text = f"âœ… Completed: {task.video_info.title[:50]}"
+                    stage_text = f"✅ Completed: {task.video_info.title[:50]}"
                 
                 # Update enhanced progress bar
                 self.main_progress.set_progress(task.progress, stage=stage_name)
@@ -6657,7 +7715,7 @@ class YtDlpGUI(ctk.CTk):
                     self.log_panel.log(f"✅ Completed: {task.video_info.title}", "success")
                     self.main_progress.set_progress(100, stage="idle")
                 elif task.status == DownloadStatus.FAILED:
-                    self.log_panel.log(f"❌ Failed: {task.error_message}", "error")
+                    self.log_panel.log(f"âŒ Failed: {task.error_message}", "error")
                     self.progress_label.configure(text="Download failed")
                     self.queue_status.configure(text="Failed")
             
@@ -6677,73 +7735,54 @@ class YtDlpGUI(ctk.CTk):
     # Now using YtDlpUpdater class for auto-updates (v17.10.0)
     
     def _show_help(self):
-        """Show help window."""
-        help_window = ctk.CTkToplevel(self)
-        help_window.title("Help")
-        help_window.geometry("600x600")
-        help_window.transient(self)
+        """Show help window (toggle behavior - close if already open)."""
+        # If window already exists and is open, close it
+        if hasattr(self, 'help_window') and self.help_window and self.help_window.winfo_exists():
+            self.help_window.destroy()
+            self.help_window = None
+            return
+        
+        # Create new help window
+        self.help_window = ctk.CTkToplevel(self)
+        self.help_window.title("Help")
+        self.help_window.geometry("650x700")
+        self.help_window.transient(self)
         
         help_text = ctk.CTkTextbox(
-            help_window,
+            self.help_window,
             font=ctk.CTkFont(size=13),
             wrap="word"
         )
         help_text.pack(fill="both", expand=True, padx=20, pady=20)
         
-        help_content = """
-YouTube 4K Downloader v17.10 - Help
+        help_content = f"""
+YouTube 4K Downloader v{APP_VERSION} - Help
 
 QUICK START
 1. Paste a YouTube URL (or drag & drop)
-2. Click "Analyze" to see available formats
+2. Click "⚡ Analyze" to see available formats
 3. Select your preferred quality
-4. Click "Download" or press Cmd+Return
+4. Click "⚡ Download" or press Cmd+Return
 
-NEW IN V17.10 - AUTO-UPDATE YT-DLP
-- Click "Update" in the header to check for yt-dlp updates
-- Updates are downloaded from GitHub releases automatically
-- No need to re-download the entire app!
-- The Update button turns orange when an update is available
-- Updates are stored in ~/Library/Application Support/
+NEW IN V18.1 - FULL PLAYLIST SUPPORT
+• Download entire YouTube playlists with video selection
+• Smart URL detection: playlist URLs auto-enable playlist mode
+• Toggle appears for URLs like "watch?v=xxx&list=yyy"
+• Select individual videos or download all at once
+• Quality selection (Best/4K/1440p/1080p/720p/480p)
+• Audio-only option for extracting music
+• Automatic retry on failures
 
-CHAPTER DOWNLOADS (V17.8)
-- Download videos split by chapters!
-- Select individual chapters or download all
-- Supports both video and audio-only extraction
-- Files named with chapter number and title
-- 10-50x faster using stream copy (no re-encoding per chapter)
-
-100% SELF-CONTAINED
-This app includes everything needed - no manual installation required:
-- yt-dlp (bundled, auto-updates available)
-- ffmpeg (bundled)  
-- deno JavaScript runtime (bundled)
-
-Just download, drag to Applications, and run!
-
-FEATURES
-- Auto-Update yt-dlp - Keep yt-dlp current without app re-download
-- Chapter Downloads - Split videos into separate files per chapter
-- Settings window - Configure SponsorBlock, subtitles, encoding
-- SponsorBlock - Removes sponsor segments after download
-- History browser - Search and manage download history
-- Playlist support - Download entire playlists
-- Audio-only mode - M4A/MP3 with proper metadata
-- Drag & drop URLs - Drop a YouTube link onto the window
-- QuickTime Compatible - H.264 + AAC for native macOS playback
-
-KEYBOARD SHORTCUTS
-- Cmd+V - Paste URL from clipboard
-- Cmd+Return - Start download
-- Enter - Analyze URL
+Note: YouTube Mix playlists (auto-generated based on a video) 
+cannot be downloaded as playlists - the app will automatically
+fall back to single-video mode for these.
 
 CHAPTER DOWNLOADS
-When a video has chapters:
-1. Click "Analyze" to load video info
-2. A purple "📑 Download Chapters" button appears
-3. Select which chapters to download
-4. Choose "Audio Only" for audio extraction
-5. Each chapter becomes a separate file!
+• Download videos split by chapters!
+• Click the purple "📑 Chapters" button when available
+• Select individual chapters or download all
+• Supports both video and audio-only extraction
+• 10-50x faster using stream copy (no re-encoding per chapter)
 
 Files are saved like:
   Video Title/
@@ -6751,25 +7790,63 @@ Files are saved like:
     02 - Getting Started.mp4
     03 - Advanced Topics.mp4
 
-OPTIONS
-- Video + Audio: Download complete video
-- Audio Only: Extract audio as M4A/MP3
-- QuickTime Compatible: Apple-optimized encoding
-- SponsorBlock: Remove sponsor segments
-- Subtitles: Download and embed multiple languages
-- Trim: Cut start/end of videos
+AUTO-UPDATE YT-DLP
+• Click "🔄" in the header to check for yt-dlp updates
+• Updates are downloaded from GitHub automatically
+• No need to re-download the entire app!
+• The Update button turns orange when an update is available
+• Updates stored in ~/Library/Application Support/
+
+100% SELF-CONTAINED
+This app includes everything needed:
+• yt-dlp (bundled, auto-updates available)
+• ffmpeg (bundled)  
+• deno JavaScript runtime (bundled)
+
+Just download, drag to Applications, and run!
+
+FEATURES
+• Full Playlist Downloads - Select videos, choose quality
+• Chapter Downloads - Split videos into separate files
+• Auto-Update yt-dlp - Stay current without re-downloading app
+• SponsorBlock - Removes sponsor segments after download
+• History Browser - Search and manage download history
+• Audio-Only Mode - M4A extraction with proper metadata
+• Drag & Drop - Drop a YouTube link onto the window
+• QuickTime Compatible - H.264 + AAC for native macOS playback
+
+KEYBOARD SHORTCUTS
+• Cmd+V - Paste URL from clipboard
+• Cmd+Return - Start download
+• Enter - Analyze URL
+
+SETTINGS (⚙️ button)
+• SponsorBlock - Enable/disable, select categories
+• Subtitles - Languages, auto-generated, embedding
+• Encoding - GPU/CPU, preset, bitrate modes
+• Trim - Set start/end times for partial downloads
+• Playlist - Default selection, order, max videos
 
 TROUBLESHOOTING
+
 "App is damaged" error:
   Run in Terminal: xattr -cr /Applications/YouTube\\ 4K\\ Downloader.app
 
 App won't open:
   Right-click the app > Select "Open" > Click "Open" in dialog
 
+Playlist videos randomly fail:
+  The app will automatically retry failed downloads once.
+  If a video still fails, it may be age-restricted, private,
+  or region-locked. Check the Activity Log for details.
+
+YouTube Mix playlists not working:
+  Mix playlists (RD prefix) are auto-generated and cannot be
+  enumerated. The app will download the single seed video instead.
+
 For more information, visit:
 https://github.com/bytePatrol/YT-DLP-GUI-for-MacOS
         """
-
         
         help_text.insert("1.0", help_content)
         help_text.configure(state="disabled")
@@ -6980,7 +8057,7 @@ https://github.com/bytePatrol/YT-DLP-GUI-for-MacOS
         self.update_btn.configure(state="normal", text="Update")
         self.main_progress.set_progress(100 if success else 0, stage="idle")
         self.main_progress.stop_animation()
-        self.progress_label.configure(text="⏳ Ready to download")
+        self.progress_label.configure(text="â³ Ready to download")
         self.queue_status.configure(text="Idle")
         self.percentage_label.configure(text="")
         

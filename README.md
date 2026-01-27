@@ -26,12 +26,80 @@ A modern, fully self-contained YouTube video downloader with a beautiful dark mo
 - ⚡ **Fast Downloads** - Separate video+audio download with smart merging
 - 🎵 **Audio Only Mode** - Extract audio as M4A or MP3
 - 📋 **Playlist Support** - Download entire playlists
-- ✂️ **SponsorBlock Integration** - Automatically remove sponsor segments
-- 📝 **Subtitles** - Download and embed subtitles
+- ✂️ **SponsorBlock Integration** - Automatically remove sponsor segments
+- 🔍 **Subtitles** - Download and embed subtitles
 - 🎬 **QuickTime Compatible** - H.264 + AAC encoding for native macOS playback
 - 📊 **Progress Tracking** - Real-time speed, ETA, and progress display
 - 🔔 **Notifications** - macOS notifications when downloads complete
 - 📜 **Download History** - Browse and search past downloads
+
+## NEW in v18.1.2: Playlist Reliability Improvements
+
+### Automatic Retry for Failed Videos
+When downloading playlists, failed videos are now automatically retried once before marking as failed. This handles transient network issues and temporary YouTube rate limits.
+
+### Detailed Error Reporting
+The Activity Log now shows **specific reasons** for failed downloads:
+- Age-restricted videos (requires authentication)
+- Private videos
+- Region-locked content  
+- Copyright-removed videos
+- Videos requiring login
+
+Example log output:
+```
+[1/11] Downloading: Video Title...
+  Retry attempt 2 for video 1...
+  ❌ Failed: Video Title
+     Reason: Video unavailable (deleted or region-locked)
+```
+
+## NEW in v18.1.1: YouTube Mix Playlist Handling
+
+### Smart Mix Detection
+YouTube Mix playlists (auto-generated "Radio" playlists based on a video) cannot be downloaded as playlists since YouTube doesn't expose the full list. The app now:
+- Detects Mix playlists (URLs with `list=RD...`)
+- Shows a helpful explanation in the Activity Log
+- Automatically falls back to single-video mode
+- Downloads the seed video without errors
+
+## NEW in v18.1.0: Full Playlist Support
+
+Download entire YouTube playlists with smart video selection!
+
+### Smart URL Detection
+- **Explicit playlist URLs** (`youtube.com/playlist?list=xxx`) automatically enable playlist mode
+- **Video-in-playlist URLs** (`watch?v=xxx&list=yyy`) show a toggle to choose single video or full playlist
+- The app intelligently detects your intent based on the URL type
+
+### Playlist Selection Dialog
+- See all videos in the playlist with titles, durations, and channels
+- **Select All / Deselect All** buttons for quick selection
+- Choose quality (Best/4K/1440p/1080p/720p/480p) for all videos
+- **Audio-only mode** to extract audio from all selected videos
+
+### Organized Downloads
+Videos are saved to a folder named after the playlist:
+```
+Playlist Title/
+├── 01 - First Video.mp4
+├── 02 - Second Video.mp4
+├── 03 - Third Video.mp4
+└── ...
+```
+
+### How to use:
+1. Paste a YouTube playlist URL
+2. If it's a video-in-playlist URL, toggle "📋 Playlist" to enable playlist mode
+3. Click **Analyze** to load all videos
+4. Select which videos to download in the playlist dialog
+5. Choose quality and click **Download**
+
+### Playlist Settings
+Configure defaults in Settings → Playlist:
+- **Download all by default** - Pre-select all videos
+- **Reverse order** - Download oldest first
+- **Max videos** - Limit number of videos
 
 ## NEW in v18.0.8: Smart Error Detection
 
@@ -106,7 +174,7 @@ Chapter downloads are **10-50x faster** than previous methods! The app downloads
 macOS blocks apps from unidentified developers. Follow these steps on first launch:
 
 1. **Double-click** the app to try opening it (it will be blocked - this is expected)
-2. Open **System Settings** → **Privacy & Security**
+2. Open **System Settings** →’ **Privacy & Security**
 3. Scroll down to find **"YouTube 4K Downloader" was blocked...**
 4. Click **"Open Anyway"**
 5. Enter your password if prompted
@@ -135,7 +203,7 @@ cd YT-DLP-GUI-for-MacOS
 pip install customtkinter pillow requests yt-dlp psutil
 
 # Run the app
-python yt_dlp_gui_v18_0_8.py
+python yt_dlp_gui_v18_1_2.py
 ```
 
 ## Usage
@@ -156,7 +224,7 @@ python yt_dlp_gui_v18_0_8.py
 
 ## Settings
 
-Access settings via the ⚙️ **Settings** button to configure:
+Access settings via the ⚙️ **Settings** button to configure:
 
 - **SponsorBlock** - Enable/disable, select categories to remove
 - **Subtitles** - Languages, auto-generated, embedding
@@ -215,7 +283,7 @@ xattr -cr /Applications/YouTube\ 4K\ Downloader.app
 ```
 
 ### "App can't be opened because it is from an unidentified developer"
-Right-click the app → Select "Open" → Click "Open" in the dialog.
+Right-click the app →’ Select "Open" →’ Click "Open" in the dialog.
 
 ### App launches but immediately crashes
 Run this in Terminal to see the error:
@@ -263,4 +331,4 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-⭐ If you find this useful, please star the repository!
+⭐ If you find this useful, please star the repository!
