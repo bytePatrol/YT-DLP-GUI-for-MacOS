@@ -3,12 +3,21 @@
 # build_app.sh - Complete build system for YouTube 4K Downloader
 # 
 # This script handles:
+#   - Auto-detecting the best Python version (prefers 3.13, avoids 3.14)
+#   - Auto-installing Python 3.13 via Homebrew if needed
+#   - Auto-fixing missing Tkinter support
 #   - Generating setup.py configuration
 #   - Updating yt-dlp to the latest version
 #   - Building the macOS app with py2app
 #   - Bundling ffmpeg and deno for a self-contained app
 #   - Creating DMG installer with background and icons
 #   - Installing to Applications folder
+#
+# Python Detection (fully automatic):
+#   1. Searches for Python 3.13/3.12/3.11/3.10 with working Tkinter
+#   2. If Tkinter is broken, automatically installs python-tk via Homebrew
+#   3. If no suitable Python exists, offers to install Python 3.13
+#   4. Supports both Apple Silicon (/opt/homebrew/) and Intel (/usr/local/)
 #
 # Usage:
 #   ./build_app.sh                      # Build with current .py file
@@ -100,6 +109,328 @@ show_help() {
     echo "  ./build_app.sh --update-ytdlp       Update yt-dlp before building"
     echo "  ./build_app.sh --dmg                Create DMG from existing build"
     echo ""
+    echo "Python Detection:"
+    echo "  The script automatically finds the best Python version:"
+    echo "  - Prefers Python 3.13, 3.12, 3.11, 3.10 (in that order)"
+    echo "  - Avoids Python 3.14 (Tcl/Tk threading issues)"
+    echo "  - Checks Homebrew locations (Apple Silicon and Intel)"
+    echo "  - Falls back to system python3 if needed"
+    echo ""
+}
+
+# ============================================================================
+# PYTHON DETECTION & AUTO-INSTALLATION
+# ============================================================================
+
+# Global variable to store the detected Python path
+DETECTED_PYTHON=""
+
+test_python_tkinter() {
+    # Test if a Python interpreter has working Tkinter
+    # Returns 0 if Tkinter works, 1 if it doesn't
+    local python_path="$1"
+    "$python_path" -c "import tkinter" 2>/dev/null
+    return $?
+}
+
+check_homebrew() {
+    # Check if Homebrew is installed
+    if command -v brew &> /dev/null; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+auto_install_python() {
+    # Attempt to automatically install Python 3.13 with Tkinter via Homebrew
+    # Returns 0 on success, 1 on failure
+    
+    echo ""
+    print_info "This build requires Python with Tkinter (GUI) support."
+    print_info "No suitable Python installation was found on your system."
+    echo ""
+    
+    if ! check_homebrew; then
+        print_error "Homebrew is not installed."
+        echo ""
+        echo "  To install Homebrew, run:"
+        echo ""
+        echo '    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+        echo ""
+        echo "  Then re-run this build script."
+        echo ""
+        return 1
+    fi
+    
+    echo "┌─────────────────────────────────────────────────────────────────┐"
+    echo "│  AUTOMATIC SETUP                                                │"
+    echo "├─────────────────────────────────────────────────────────────────┤"
+    echo "│  This script can automatically install the required Python      │"
+    echo "│  version (3.13) with GUI support via Homebrew.                  │"
+    echo "│                                                                 │"
+    echo "│  The following will be installed:                               │"
+    echo "│    • python@3.13      (Python interpreter)                      │"
+    echo "│    • python-tk@3.13   (Tkinter GUI support)                     │"
+    echo "└─────────────────────────────────────────────────────────────────┘"
+    echo ""
+    
+    # Check if running interactively
+    if [ -t 0 ]; then
+        # Interactive mode - ask for confirmation
+        read -p "Would you like to install Python 3.13 now? [Y/n] " -n 1 -r
+        echo ""
+        
+        if [[ ! $REPLY =~ ^[Yy]$ ]] && [[ ! -z $REPLY ]]; then
+            print_info "Installation cancelled."
+            print_info "You can manually install with: brew install python@3.13 python-tk@3.13"
+            return 1
+        fi
+    else
+        # Non-interactive mode - proceed with installation
+        print_info "Non-interactive mode detected. Proceeding with automatic installation..."
+    fi
+    
+    echo ""
+    print_info "Installing Python 3.13 with Tkinter support..."
+    echo ""
+    
+    # Install python-tk first (it's a dependency for GUI apps)
+    if ! brew install python-tk@3.13 2>&1; then
+        print_warning "python-tk@3.13 installation had issues, continuing..."
+    fi
+    
+    # Install Python 3.13
+    if ! brew install python@3.13 2>&1; then
+        print_error "Failed to install Python 3.13"
+        return 1
+    fi
+    
+    echo ""
+    print_success "Python 3.13 installed successfully!"
+    echo ""
+    
+    # Verify the installation
+    local new_python="/opt/homebrew/opt/python@3.13/bin/python3"
+    if [ ! -x "$new_python" ]; then
+        # Try Intel location
+        new_python="/usr/local/opt/python@3.13/bin/python3"
+    fi
+    
+    if [ -x "$new_python" ] && test_python_tkinter "$new_python"; then
+        DETECTED_PYTHON="$new_python"
+        return 0
+    else
+        print_error "Python was installed but Tkinter still isn't working."
+        print_info "Try running: brew reinstall python-tk@3.13 python@3.13"
+        return 1
+    fi
+}
+
+try_fix_tkinter() {
+    # Attempt to fix Tkinter for a specific Python version
+    # $1 = Python version (e.g., "3.14")
+    local version="$1"
+    
+    if ! check_homebrew; then
+        return 1
+    fi
+    
+    print_info "Attempting to install Tkinter support for Python $version..."
+    
+    if brew install "python-tk@$version" 2>&1; then
+        print_success "python-tk@$version installed"
+        return 0
+    else
+        return 1
+    fi
+}
+
+find_python() {
+    # Find the best available Python 3 interpreter with working Tkinter
+    # Priority: Python 3.13 > 3.12 > 3.11 > 3.10 (avoiding 3.14 due to Tcl/Tk threading issues)
+    # Will attempt to auto-install if no suitable Python is found
+    # Sets DETECTED_PYTHON global variable
+    
+    DETECTED_PYTHON=""
+    
+    # Preferred versions in order (3.13 is ideal, avoid 3.14)
+    local PREFERRED_VERSIONS=("3.13" "3.12" "3.11" "3.10")
+    
+    # Fallback versions (we'll use these if nothing else works, but warn about issues)
+    local FALLBACK_VERSIONS=("3.14" "3.9")
+    
+    # Locations to check for each version
+    local HOMEBREW_APPLE="/opt/homebrew/opt/python@VERSION/bin/python3"
+    local HOMEBREW_INTEL="/usr/local/opt/python@VERSION/bin/python3"
+    local HOMEBREW_GENERIC_APPLE="/opt/homebrew/bin/python3"
+    local HOMEBREW_GENERIC_INTEL="/usr/local/bin/python3"
+    
+    # Track Python installations with broken Tkinter (we might try to fix them)
+    local BROKEN_TKINTER_VERSIONS=()
+    
+    # First, try to find preferred versions in Homebrew
+    for version in "${PREFERRED_VERSIONS[@]}"; do
+        # Check Apple Silicon Homebrew
+        local apple_path="${HOMEBREW_APPLE/VERSION/$version}"
+        if [ -x "$apple_path" ]; then
+            if test_python_tkinter "$apple_path"; then
+                DETECTED_PYTHON="$apple_path"
+                print_info "Found Python $version at: $apple_path"
+                break
+            else
+                BROKEN_TKINTER_VERSIONS+=("$version")
+            fi
+        fi
+        
+        # Check Intel Homebrew
+        local intel_path="${HOMEBREW_INTEL/VERSION/$version}"
+        if [ -x "$intel_path" ]; then
+            if test_python_tkinter "$intel_path"; then
+                DETECTED_PYTHON="$intel_path"
+                print_info "Found Python $version at: $intel_path"
+                break
+            else
+                BROKEN_TKINTER_VERSIONS+=("$version")
+            fi
+        fi
+    done
+    
+    # If no preferred version found, check fallback versions
+    if [ -z "$DETECTED_PYTHON" ]; then
+        for version in "${FALLBACK_VERSIONS[@]}"; do
+            local apple_path="${HOMEBREW_APPLE/VERSION/$version}"
+            local intel_path="${HOMEBREW_INTEL/VERSION/$version}"
+            
+            if [ -x "$apple_path" ]; then
+                if test_python_tkinter "$apple_path"; then
+                    DETECTED_PYTHON="$apple_path"
+                    print_info "Found Python $version at: $apple_path"
+                    break
+                else
+                    BROKEN_TKINTER_VERSIONS+=("$version")
+                fi
+            elif [ -x "$intel_path" ]; then
+                if test_python_tkinter "$intel_path"; then
+                    DETECTED_PYTHON="$intel_path"
+                    print_info "Found Python $version at: $intel_path"
+                    break
+                else
+                    BROKEN_TKINTER_VERSIONS+=("$version")
+                fi
+            fi
+        done
+    fi
+    
+    # If still nothing, try generic Homebrew python3
+    if [ -z "$DETECTED_PYTHON" ]; then
+        if [ -x "$HOMEBREW_GENERIC_APPLE" ]; then
+            if test_python_tkinter "$HOMEBREW_GENERIC_APPLE"; then
+                DETECTED_PYTHON="$HOMEBREW_GENERIC_APPLE"
+                print_info "Found Python at: $HOMEBREW_GENERIC_APPLE"
+            fi
+        fi
+        
+        if [ -z "$DETECTED_PYTHON" ] && [ -x "$HOMEBREW_GENERIC_INTEL" ]; then
+            if test_python_tkinter "$HOMEBREW_GENERIC_INTEL"; then
+                DETECTED_PYTHON="$HOMEBREW_GENERIC_INTEL"
+                print_info "Found Python at: $HOMEBREW_GENERIC_INTEL"
+            fi
+        fi
+    fi
+    
+    # Last resort: system python3
+    if [ -z "$DETECTED_PYTHON" ]; then
+        if command -v python3 &> /dev/null; then
+            local sys_python=$(command -v python3)
+            if test_python_tkinter "$sys_python"; then
+                DETECTED_PYTHON="$sys_python"
+                print_info "Using system Python: $DETECTED_PYTHON"
+            fi
+        fi
+    fi
+    
+    # If we found Python installations with broken Tkinter, try to fix them
+    if [ -z "$DETECTED_PYTHON" ] && [ ${#BROKEN_TKINTER_VERSIONS[@]} -gt 0 ]; then
+        echo ""
+        print_warning "Found Python installations but Tkinter (GUI support) is missing."
+        
+        # Try to fix the first broken version
+        local version_to_fix="${BROKEN_TKINTER_VERSIONS[0]}"
+        
+        if check_homebrew; then
+            echo ""
+            print_info "Attempting to install Tkinter support for Python $version_to_fix..."
+            echo ""
+            
+            if brew install "python-tk@$version_to_fix" 2>&1; then
+                # Re-check if it works now
+                local apple_path="${HOMEBREW_APPLE/VERSION/$version_to_fix}"
+                local intel_path="${HOMEBREW_INTEL/VERSION/$version_to_fix}"
+                
+                if [ -x "$apple_path" ] && test_python_tkinter "$apple_path"; then
+                    DETECTED_PYTHON="$apple_path"
+                    echo ""
+                    print_success "Tkinter support installed successfully!"
+                    print_info "Found Python $version_to_fix at: $apple_path"
+                elif [ -x "$intel_path" ] && test_python_tkinter "$intel_path"; then
+                    DETECTED_PYTHON="$intel_path"
+                    echo ""
+                    print_success "Tkinter support installed successfully!"
+                    print_info "Found Python $version_to_fix at: $intel_path"
+                fi
+            fi
+        fi
+    fi
+    
+    # If still no working Python, offer to install one
+    if [ -z "$DETECTED_PYTHON" ]; then
+        if auto_install_python; then
+            # DETECTED_PYTHON is set by auto_install_python on success
+            # Delete any existing venv since we have a new Python
+            if [ -d "$VENV_DIR" ]; then
+                print_info "Removing old virtual environment..."
+                rm -rf "$VENV_DIR"
+            fi
+        else
+            echo ""
+            print_error "Unable to find or install a suitable Python environment."
+            echo ""
+            echo "  Manual installation options:"
+            echo ""
+            echo "  1. Install Python 3.13 (recommended):"
+            echo "     brew install python@3.13 python-tk@3.13"
+            echo ""
+            echo "  2. Fix Tkinter for your existing Python:"
+            echo "     brew install python-tk@3.14"
+            echo "     brew reinstall python@3.14"
+            echo ""
+            echo "  After installing, delete the 'venv' folder and re-run this script."
+            echo ""
+            exit 1
+        fi
+    fi
+    
+    # Check Python version for warnings
+    local PY_VERSION=$("$DETECTED_PYTHON" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')" 2>/dev/null)
+    
+    if [ -z "$PY_VERSION" ]; then
+        print_error "Could not determine Python version from: $DETECTED_PYTHON"
+        exit 1
+    fi
+    
+    # Warn about Python 3.14 (Tcl/Tk threading issues in some cases)
+    if [[ "$PY_VERSION" == "3.14" ]]; then
+        print_warning "Python 3.14 in use - if you experience GUI issues, consider Python 3.13"
+    fi
+    
+    # Warn about old versions
+    local MINOR_VERSION="${PY_VERSION#3.}"
+    if [ "$MINOR_VERSION" -lt 10 ] 2>/dev/null; then
+        print_warning "Python $PY_VERSION detected - version 3.10+ recommended"
+    fi
+    
+    print_success "Using Python $PY_VERSION ($DETECTED_PYTHON)"
 }
 
 activate_venv() {
@@ -107,10 +438,20 @@ activate_venv() {
         print_warning "Virtual environment not found at $VENV_DIR"
         print_info "Creating virtual environment..."
         
-        /opt/homebrew/opt/python@3.13/bin/python3.13 -m venv "$VENV_DIR"
+        # Find the best Python interpreter (sets DETECTED_PYTHON)
+        find_python
+        
+        if [ -z "$DETECTED_PYTHON" ]; then
+            print_error "Failed to find Python interpreter"
+            exit 1
+        fi
+        
+        # Create virtual environment
+        "$DETECTED_PYTHON" -m venv "$VENV_DIR"
         
         if [ $? -ne 0 ]; then
             print_error "Failed to create virtual environment"
+            print_info "Python used: $DETECTED_PYTHON"
             exit 1
         fi
         
@@ -131,17 +472,62 @@ activate_venv() {
         print_success "All dependencies installed"
     else
         source "$VENV_DIR/bin/activate"
-        print_success "Virtual environment activated"
         
-        # Check if psutil is installed (required for v18.0.0+)
-        if ! python -c "import psutil" 2>/dev/null; then
-            print_warning "psutil not found in existing venv, installing..."
-            pip install psutil
-            if [ $? -ne 0 ]; then
-                print_error "Failed to install psutil"
+        # CRITICAL: Verify Tkinter works in this venv
+        if ! python -c "import tkinter" 2>/dev/null; then
+            print_warning "Existing virtual environment has broken Tkinter!"
+            print_info "Rebuilding virtual environment..."
+            
+            # Deactivate and remove the broken venv
+            deactivate 2>/dev/null || true
+            rm -rf "$VENV_DIR"
+            
+            # Find a working Python (sets DETECTED_PYTHON)
+            find_python
+            
+            if [ -z "$DETECTED_PYTHON" ]; then
+                print_error "Failed to find Python interpreter with working Tkinter"
                 exit 1
             fi
-            print_success "psutil installed"
+            
+            # Create new virtual environment
+            print_info "Creating new virtual environment..."
+            "$DETECTED_PYTHON" -m venv "$VENV_DIR"
+            
+            if [ $? -ne 0 ]; then
+                print_error "Failed to create virtual environment"
+                print_info "Python used: $DETECTED_PYTHON"
+                exit 1
+            fi
+            
+            print_success "Virtual environment created"
+            
+            # Activate and install dependencies
+            source "$VENV_DIR/bin/activate"
+            
+            print_info "Installing required packages..."
+            pip install --upgrade pip
+            pip install py2app customtkinter pillow requests yt-dlp darkdetect idna urllib3 charset-normalizer certifi psutil
+            
+            if [ $? -ne 0 ]; then
+                print_error "Failed to install dependencies"
+                exit 1
+            fi
+            
+            print_success "All dependencies installed"
+        else
+            print_success "Virtual environment activated"
+            
+            # Check if psutil is installed (required for v18.0.0+)
+            if ! python -c "import psutil" 2>/dev/null; then
+                print_warning "psutil not found in existing venv, installing..."
+                pip install psutil
+                if [ $? -ne 0 ]; then
+                    print_error "Failed to install psutil"
+                    exit 1
+                fi
+                print_success "psutil installed"
+            fi
         fi
     fi
 }
@@ -1170,7 +1556,7 @@ create_dmg() {
 Installation: Drag app to Applications folder.
 
 First Launch (macOS Security):
-  System Settings → Privacy & Security → Open Anyway
+  System Settings â†’ Privacy & Security â†’ Open Anyway
   
 Or run in Terminal:
   xattr -cr /Applications/YouTube\ 4K\ Downloader.app
