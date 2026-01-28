@@ -1,6 +1,6 @@
 # YouTube 4K Downloader for macOS
 
-A modern, fully self-contained YouTube video downloader with a beautiful dark mode interface. No dependencies required - just download and run!
+A modern, fully self-contained YouTube video downloader with a beautiful dark mode interface. One of the only MacOS apps that can download 4K content directly from YouTube in native MacOS compatible format and remove all sponsor segments within the video. No dependencies required, No Ads, Telemetry & No "Calling Home" - just download and run!
 
 ## Screenshots
 
