@@ -2,6 +2,48 @@
 
 All notable changes to YouTube 4K Downloader will be documented in this file.
 
+## [18.1.3] - 2026-01-28
+
+### 🔄 Unified Retry System
+- **All downloads now use a unified retry system** with 6 total attempts (5 retries + 1 initial)
+- **Progressive delays between retries**: 5s, 10s, 15s, 20s, 25s - gives YouTube time to lift rate limits
+- **Silent retries for first 2 attempts** - only logs if problem persists after 3rd failure
+- Shows "Waiting Xs for YouTube..." during retry delays so app doesn't appear frozen
+- Applies to: main downloads, chapter downloads, playlist downloads (video and audio)
+
+### 🎬 True 4K Downloads
+- **FIXED: 4K downloads were actually downloading 1080p and upscaling to fake 4K!**
+- Now correctly prioritizes RESOLUTION over codec for 4K+ content
+- YouTube only offers H.264 up to 1080p; 4K requires VP9/AV1 codecs
+- For 1080p and below, still prefers H.264 for hardware decoding benefits
+- Resolution is verified after download to ensure you get true 4K quality
+
+### 🔧 403 Forbidden Error Fixes
+- Removed forced `player_client` settings that YouTube was actively blocking
+- Lets yt-dlp use its default player client selection (much more reliable)
+- Better detection of incomplete downloads (.part files no longer falsely reported as success)
+- Validates file size to ensure downloads are actually complete
+
+### 📊 Better Progress Feedback
+- Chapter encoding now shows **FPS, Speed, and ETA** during conversion
+- Progress bar updates during retry waits so app doesn't appear frozen
+- Cleaner Activity Log - removed alarming ERROR messages during normal retries
+- Filtered confusing yt-dlp warnings (ffmpeg installation, DASH m4a, etc.)
+
+### 🍎 macOS Improvements  
+- Fixed "Install ffmpeg" warning by passing `--ffmpeg-location` to yt-dlp
+- Uses ffmpeg instead of ffprobe for resolution detection (ffprobe not bundled)
+- Clear explanation of CPU usage during 4K encoding:
+  - VP9 **decoding** uses CPU (unavoidable on macOS - no hardware VP9 decoder)
+  - H.264 **encoding** uses Apple Media Engine (VideoToolbox)
+- VideoToolbox hardware encoder confirmation in logs
+
+### 📁 File Handling Improvements
+- Better temp file detection with multiple search strategies
+- Handles yt-dlp naming variations (format IDs in filenames like `video.f313.webm`)
+- Longer waits for file system sync to prevent race conditions
+- Validates file size (>10KB) to ensure downloads are complete
+
 ## [18.1.2] - 2026-01-26
 
 ### Added
@@ -15,7 +57,7 @@ All notable changes to YouTube 4K Downloader will be documented in this file.
 - **Temp File Cleanup Before Retry** - Leftover temp files are cleaned up before each retry attempt
 
 ### Fixed
-- **Help Button Encoding** - Fixed broken ❓ emoji in the Help button
+- **Help Button Encoding** - Fixed broken â" emoji in the Help button
 - **Help Window Toggle** - Clicking Help twice now closes the window instead of opening duplicates
 - **Updated Help Content** - Help now reflects v18.1 features including playlist support, YouTube Mix handling, and troubleshooting tips
 
@@ -99,13 +141,13 @@ All notable changes to YouTube 4K Downloader will be documented in this file.
 - Detailed Activity Log output with step-by-step instructions for workarounds
 
 ### Fixed
-- **Restored all emoji icons** - UI emojis now display correctly (🔥, ⚡, ⚙️, 📚, â“, 🔥, âœ…, âŒ, etc.)
+- **Restored all emoji icons** - UI emojis now display correctly
 - **Fixed lambda closure bug** - Exception handlers in threaded analysis now properly capture error objects
 - **Removed duplicate exception classes** - Cleaned up duplicate YtDlpError class definitions that were causing issues
 - App no longer appears frozen when analyzing problematic videos - proper error feedback is shown
 
 ### Changed
-- All UI elements now use proper UTF-8 emoji encoding
+- All UI elements now use proper UTF-8 encoding
 - Activity Log messages include status emojis for better visual feedback
 - Error dialogs provide specific instructions based on the type of error encountered
 
@@ -166,220 +208,6 @@ All notable changes to YouTube 4K Downloader will be documented in this file.
 - Removes macOS quarantine attribute automatically
 - Progress shown in main progress bar during download
 - All operations are non-blocking with proper threading
-
-## [17.9.0] - 2026-01-20
-
-### Security
-- **Fixed shell injection vulnerability** in macOS notifications - malicious video titles could no longer execute arbitrary AppleScript commands
-- Added input sanitization (escaping `\`, `"`, `'`) in `send_notification()` function
-- Added input truncation (100/200 char limits) to prevent buffer overflow attacks
-- Added subprocess timeouts to prevent hanging:
-  - `get_version()`: 10 second timeout
-  - `fetch_video_info()`: 30 second timeout
-  - `fetch_full_info()`: 30 second timeout
-  - `send_notification()`: 5 second timeout
-
-### Changed
-- **Complete documentation overhaul** - Added comprehensive Google-style docstrings to all 25+ classes and functions
-- Replaced 200+ lines of version history in file header with professional module documentation
-- Added architecture overview documenting UI Layer, Business Logic Layer, and Data Layer
-- Version history now references CHANGELOG.md instead of inline comments
-
-### Fixed
-- **Eliminated all bare `except:` clauses** - Now uses specific exception types:
-  - `except ValueError:` for parsing errors
-  - `except (ValueError, AttributeError):` for settings validation
-  - `except (ValueError, TypeError):` for numeric conversions
-  - `except (tk.TclError, RuntimeError):` for widget destruction
-  - `except (subprocess.TimeoutExpired, OSError, ValueError):` for subprocess calls
-  - `except OSError:` for file operations
-- Removed all debug print statements for cleaner production output
-- Improved type hints with explicit return types (`-> None`, `-> str`, etc.)
-- Consistent code formatting and whitespace cleanup
-
-### Documentation
-- `VideoFormat`: Full attribute descriptions for all 16 fields
-- `Chapter`: Chapter metadata and duration properties explained
-- `VideoInfo`: Complete video metadata documentation
-- `DownloadTask`: All 18 attributes documented with types and descriptions
-- `SponsorBlockAPI`: API usage and privacy-preserving hash mechanism
-- `YtDlpInterface`: Multiple execution modes documented with examples
-- `DownloadManager`: Thread-safety and callback system explained
-- All UI widgets: `EnhancedProgressBar`, `ModernButton`, `FormatCard`, etc.
-- All dialog windows: `SettingsWindow`, `HistoryBrowserWindow`, `ChapterSelectionWindow`
-
-## [17.8.8] - 2026-01-19
-
-### Fixed
-- **History now saves correctly** - Downloads were being saved to wrong file path (`~/.yt_dlp_gui_v16_history.json` instead of `~/.config/yt-dlp-gui/history.json`)
-
-### Changed
-- Updated Help menu with accurate, current information
-- Removed outdated references to manual yt-dlp/ffmpeg installation (app is 100% self-contained)
-- Fixed broken emoji/unicode characters throughout the codebase
-- Updated documentation to highlight chapter download features
-
-## [17.8.7] - 2026-01-19
-
-### Changed
-- SponsorBlock is now automatically disabled for chapter downloads
-- Added notice in SponsorBlock settings explaining chapter download limitation
-- Added notice in chapter selection window about SponsorBlock being disabled
-- This prevents potential issues with chapter extraction and SponsorBlock conflicts
-
-## [17.8.6] - 2026-01-19
-
-### Fixed
-- **Footer no longer disappears after clicking Analyze**
-- Footer (Output path, Open Folder, Change buttons) now stays visible permanently
-- Fixed layout issue where dynamically showing video_frame pushed footer off screen
-- Log panel no longer expands infinitely, allowing footer to remain visible
-- Can now download multiple videos without restarting the app
-
-## [17.8.5] - 2026-01-19
-
-### Changed
-- **MAJOR PERFORMANCE FIX: Chapter downloads are now 10-50x faster!**
-- New strategy: Download once  →  Encode once  →  Split into chapters
-- Old method downloaded and encoded the ENTIRE video for EACH chapter (extremely slow)
-- New method uses ffmpeg stream copy to split chapters (instant, no re-encoding)
-
-### Fixed
-- Fixed bug where only 3 chapters were output despite selecting more
-- Added proper progress tracking through all stages (download/encode/split)
-- Temp files are now properly cleaned up after chapter extraction
-
-## [17.8.4] - 2026-01-19
-
-### Fixed
-- **Chapter downloads now work with bundled ffmpeg**
-- Added `--ffmpeg-location` to chapter extraction commands
-- yt-dlp's `--download-sections` requires ffmpeg for partial video extraction
-- Error "ffmpeg is not installed" no longer occurs when downloading chapters
-
-## [17.8.3] - 2026-01-19
-
-### Fixed
-- **CRITICAL: All downloads now work with YouTube's SABR streaming restrictions**
-- Added `--extractor-args youtube:player_client=android_sdkless` to ALL yt-dlp commands
-- Added `--remote-components ejs:github` for JavaScript challenge solving
-- Fixed chapter downloads failing with "Some web client https formats have been skipped"
-- Fixed main video/audio downloads that were also affected by SABR restrictions
-- `android_sdkless` client bypasses YouTube's SABR-only enforcement
-
-## [17.8.2] - 2026-01-19
-
-### Fixed
-- **App no longer appears frozen during long merge/conversion operations** - Videos with many chapters would cause the app to appear unresponsive for 9+ minutes
-- **Analyze button now works** - Fixed UTF-8 encoding issue in `fetch_video_info()` and `fetch_full_info()`
-- **Footer stays visible** - Output path and buttons no longer disappear after clicking Analyze
-- Progress bar and status now show activity even when ffmpeg/yt-dlp don't output progress percentages
-
-### Added
-- **Chapter Downloads Restored** - Download videos split by chapters!
-  - Automatically detects YouTube chapters from video metadata
-  - Shows chapter count in video info (e.g., "f09f9391 37 chapters")
-  - Purple "Download Chapters" button appears when chapters are available
-  - Chapter selection dialog with Select All/Deselect All options
-  - Support for both video and audio-only chapter extraction
-  - Chapter files named with number prefix and chapter title (e.g., "01 - Introduction.mp4")
-  - Progress tracking shows current chapter being extracted
-  - All chapter files saved to a folder named after the video
-- **Real-time file size monitoring** - When progress parsing fails, shows current output file size
-- **Detailed status messages** - Status bar shows "Processing chapters...", "Merging streams...", etc.
-- **Background file growth detection** - Monitor thread tracks output file growth during stalls
-
-### Changed
-- Enhanced `_run_subprocess_with_progress` to detect yt-dlp's `[Merger]` and `[ffmpeg]` phases
-- Enhanced `_run_ffmpeg_with_progress` with file monitoring when time-based progress unavailable
-- DownloadTask now includes `status_detail` and `current_file_size` fields
-- Removed debug print statements from `get_version()`
-
-## [17.7.4] - 2026-01-19
-
-### Fixed
-- **Tcl/Tk bundling** - App now bundles Tcl/Tk frameworks to fix "py2app launch issues" error
-- Users no longer need to run `brew install tcl-tk` to launch the app
-- Build script auto-detects and bundles Tcl/Tk from Python installation
-- **Settings window** - Save/Cancel buttons now visible; window is taller and scrollable
-
-### Changed
-- **Ad-hoc code signing** - App is now signed to prevent "app is damaged" errors
-- Improved dependency bundling for more reliable launches on all Macs
-- Build script now uses ASCII-safe output (no more garbled Unicode characters)
-- Better verification of bundled components during build
-
-### Added
-- Build script now checks for and bundles Tcl.framework and Tk.framework
-- Verification step confirms all required frameworks are present
-
-## [17.7.3] - 2026-01-18
-
-### Fixed
-- **File size display** - Format cards now correctly show file sizes (e.g., "668 MB") instead of "Unknown"
-- Improved parsing of yt-dlp's format table output to handle separator characters
-- Better regex matching for file sizes (MiB, GiB, KiB), bitrates, and resolutions
-- FPS values now correctly parsed from format table
-
-### Changed
-- App renamed from "yt-dlp GUI" to "YouTube 4K Downloader"
-- Bundle identifier changed to `com.bytepatrol.youtube4kdownloader`
-
-## [17.7.2] - 2026-01-18
-
-### Changed
-- Rebranded app from "yt-dlp GUI" to "YouTube 4K Downloader"
-- Updated window title, help text, and all UI references
-
-## [17.7.1] - 2026-01-17
-
-### Fixed
-- Minor bug fixes and stability improvements
-
-## [17.7.0] - 2026-01-17
-
-### Added
-- **SponsorBlock post-processing** - Now works reliably by querying SponsorBlock API after download
-- Segments are fetched and removed via ffmpeg re-encoding
-- Detailed segment information shown in activity log
-
-### Fixed
-- SponsorBlock now actually removes sponsor segments (previous versions had integration issues)
-
-## [17.6.0] - 2026-01-16
-
-### Changed
-- Reverted to proven separate download strategy (fast, reliable)
-- Using bundled ffmpeg for QuickTime-compatible encoding (H.264 + AAC)
-- SponsorBlock kept disabled during download phase due to YouTube API restrictions
-
-## [17.4.0] - 2026-01-15
-
-### Changed
-- Reverted to separate video+audio download strategy (known to work reliably)
-- Disabled SponsorBlock in download commands (not compatible with current YouTube API)
-- SponsorBlock UI remains but feature was non-functional until v17.7.0
-
-## [17.0.0] - 2026-01-10
-
-### Added
-- Modern dark mode UI using CustomTkinter
-- Fully responsive layout
-- Video thumbnails and previews
-- Download queue with pause/resume
-- Playlist support
-- Subtitle downloads
-- Persistent settings (stored in `~/.config/yt-dlp-gui/`)
-- Self-contained app with bundled ffmpeg and deno
-- Per-resolution bitrate settings
-- Enhanced progress tracking with ETA
-- macOS notifications on completion
-- Download history browser
-- Drag & drop URL support
-
-### Fixed
-- Settings persistence - SponsorBlock, Encoding, etc. now save properly
-- Separated settings.json from config.json to prevent overwrites
 
 ---
 

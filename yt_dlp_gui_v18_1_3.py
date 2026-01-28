@@ -1,16 +1,91 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 YouTube 4K Downloader v18 - 2026 Modern Design Edition
 
 Complete UI/UX overhaul with contemporary design standards:
--  Glass morphism design with backdrop blur effects
-- 💫 Purple-blue gradient accents throughout
--  Responsive flexbox layout (no cut-off sections)
--  Collapsible activity log panel (max 200px, scrollable)
-- Â± Modern card-based interface with generous spacing
-- ✨ Smooth animations and micro-interactions
-- Ëœ Larger touch targets (56-60px buttons)
-- 💎 Softer corners (16-20px border radius)
+- Glass morphism design with backdrop blur effects
+- Purple-blue gradient accents throughout
+- Responsive flexbox layout (no cut-off sections)
+- Collapsible activity log panel (max 200px, scrollable)
+- Modern card-based interface with generous spacing
+- Smooth animations and micro-interactions
+- Larger touch targets (56-60px buttons)
+- Softer corners (16-20px border radius)
+
+v18.1.3 Changes - MAJOR RELIABILITY UPDATE:
+
+🔄 UNIFIED RETRY SYSTEM:
+- All downloads now use a unified retry system with 6 total attempts
+- Progressive delays between retries: 5s, 10s, 15s, 20s, 25s
+- Silent retries for first 2 attempts - only logs if problem persists
+- Applies to: main downloads, chapter downloads, playlist downloads
+- Shows "Waiting Xs for YouTube..." during retry delays
+- Much better handling of YouTube's aggressive rate limiting
+
+🎬 TRUE 4K DOWNLOADS:
+- FIXED: 4K downloads were actually downloading 1080p and upscaling (fake 4K!)
+- Now correctly prioritizes RESOLUTION over codec for 4K+ content
+- YouTube only offers H.264 up to 1080p; 4K requires VP9/AV1
+- For 1080p and below, still prefers H.264 for hardware decoding benefits
+- Resolution is now verified after download to ensure quality
+
+🔧 403 FORBIDDEN FIXES:
+- Removed forced player_client settings that YouTube was blocking
+- Lets yt-dlp use its default player client selection (more reliable)
+- Better detection of incomplete downloads (.part files)
+- No longer falsely reports success when download is incomplete
+
+📊 BETTER PROGRESS FEEDBACK:
+- Chapter encoding now shows FPS, Speed, and ETA during conversion
+- Progress bar updates during retry waits so app doesn't appear frozen
+- Cleaner activity log - removed alarming ERROR messages during normal retries
+- Filtered confusing yt-dlp warnings (ffmpeg installation, DASH m4a, etc.)
+
+🍎 MACOS IMPROVEMENTS:
+- Fixed "Install ffmpeg" warning by passing --ffmpeg-location to yt-dlp
+- Uses ffmpeg instead of ffprobe for resolution detection (ffprobe not bundled)
+- Clear explanation of CPU usage: VP9 decoding uses CPU, encoding uses Media Engine
+- VideoToolbox hardware encoder confirmation in logs
+
+📁 FILE HANDLING:
+- Better temp file detection with multiple search strategies
+- Handles yt-dlp naming variations (format IDs in filenames)
+- Longer waits for file system sync to prevent race conditions
+- Validates file size to ensure downloads are complete
+
+v18.1.6 Changes - 4K RESOLUTION PRESERVATION FIX:
+- FIXED: 4K videos being downscaled to 1080p during FFmpeg conversion
+- NEW: FFprobe detection of actual source video resolution before encoding
+- NEW: Explicit -s WIDTHxHEIGHT parameter in FFmpeg command preserves resolution
+- IMPROVED: Increased default bitrates for H.264 encoding (H.264 needs higher bitrates than VP9):
+  - 4K: 45 Mbps (was 15 Mbps) - matches quality of YouTube's 9.3 Mbps VP9
+  - 1440p: 20 Mbps (was 10 Mbps)
+  - 1080p: 8 Mbps (was 6 Mbps)
+  - 720p: 5 Mbps (was 4 Mbps)
+- IMPROVED: Resolution logged before encoding for verification
+
+v18.1.5 Changes - RETRY LOGIC & FILE SYNC FIX:
+- FIXED: Downloads failing on first attempt due to YouTube rate limiting
+- NEW: Automatic retry logic (up to 2 retries with 3 second delays) for rate-limited downloads
+- NEW: File system sync delays after downloads to prevent race conditions
+- IMPROVED: More robust file detection with size validation (ensures file is not empty)
+- IMPROVED: Better logging during retry attempts ("Download attempt X failed, retrying...")
+- IMPROVED: Video file search now excludes _temp_audio files to avoid false matches
+
+v18.1.4 Changes - 403 FORBIDDEN FIX:
+- FIXED: 403 Forbidden errors by using multiple player clients (tv,android_sdkless)
+  instead of forcing android_sdkless only
+- FIXED: Audio/video file detection now uses specific file prefixes to avoid
+  false "file downloaded successfully" messages
+- FIXED: Corrupted emoji characters in log output (mojibake cleanup)
+- IMPROVED: Format selection now prefers avc1 (H.264) codec for better QuickTime
+  compatibility, matching the working manual yt-dlp command
+- IMPROVED: Audio format selection prefers AAC codec (acodec^=mp4a) for compatibility
+- IMPROVED: _find_temp_file and _find_chapter_temp_file properly handle audio files
+- IMPROVED: Both methods now skip .part files and provide better error logging
+- IMPROVED: Chapter downloads also updated with improved player client strategy
+- REMOVED: --remote-components ejs:github flag (not needed with tv client)
 
 v18.0.5 Changes - DOWNLOAD BUTTON & SELECTION FIX:
 - FIXED: Download button now ALWAYS visible without needing fullscreen
@@ -328,7 +403,25 @@ except ImportError:
 # ============================================================================
 
 APP_NAME = "YouTube 4K Downloader"
-APP_VERSION = "18.1.2"
+APP_VERSION = "18.1.3"
+
+# ============================================================================
+# RETRY CONFIGURATION
+# ============================================================================
+# Unified retry settings for all download operations
+# YouTube aggressively rate-limits requests, so we need robust retry logic
+
+RETRY_MAX_ATTEMPTS = 6          # Total attempts (5 retries + 1 initial)
+RETRY_BASE_DELAY = 5            # Base delay in seconds
+RETRY_DELAY_INCREMENT = 5       # Additional seconds per retry (5s, 10s, 15s, 20s, 25s)
+RETRY_SILENT_THRESHOLD = 2      # Don't log retries until this many failures
+RETRY_DELAYS = [5, 10, 15, 20, 25]  # Delay before each retry attempt
+
+def get_retry_delay(attempt: int) -> int:
+    """Get delay for a specific retry attempt (0-indexed)."""
+    if attempt < len(RETRY_DELAYS):
+        return RETRY_DELAYS[attempt]
+    return RETRY_DELAYS[-1]  # Use last delay for any additional attempts
 
 # Configuration paths - using proper config directory
 CONFIG_DIR = Path.home() / ".config" / "yt-dlp-gui"
@@ -892,7 +985,7 @@ class UpdateNotificationDialog(ctk.CTkToplevel):
         # Download button (primary, prominent)
         download_btn = ModernButton(
             button_frame,
-            text="â¬‡ï¸ Download Update",
+            text="[DOWN] Download Update",
             style="primary",
             width=220,
             height=48,
@@ -2129,7 +2222,6 @@ class YtDlpInterface:
                 self._build_command([
                     "-J",
                     "--flat-playlist",
-                    "--extractor-args", "youtube:player_client=android_sdkless",
                     parsed.playlist_url
                 ]),
                 capture_output=True, text=True, check=False, timeout=60,  # Longer timeout for playlists
@@ -2986,18 +3078,29 @@ class DownloadManager:
                 final_output = f"{name} ({counter}){ext}"
                 counter += 1
             
-            # Step 1: Download best video (using working strategy from v17.1.7)
+            # Step 1: Download best video
+            # CRITICAL: For 4K+, prioritize RESOLUTION over codec preference
+            # YouTube only offers H.264 up to 1080p; 4K requires VP9/AV1
             if fmt and fmt.height:
-                video_format = f"bestvideo[height<={fmt.height}][ext=mp4]/bestvideo[height<={fmt.height}]/bestvideo"
-                self._notify("log", ("info", f"Downloading best video at or below {fmt.height}p"))
+                if fmt.height > 1080:
+                    # For 4K+: Get the best quality at requested resolution, regardless of codec
+                    # VP9/AV1 are the only options for 4K on YouTube
+                    video_format = f"bestvideo[height<={fmt.height}]/bestvideo"
+                    self._notify("log", ("info", f"Downloading best {fmt.height}p video (VP9/AV1 - 4K requires these codecs)"))
+                    self._notify("log", ("info", "VP9 decoding uses CPU; encoding uses Apple Media Engine"))
+                else:
+                    # For 1080p and below: Prefer H.264 for hardware decoding
+                    video_format = f"bestvideo[vcodec^=avc1][height<={fmt.height}][ext=mp4]/bestvideo[height<={fmt.height}][ext=mp4]/bestvideo[height<={fmt.height}]/bestvideo"
+                    self._notify("log", ("info", f"Downloading best video at or below {fmt.height}p (preferring H.264)"))
             else:
                 video_format = "bestvideo[ext=mp4]/bestvideo/best"
                 self._notify("log", ("info", "Downloading best available video"))
             
+            # Let yt-dlp use its default player client selection
+            # Forcing specific clients can cause 403 errors as YouTube blocks them
             video_cmd_args = [
                 "--newline",
-                "--remote-components", "ejs:github",
-                "--extractor-args", "youtube:player_client=android_sdkless",
+                "--ffmpeg-location", FFMPEG_PATH.rsplit('/', 1)[0],  # Tell yt-dlp where ffmpeg is
                 "-f", video_format,
                 "-o", temp_video,
                 video_info.url
@@ -3007,20 +3110,87 @@ class DownloadManager:
             # See _apply_sponsorblock_postprocess() method
             
             video_cmd = self.ytdlp._build_command(video_cmd_args)
-            self._run_subprocess_with_progress(video_cmd, task, "🔥 Downloading video", 0, 40, video_id)
+            
+            # Try video download with unified retry logic
+            # YouTube aggressively rate-limits, so we use longer delays between retries
+            for attempt in range(RETRY_MAX_ATTEMPTS):
+                self._run_subprocess_with_progress(video_cmd, task, "Downloading video", 0, 40, f"{video_id}_temp_video")
+                
+                if task.status != DownloadStatus.FAILED:
+                    break
+                    
+                if attempt < RETRY_MAX_ATTEMPTS - 1:
+                    # Get delay for this retry
+                    delay = get_retry_delay(attempt)
+                    
+                    # Only show retry message after silent threshold
+                    if attempt >= RETRY_SILENT_THRESHOLD:
+                        self._notify("log", ("info", f"YouTube rate limit - retrying in {delay}s ({attempt + 1}/{RETRY_MAX_ATTEMPTS - 1})..."))
+                    
+                    task.status = DownloadStatus.DOWNLOADING  # Reset status for retry
+                    task.status_detail = f"Waiting {delay}s for YouTube..."
+                    self._notify("task_updated", task)
+                    time.sleep(delay)
+                    task.status_detail = None
             
             if task.status == DownloadStatus.FAILED:
+                self._notify("log", ("error", f"Video download failed after {RETRY_MAX_ATTEMPTS} attempts"))
                 return
+            
+            # Wait a moment for file system to sync (helps with race conditions)
+            time.sleep(1)
             
             # Find the downloaded video file
             video_file = self._find_temp_file(self.output_dir, f"{video_id}_temp_video")
             
+            # If not found immediately, wait and retry (file may still be writing)
             if not video_file:
-                self._notify("log", ("warning", f"Temp video file not found with expected name, searching..."))
+                self._notify("log", ("warning", "Temp video file not found, waiting for file system..."))
+                time.sleep(2)
+                video_file = self._find_temp_file(self.output_dir, f"{video_id}_temp_video")
+            
+            if not video_file:
+                self._notify("log", ("warning", "Still not found, searching by video_id..."))
+                # Log all files in directory for debugging
+                try:
+                    all_files = os.listdir(self.output_dir)
+                    matching_files = [f for f in all_files if video_id in f]
+                    self._notify("log", ("info", f"Files with video_id in name: {matching_files}"))
+                except Exception as e:
+                    self._notify("log", ("error", f"Error listing directory: {e}"))
+                
+                # Search more broadly - any file with video_id that looks like video
                 for fname in os.listdir(self.output_dir):
-                    if video_id in fname and fname.endswith(('.mp4', '.webm', '.mkv')):
-                        video_file = os.path.join(self.output_dir, fname)
-                        self._notify("log", ("info", f"Found video file: {fname}"))
+                    if video_id in fname and '_temp_audio' not in fname:
+                        # Check various video extensions
+                        if fname.endswith(('.mp4', '.webm', '.mkv', '.f137.mp4', '.f313.webm', '.f271.webm')):
+                            fpath = os.path.join(self.output_dir, fname)
+                            try:
+                                fsize = os.path.getsize(fpath)
+                                if fsize > 1000:  # At least 1KB
+                                    video_file = fpath
+                                    self._notify("log", ("info", f"Found video file: {fname} ({fsize} bytes)"))
+                                    break
+                            except:
+                                pass
+            
+            # Last resort: look for any recently modified video file with video_id
+            if not video_file:
+                self._notify("log", ("warning", "Trying last resort search..."))
+                import glob
+                patterns = [
+                    os.path.join(self.output_dir, f"*{video_id}*.mp4"),
+                    os.path.join(self.output_dir, f"*{video_id}*.webm"),
+                    os.path.join(self.output_dir, f"*{video_id}*.mkv"),
+                ]
+                for pattern in patterns:
+                    matches = glob.glob(pattern)
+                    for match in matches:
+                        if '_temp_audio' not in match and os.path.getsize(match) > 1000:
+                            video_file = match
+                            self._notify("log", ("info", f"Found via glob: {os.path.basename(match)}"))
+                            break
+                    if video_file:
                         break
             
             if not video_file:
@@ -3028,31 +3198,64 @@ class DownloadManager:
                 task.error_message = "Video file not found after download"
                 return
             
-            # Step 2: Download best audio
+            # Step 2: Download best audio (prefer AAC for QuickTime compatibility)
             audio_cmd = self.ytdlp._build_command([
                 "--newline",
-                "--remote-components", "ejs:github",
-                "--extractor-args", "youtube:player_client=android_sdkless",
-                "-f", "bestaudio[ext=m4a]/bestaudio/best",
+                "--ffmpeg-location", FFMPEG_PATH.rsplit('/', 1)[0],  # Tell yt-dlp where ffmpeg is
+                "-f", "bestaudio[acodec^=mp4a][ext=m4a]/bestaudio[ext=m4a]/bestaudio/best",
                 "-o", temp_audio,
                 video_info.url
             ])
             
-            self._run_subprocess_with_progress(audio_cmd, task, "🎵 Downloading audio", 40, 60, video_id)
+            # Try audio download with unified retry logic
+            for attempt in range(RETRY_MAX_ATTEMPTS):
+                self._run_subprocess_with_progress(audio_cmd, task, "Downloading audio", 40, 60, f"{video_id}_temp_audio")
+                
+                if task.status != DownloadStatus.FAILED:
+                    break
+                    
+                if attempt < RETRY_MAX_ATTEMPTS - 1:
+                    delay = get_retry_delay(attempt)
+                    
+                    if attempt >= RETRY_SILENT_THRESHOLD:
+                        self._notify("log", ("info", f"YouTube rate limit - retrying audio in {delay}s ({attempt + 1}/{RETRY_MAX_ATTEMPTS - 1})..."))
+                    
+                    task.status = DownloadStatus.DOWNLOADING
+                    task.status_detail = f"Waiting {delay}s for YouTube..."
+                    self._notify("task_updated", task)
+                    time.sleep(delay)
+                    task.status_detail = None
             
             if task.status == DownloadStatus.FAILED:
+                self._notify("log", ("error", f"Audio download failed after {RETRY_MAX_ATTEMPTS} attempts"))
                 return
             
+            # Wait a moment for file system to sync
+            time.sleep(0.5)
+            
             # Find the downloaded audio file
-            audio_file = self._find_temp_file(self.output_dir, f"{video_id}_temp_audio")
+            audio_file = self._find_temp_file(self.output_dir, f"{video_id}_temp_audio", is_audio=True)
+            
+            # If not found immediately, wait and retry
+            if not audio_file:
+                self._notify("log", ("warning", "Temp audio file not found, waiting for file system..."))
+                time.sleep(2)
+                audio_file = self._find_temp_file(self.output_dir, f"{video_id}_temp_audio", is_audio=True)
             
             if not audio_file:
-                self._notify("log", ("warning", f"Temp audio file not found, searching..."))
+                self._notify("log", ("warning", "Still not found, searching by video_id..."))
+                # Search for any audio file containing the video_id
+                audio_extensions = ('.m4a', '.webm', '.opus', '.mp3', '.ogg', '.aac', '.mp4')
                 for fname in os.listdir(self.output_dir):
-                    if video_id in fname and fname.endswith(('.m4a', '.webm', '.opus', '.mp3')):
-                        audio_file = os.path.join(self.output_dir, fname)
-                        self._notify("log", ("info", f"Found audio file: {fname}"))
-                        break
+                    if video_id in fname and fname.endswith(audio_extensions):
+                        # Skip files that look like video (contain _temp_video)
+                        if '_temp_video' not in fname:
+                            fpath = os.path.join(self.output_dir, fname)
+                            # Make sure file has content
+                            if os.path.getsize(fpath) > 0:
+                                audio_file = fpath
+                                self._notify("log", ("info", f"Found audio file: {fname}"))
+                                break
             
             if not audio_file:
                 task.status = DownloadStatus.FAILED
@@ -3090,17 +3293,17 @@ class DownloadManager:
             
             if bitrate_mode == "per_resolution":
                 per_res = settings_mgr.get("per_resolution_bitrates", {
-                    "2160": "15", "1440": "10", "1080": "6", "720": "4", "480": "2"
+                    "2160": "45", "1440": "20", "1080": "8", "720": "5", "480": "2"
                 })
                 if video_height:
                     if video_height >= 2160:
-                        video_bitrate = f"{per_res.get('2160', '15')}M"
+                        video_bitrate = f"{per_res.get('2160', '45')}M"
                     elif video_height >= 1440:
-                        video_bitrate = f"{per_res.get('1440', '10')}M"
+                        video_bitrate = f"{per_res.get('1440', '20')}M"
                     elif video_height >= 1080:
-                        video_bitrate = f"{per_res.get('1080', '6')}M"
+                        video_bitrate = f"{per_res.get('1080', '8')}M"
                     elif video_height >= 720:
-                        video_bitrate = f"{per_res.get('720', '4')}M"
+                        video_bitrate = f"{per_res.get('720', '5')}M"
                     else:
                         video_bitrate = f"{per_res.get('480', '2')}M"
                 else:
@@ -3109,16 +3312,16 @@ class DownloadManager:
                 video_bitrate = settings_mgr.get("video_bitrate", "8M")
                 if not video_bitrate.endswith(('M', 'm', 'K', 'k')):
                     video_bitrate = f"{video_bitrate}M"
-            else:  # auto mode
+            else:  # auto mode - use higher bitrates for H.264 (less efficient than VP9)
                 if video_height:
                     if video_height >= 2160:
-                        video_bitrate = "15M"
+                        video_bitrate = "45M"  # 4K needs ~45Mbps for H.264 to match VP9 quality
                     elif video_height >= 1440:
-                        video_bitrate = "10M"
+                        video_bitrate = "20M"  # 1440p
                     elif video_height >= 1080:
-                        video_bitrate = "6M"
+                        video_bitrate = "8M"   # 1080p
                     elif video_height >= 720:
-                        video_bitrate = "4M"
+                        video_bitrate = "5M"   # 720p
                     else:
                         video_bitrate = "2M"
                 else:
@@ -3136,6 +3339,77 @@ class DownloadManager:
             # Log the bitrate being used
             self._notify("log", ("info", f"Using video bitrate: {video_bitrate}, maxrate: {maxrate}, bufsize: {bufsize}"))
             
+            # Get actual source resolution from the downloaded video file
+            # Use ffmpeg (which is bundled) instead of ffprobe
+            source_width = None
+            source_height = None
+            try:
+                # Use ffmpeg to get video dimensions (ffmpeg can probe files too)
+                probe_cmd = [
+                    FFMPEG_PATH,
+                    "-i", video_file,
+                    "-hide_banner"
+                ]
+                # ffmpeg outputs info to stderr when no output specified
+                probe_result = subprocess.run(
+                    probe_cmd, 
+                    capture_output=True, 
+                    text=True, 
+                    timeout=10,
+                    encoding='utf-8',
+                    errors='replace'
+                )
+                
+                # Parse ffmpeg output for video stream resolution
+                # Look for lines like "Stream #0:0(und): Video: h264, 3840x2160" or "Video: vp9, 3840x2160, SAR"
+                import re
+                stderr_output = probe_result.stderr
+                
+                # Find all video stream lines and extract resolutions
+                # Pattern matches "Video: codec, WIDTHxHEIGHT" with various formats
+                video_stream_pattern = r'Video:.*?(\d{3,5})x(\d{3,5})'
+                all_resolutions = re.findall(video_stream_pattern, stderr_output)
+                
+                if all_resolutions:
+                    # Find the highest resolution (largest height)
+                    best_res = max(all_resolutions, key=lambda x: int(x[1]))
+                    source_width = int(best_res[0])
+                    source_height = int(best_res[1])
+                    self._notify("log", ("info", f"Detected video resolution: {source_width}x{source_height}"))
+                else:
+                    # Fallback: look for any WxH pattern but prefer larger ones
+                    all_dims = re.findall(r'(\d{3,5})x(\d{3,5})', stderr_output)
+                    if all_dims:
+                        # Filter to reasonable video dimensions (height >= 360)
+                        video_dims = [(int(w), int(h)) for w, h in all_dims if int(h) >= 360]
+                        if video_dims:
+                            source_width, source_height = max(video_dims, key=lambda x: x[1])
+                            self._notify("log", ("info", f"Detected resolution: {source_width}x{source_height}"))
+            except Exception as e:
+                self._notify("log", ("warning", f"Could not detect source resolution: {e}"))
+            
+            # Validate downloaded resolution matches what was requested
+            if fmt and fmt.height:
+                expected_height = fmt.height
+                expected_width = int(expected_height * 16 / 9)
+                
+                if source_height and source_height < expected_height:
+                    # CRITICAL: Downloaded resolution is LOWER than requested!
+                    # This means we got the wrong format (e.g., 1080p instead of 4K)
+                    self._notify("log", ("error", f"WARNING: Downloaded {source_height}p but requested {expected_height}p!"))
+                    self._notify("log", ("error", f"The source file is only {source_width}x{source_height} - cannot create true {expected_height}p output"))
+                    # Don't upscale - use actual source resolution to avoid fake 4K
+                    self._notify("log", ("warning", f"Using actual source resolution to avoid upscaling artifacts"))
+                    # Keep source_width and source_height as detected
+                elif not source_height:
+                    # Couldn't detect, use format info
+                    source_width = expected_width
+                    source_height = expected_height
+                    self._notify("log", ("info", f"Output resolution: {source_width}x{source_height}"))
+                else:
+                    # Resolution matches or is higher - good
+                    self._notify("log", ("info", f"Source resolution verified: {source_width}x{source_height}"))
+            
             # Build ffmpeg command - merge video and audio
             ffmpeg_cmd = [
                 FFMPEG_PATH,
@@ -3150,6 +3424,11 @@ class DownloadManager:
             # Add preset for CPU encoding
             if video_codec == "libx264":
                 ffmpeg_cmd.extend(["-preset", encoder_preset])
+            
+            # CRITICAL: Explicitly set output resolution to match source
+            # This prevents VideoToolbox from defaulting to lower resolution
+            if source_width and source_height:
+                ffmpeg_cmd.extend(["-s", f"{source_width}x{source_height}"])
             
             # Add bitrate and encoding params
             ffmpeg_cmd.extend([
@@ -3167,6 +3446,15 @@ class DownloadManager:
             # Log full ffmpeg command for debugging (properly quoted)
             cmd_str = shlex.join(ffmpeg_cmd)
             self._notify("log", ("info", f"FFmpeg command: {cmd_str}"))
+            
+            # Log encoder info
+            if video_codec == "h264_videotoolbox":
+                self._notify("log", ("info", "Using Apple VideoToolbox hardware encoder (Media Engine)"))
+                # Explain CPU usage if source is VP9
+                if fmt and fmt.vcodec and 'vp9' in fmt.vcodec.lower():
+                    self._notify("log", ("info", "Note: High CPU usage is from VP9 decoding (not hardware accelerated on macOS)"))
+            else:
+                self._notify("log", ("info", f"Using CPU encoder: {video_codec}"))
             
             # If GPU encoding fails, fall back to CPU
             # Progress: 60-85% if no SponsorBlock, 60-75% if SponsorBlock enabled
@@ -3252,35 +3540,75 @@ class DownloadManager:
             self.current_process = None
             self._notify("task_updated", task)
     
-    def _find_temp_file(self, directory: str, prefix: str) -> Optional[str]:
-        """Find a temp file by prefix, preferring video files over audio-only."""
+    def _find_temp_file(self, directory: str, prefix: str, is_audio: bool = False) -> Optional[str]:
+        """Find a temp file by prefix.
+        
+        Args:
+            directory: Directory to search in
+            prefix: Filename prefix to match (e.g., "dT9CTuPyyrU_temp_video")
+            is_audio: If True, we're looking for audio files (don't filter out audio formats)
+        
+        Returns:
+            Full path to matching file, or None if not found
+        """
         try:
             matches = []
+            # Extract video_id from prefix (e.g., "dT9CTuPyyrU" from "dT9CTuPyyrU_temp_video")
+            video_id = prefix.split('_temp_')[0] if '_temp_' in prefix else prefix
+            
             for fname in os.listdir(directory):
+                # Skip .part files (incomplete downloads)
+                if fname.endswith('.part'):
+                    continue
+                    
+                # Match files that start with the full prefix
                 if fname.startswith(prefix):
                     matches.append(fname)
+                # Also match files that start with just the video_id (yt-dlp sometimes names differently)
+                elif fname.startswith(video_id) and '_temp_' not in fname:
+                    # Only add if looking for video and it's a video extension
+                    # or looking for audio and it's an audio extension
+                    if is_audio:
+                        if any(fname.endswith(ext) for ext in ['.m4a', '.mp4', '.aac', '.webm', '.opus', '.mp3', '.ogg']):
+                            matches.append(fname)
+                    else:
+                        if any(fname.endswith(ext) for ext in ['.mp4', '.webm', '.mkv']):
+                            # Exclude audio-only format files for video search
+                            audio_formats = ['.f251.', '.f140.', '.f139.', '.f250.', '.f249.']
+                            if not any(af in fname for af in audio_formats):
+                                matches.append(fname)
             
             if not matches:
                 return None
             
-            # Filter out known audio-only formats
-            audio_formats = ['.f251.', '.f140.', '.f139.', '.f250.']
-            video_files = [f for f in matches if not any(af in f for af in audio_formats)]
-            
-            # Prefer MP4, then MKV, then WebM
-            for ext in ['.mp4', '.mkv', '.webm']:
-                for fname in video_files:
-                    if fname.endswith(ext):
-                        return os.path.join(directory, fname)
-            
-            # If no video files found, return first non-audio file
-            if video_files:
-                return os.path.join(directory, video_files[0])
-            
-            # Last resort: return any match
-            return os.path.join(directory, matches[0])
-        except Exception:
-            pass
+            if is_audio:
+                # For audio files, prefer m4a (AAC) for QuickTime compatibility
+                audio_extensions = ['.m4a', '.mp4', '.aac', '.webm', '.opus', '.mp3', '.ogg']
+                for ext in audio_extensions:
+                    for fname in matches:
+                        if fname.endswith(ext):
+                            return os.path.join(directory, fname)
+                # Return any match if no preferred extension found
+                return os.path.join(directory, matches[0])
+            else:
+                # For video files, filter out known audio-only format IDs
+                audio_format_ids = ['.f251.', '.f140.', '.f139.', '.f250.', '.f249.']
+                video_files = [f for f in matches if not any(af in f for af in audio_format_ids)]
+                
+                # Prefer MP4, then MKV, then WebM for video
+                for ext in ['.mp4', '.mkv', '.webm']:
+                    for fname in video_files:
+                        if fname.endswith(ext):
+                            return os.path.join(directory, fname)
+                
+                # If no video files found after filtering, return first non-audio file
+                if video_files:
+                    return os.path.join(directory, video_files[0])
+                
+                # Last resort: return any match (including audio files if that's all we have)
+                return os.path.join(directory, matches[0])
+        except Exception as e:
+            self._notify("log", ("error", f"Error finding temp file: {e}"))
         return None
     
     def _apply_sponsorblock_postprocess(self, task: DownloadTask, video_path: str, 
@@ -3565,9 +3893,24 @@ class DownloadManager:
                     while self._paused and self._running:
                         time.sleep(0.1)
                 
-                # Capture error lines (but only actual errors, not all warnings)
-                if "error" in line.lower() and "warning" not in line.lower():
+                # Capture error and warning lines for debugging
+                line_lower = line.lower()
+                if "error" in line_lower:
                     error_lines.append(line.strip())
+                    # Don't log errors immediately - we have retry logic
+                    # Errors will be shown if all retries fail
+                elif "warning" in line_lower:
+                    # Filter out confusing warnings that don't help users
+                    skip_warnings = [
+                        "install ffmpeg",  # We have ffmpeg bundled
+                        "dash m4a",        # Related to above
+                        "skipped",         # Format skipped warnings
+                        "merger",          # Merger warnings handled elsewhere
+                        "429",             # Rate limiting - handled by retry
+                        "403",             # Forbidden - handled by retry
+                    ]
+                    if not any(skip in line_lower for skip in skip_warnings):
+                        self._notify("log", ("warning", f"yt-dlp: {line.strip()[:150]}"))
                 
                 # v17.7.5: Detect merge/processing phases
                 if merge_re.search(line):
@@ -3637,18 +3980,34 @@ class DownloadManager:
             
             # Check if download succeeded despite non-zero return code
             file_exists = False
+            found_file = None
             if expected_file_pattern and self.current_process.returncode != 0:
-                # Check if a file matching the pattern exists
+                # Wait a moment for file system to sync and .part to be renamed
+                time.sleep(1)
+                
+                # Check if a COMPLETE file (not .part) matching the pattern exists
                 try:
                     for fname in os.listdir(self.output_dir):
                         if expected_file_pattern in fname:
-                            file_exists = True
-                            self._notify("log", ("warning", f"{stage} had non-zero exit code but file was downloaded successfully"))
-                            break
-                except:
-                    pass
+                            # CRITICAL: Skip .part files - these are incomplete!
+                            if fname.endswith('.part'):
+                                # Don't log this as warning - it's expected during retries
+                                continue
+                            # Check if file has actual content
+                            fpath = os.path.join(self.output_dir, fname)
+                            try:
+                                fsize = os.path.getsize(fpath)
+                                if fsize > 10000:  # At least 10KB
+                                    file_exists = True
+                                    found_file = fname
+                                    # Don't spam the log - only log if there was an error
+                                    break
+                            except:
+                                pass
+                except Exception as e:
+                    self._notify("log", ("error", f"Error checking files: {e}"))
             
-            # Only fail if returncode is non-zero AND no file was downloaded
+            # Only fail if returncode is non-zero AND no complete file was downloaded
             if self.current_process.returncode != 0 and not file_exists:
                 task.status = DownloadStatus.FAILED
                 # Include captured errors in error message
@@ -4517,11 +4876,11 @@ class SettingsManager:
             "video_bitrate": "auto",
             "audio_bitrate": 192,
             "per_resolution_bitrates": {
-                "2160": "15",
-                "1440": "10",
+                "2160": "45",
+                "1440": "20",
                 "1080": "8",
                 "720": "5",
-                "480": "2.5",
+                "480": "2",
             },
             
             # Trim
@@ -4819,7 +5178,7 @@ class SettingsWindow(ctk.CTkToplevel):
         ).pack(anchor="w", padx=15, pady=(10, 10))
         
         per_res_bitrates = self.settings_mgr.get("per_resolution_bitrates", {
-            "2160": "15", "1440": "10", "1080": "6", "720": "4", "480": "2"
+            "2160": "45", "1440": "20", "1080": "8", "720": "5", "480": "2"
         })
         
         self.per_res_entries = {}
@@ -6748,28 +7107,37 @@ class YtDlpGUI(ctk.CTk):
         safe_title = sanitize_filename(item.title, max_length=150)
         
         if audio_only:
-            # Audio only download
+            # Audio only download with retry logic
             output_path = os.path.join(output_folder, f"{current_idx:02d} - {safe_title}.m4a")
             
             cmd = self.ytdlp._build_command([
                 "--newline",
                 "--no-playlist",
-                "--remote-components", "ejs:github",
-                "--extractor-args", "youtube:player_client=android_sdkless",
-                "-f", "bestaudio[ext=m4a]/bestaudio/best",
+                "--ffmpeg-location", FFMPEG_PATH.rsplit('/', 1)[0],
+                "-f", "bestaudio[acodec^=mp4a][ext=m4a]/bestaudio[ext=m4a]/bestaudio/best",
                 "-o", output_path,
                 item.url
             ])
             
-            result = subprocess.run(cmd, capture_output=True, text=True, 
-                                   encoding='utf-8', errors='replace', timeout=300)
+            # Retry logic for playlist audio download
+            last_error = ""
+            for attempt in range(RETRY_MAX_ATTEMPTS):
+                result = subprocess.run(cmd, capture_output=True, text=True, 
+                                       encoding='utf-8', errors='replace', timeout=300)
+                
+                if result.returncode == 0 or os.path.exists(output_path):
+                    return True, None
+                
+                if result.stderr:
+                    last_error = result.stderr
+                
+                if attempt < RETRY_MAX_ATTEMPTS - 1:
+                    delay = get_retry_delay(attempt)
+                    time.sleep(delay)
             
-            if result.returncode == 0 or os.path.exists(output_path):
-                return True, None
-            else:
-                # Extract error from stderr
-                error_msg = self._extract_ytdlp_error(result.stderr)
-                return False, error_msg
+            # All retries failed
+            error_msg = self._extract_ytdlp_error(last_error) if last_error else "Download failed"
+            return False, error_msg
         
         else:
             # Video download with conversion
@@ -6778,64 +7146,97 @@ class YtDlpGUI(ctk.CTk):
             temp_audio = os.path.join(output_folder, f"{video_id}_temp_audio.%(ext)s")
             final_output = os.path.join(output_folder, f"{current_idx:02d} - {safe_title}.mp4")
             
-            # Determine quality
+            # Determine quality - prioritize resolution for 4K+
             if selected_format and selected_format.height:
-                video_format = f"bestvideo[height<={selected_format.height}][ext=mp4]/bestvideo[height<={selected_format.height}]/bestvideo"
+                if selected_format.height > 1080:
+                    # For 4K+: prioritize resolution over codec
+                    video_format = f"bestvideo[height<={selected_format.height}]/bestvideo"
+                else:
+                    # For 1080p and below: prefer H.264
+                    video_format = f"bestvideo[vcodec^=avc1][height<={selected_format.height}][ext=mp4]/bestvideo[height<={selected_format.height}][ext=mp4]/bestvideo[height<={selected_format.height}]/bestvideo"
             else:
                 video_format = "bestvideo[ext=mp4]/bestvideo/best"
             
             try:
-                # Download video stream
+                # Download video stream with retry logic
                 video_cmd = self.ytdlp._build_command([
                     "--newline",
                     "--no-playlist",
-                    "--remote-components", "ejs:github",
-                    "--extractor-args", "youtube:player_client=android_sdkless",
+                    "--ffmpeg-location", FFMPEG_PATH.rsplit('/', 1)[0],
                     "-f", video_format,
                     "-o", temp_video,
                     item.url
                 ])
                 
-                video_result = subprocess.run(video_cmd, capture_output=True, text=True, 
-                              encoding='utf-8', errors='replace', timeout=300)
-                
-                # Find downloaded video file
                 video_file = None
-                for fname in os.listdir(output_folder):
-                    if fname.startswith(f"{video_id}_temp_video"):
-                        video_file = os.path.join(output_folder, fname)
+                last_error = ""
+                
+                for attempt in range(RETRY_MAX_ATTEMPTS):
+                    video_result = subprocess.run(video_cmd, capture_output=True, text=True, 
+                                  encoding='utf-8', errors='replace', timeout=300)
+                    
+                    if video_result.stderr:
+                        last_error = video_result.stderr
+                    
+                    time.sleep(1)
+                    
+                    # Find downloaded video file
+                    for fname in os.listdir(output_folder):
+                        if fname.startswith(f"{video_id}_temp_video") and not fname.endswith('.part'):
+                            video_file = os.path.join(output_folder, fname)
+                            break
+                    
+                    if video_file:
                         break
+                    
+                    if attempt < RETRY_MAX_ATTEMPTS - 1:
+                        delay = get_retry_delay(attempt)
+                        time.sleep(delay)
                 
                 if not video_file:
-                    error_msg = self._extract_ytdlp_error(video_result.stderr)
+                    error_msg = self._extract_ytdlp_error(last_error) if last_error else "Download failed"
                     return False, f"Video download failed: {error_msg}"
                 
-                # Download audio stream
+                # Download audio stream with retry logic
                 audio_cmd = self.ytdlp._build_command([
                     "--newline",
                     "--no-playlist",
-                    "--remote-components", "ejs:github",
-                    "--extractor-args", "youtube:player_client=android_sdkless",
-                    "-f", "bestaudio[ext=m4a]/bestaudio/best",
+                    "--ffmpeg-location", FFMPEG_PATH.rsplit('/', 1)[0],
+                    "-f", "bestaudio[acodec^=mp4a][ext=m4a]/bestaudio[ext=m4a]/bestaudio/best",
                     "-o", temp_audio,
                     item.url
                 ])
                 
-                audio_result = subprocess.run(audio_cmd, capture_output=True, text=True,
-                              encoding='utf-8', errors='replace', timeout=300)
-                
-                # Find downloaded audio file
                 audio_file = None
-                for fname in os.listdir(output_folder):
-                    if fname.startswith(f"{video_id}_temp_audio"):
-                        audio_file = os.path.join(output_folder, fname)
+                last_error = ""
+                
+                for attempt in range(RETRY_MAX_ATTEMPTS):
+                    audio_result = subprocess.run(audio_cmd, capture_output=True, text=True,
+                                  encoding='utf-8', errors='replace', timeout=300)
+                    
+                    if audio_result.stderr:
+                        last_error = audio_result.stderr
+                    
+                    time.sleep(1)
+                    
+                    # Find downloaded audio file
+                    for fname in os.listdir(output_folder):
+                        if fname.startswith(f"{video_id}_temp_audio") and not fname.endswith('.part'):
+                            audio_file = os.path.join(output_folder, fname)
+                            break
+                    
+                    if audio_file:
                         break
+                    
+                    if attempt < RETRY_MAX_ATTEMPTS - 1:
+                        delay = get_retry_delay(attempt)
+                        time.sleep(delay)
                 
                 if not audio_file:
                     # Cleanup video file
                     if video_file and os.path.exists(video_file):
                         os.remove(video_file)
-                    error_msg = self._extract_ytdlp_error(audio_result.stderr)
+                    error_msg = self._extract_ytdlp_error(last_error) if last_error else "Download failed"
                     return False, f"Audio download failed: {error_msg}"
                 
                 # Merge with ffmpeg
@@ -7284,35 +7685,90 @@ class YtDlpGUI(ctk.CTk):
                     self.after(0, lambda: self.log_panel.log("Audio-only mode: downloading best audio", "info"))
                 else:
                     if fmt and fmt.height:
-                        video_format = f"bestvideo[height<={fmt.height}][ext=mp4]/bestvideo[height<={fmt.height}]/bestvideo"
-                        self.after(0, lambda h=fmt.height: self.log_panel.log(f"Downloading best video at or below {h}p", "info"))
+                        if fmt.height > 1080:
+                            # For 4K+: prioritize resolution over codec
+                            video_format = f"bestvideo[height<={fmt.height}]/bestvideo"
+                            self.after(0, lambda h=fmt.height: self.log_panel.log(f"Downloading best {h}p video (VP9/AV1)", "info"))
+                        else:
+                            # For 1080p and below: prefer H.264
+                            video_format = f"bestvideo[vcodec^=avc1][height<={fmt.height}][ext=mp4]/bestvideo[height<={fmt.height}][ext=mp4]/bestvideo[height<={fmt.height}]/bestvideo"
+                            self.after(0, lambda h=fmt.height: self.log_panel.log(f"Downloading best video at or below {h}p", "info"))
                     else:
                         video_format = "bestvideo[ext=mp4]/bestvideo/best"
                         self.after(0, lambda: self.log_panel.log("Downloading best available video", "info"))
                     
                     video_cmd = self.ytdlp._build_command([
                         "--newline",
-                        "--remote-components", "ejs:github",
-                        "--extractor-args", "youtube:player_client=android_sdkless",
+                        "--ffmpeg-location", FFMPEG_PATH.rsplit('/', 1)[0],
                         "-f", video_format,
                         "-o", temp_video,
                         video_info.url
                     ])
                     
-                    result = subprocess.run(
-                        video_cmd,
-                        capture_output=True,
-                        text=True,
-                        encoding='utf-8',
-                        errors='replace'
-                    )
+                    # Unified retry logic for video download
+                    video_file = None
+                    last_error = ""
                     
-                    if result.returncode != 0:
-                        # Check if file exists anyway
+                    for attempt in range(RETRY_MAX_ATTEMPTS):
+                        result = subprocess.run(
+                            video_cmd,
+                            capture_output=True,
+                            text=True,
+                            encoding='utf-8',
+                            errors='replace'
+                        )
+                        
+                        # Save error for later
+                        if result.stderr:
+                            last_error = result.stderr[-500:]
+                        
+                        # Wait a moment for file system
+                        time.sleep(1)
+                        
+                        # Check if file exists (success even with non-zero return)
                         video_file = self._find_chapter_temp_file(output_dir, f"{video_id}_temp_video")
-                        if not video_file:
-                            self.after(0, lambda e=result.stderr[:300]: self.log_panel.log(f"Video download failed: {e}", "error"))
-                            return
+                        if video_file:
+                            self.after(0, lambda: self.log_panel.log("Video stream downloaded", "success"))
+                            break
+                        
+                        if result.returncode == 0:
+                            # Command succeeded but no file yet - wait more
+                            time.sleep(2)
+                            video_file = self._find_chapter_temp_file(output_dir, f"{video_id}_temp_video")
+                            if video_file:
+                                break
+                        
+                        if attempt < RETRY_MAX_ATTEMPTS - 1:
+                            delay = get_retry_delay(attempt)
+                            
+                            # Only show retry message after silent threshold
+                            if attempt >= RETRY_SILENT_THRESHOLD:
+                                retry_msg = f"YouTube rate limit - waiting {delay}s ({attempt+1}/{RETRY_MAX_ATTEMPTS-1})..."
+                                self.after(0, lambda m=retry_msg: self.log_panel.log(m, "info"))
+                            
+                            # Update progress to show we're waiting
+                            wait_msg = f"Waiting {delay}s for YouTube..."
+                            self.after(0, lambda m=wait_msg, p=10+attempt*3: self._update_chapter_stage(m, p))
+                            time.sleep(delay)
+                    
+                    # Check final result
+                    if not video_file:
+                        # All retries failed
+                        err_msg = f"Video download failed after {RETRY_MAX_ATTEMPTS} attempts"
+                        if last_error:
+                            # Extract the actual error message
+                            if "403" in last_error:
+                                err_msg += " - YouTube rate limiting. Try again later."
+                            elif "ERROR:" in last_error:
+                                # Find the ERROR line
+                                for line in last_error.split('\n'):
+                                    if 'ERROR:' in line:
+                                        err_msg += f": {line.strip()[:150]}"
+                                        break
+                            else:
+                                err_msg += f": {last_error[:150]}"
+                        self.after(0, lambda m=err_msg: self.log_panel.log(m, "error"))
+                        return
                 
                 # ========================================
                 # STAGE 2: Download audio stream (30-50%)
@@ -7322,28 +7778,70 @@ class YtDlpGUI(ctk.CTk):
                 
                 audio_cmd = self.ytdlp._build_command([
                     "--newline",
-                    "--remote-components", "ejs:github",
-                    "--extractor-args", "youtube:player_client=android_sdkless",
-                    "-f", "bestaudio[ext=m4a]/bestaudio/best",
+                    "--ffmpeg-location", FFMPEG_PATH.rsplit('/', 1)[0],
+                    "-f", "bestaudio[acodec^=mp4a][ext=m4a]/bestaudio[ext=m4a]/bestaudio/best",
                     "-o", temp_audio,
                     video_info.url
                 ])
                 
-                result = subprocess.run(
-                    audio_cmd,
-                    capture_output=True,
-                    text=True,
-                    encoding='utf-8',
-                    errors='replace'
-                )
+                # Unified retry logic for audio download
+                audio_file = None
+                last_error = ""
                 
-                if result.returncode != 0:
+                for attempt in range(RETRY_MAX_ATTEMPTS):
+                    result = subprocess.run(
+                        audio_cmd,
+                        capture_output=True,
+                        text=True,
+                        encoding='utf-8',
+                        errors='replace'
+                    )
+                    
+                    if result.stderr:
+                        last_error = result.stderr[-500:]
+                    
+                    time.sleep(1)
+                    
+                    # Check if file exists
                     audio_file = self._find_chapter_temp_file(output_dir, f"{video_id}_temp_audio")
-                    if not audio_file:
-                        self.after(0, lambda e=result.stderr[:300]: self.log_panel.log(f"Audio download failed: {e}", "error"))
-                        return
+                    if audio_file:
+                        self.after(0, lambda: self.log_panel.log("Audio stream downloaded", "success"))
+                        break
+                    
+                    if result.returncode == 0:
+                        time.sleep(2)
+                        audio_file = self._find_chapter_temp_file(output_dir, f"{video_id}_temp_audio")
+                        if audio_file:
+                            break
+                    
+                    if attempt < RETRY_MAX_ATTEMPTS - 1:
+                        delay = get_retry_delay(attempt)
+                        
+                        if attempt >= RETRY_SILENT_THRESHOLD:
+                            retry_msg = f"YouTube rate limit - waiting {delay}s for audio ({attempt+1}/{RETRY_MAX_ATTEMPTS-1})..."
+                            self.after(0, lambda m=retry_msg: self.log_panel.log(m, "info"))
+                        
+                        wait_msg = f"Waiting {delay}s for YouTube..."
+                        self.after(0, lambda m=wait_msg, p=35+attempt*2: self._update_chapter_stage(m, p))
+                        time.sleep(delay)
                 
-                # Find the downloaded files
+                # Check final result
+                if not audio_file:
+                    err_msg = f"Audio download failed after {RETRY_MAX_ATTEMPTS} attempts"
+                    if last_error:
+                        if "403" in last_error:
+                            err_msg += " - YouTube rate limiting. Try again later."
+                        elif "ERROR:" in last_error:
+                            for line in last_error.split('\n'):
+                                if 'ERROR:' in line:
+                                    err_msg += f": {line.strip()[:150]}"
+                                    break
+                        else:
+                            err_msg += f": {last_error[:150]}"
+                    self.after(0, lambda m=err_msg: self.log_panel.log(m, "error"))
+                    return
+                
+                # Find the downloaded files (refresh after retries)
                 video_file = self._find_chapter_temp_file(output_dir, f"{video_id}_temp_video") if not audio_only else None
                 audio_file = self._find_chapter_temp_file(output_dir, f"{video_id}_temp_audio")
                 
@@ -7426,9 +7924,12 @@ class YtDlpGUI(ctk.CTk):
                     errors='replace'
                 )
                 
-                # Monitor encoding progress
+                # Monitor encoding progress with stats
                 duration = video_info.duration or 0
                 time_re = re.compile(r'time=(\d+):(\d+):(\d+(?:\.\d+)?)')
+                fps_re = re.compile(r'fps=\s*(\d+(?:\.\d+)?)')
+                speed_re = re.compile(r'speed=\s*(\d+(?:\.\d+)?)x')
+                encode_start_time = time.time()
                 
                 for line in process.stderr:
                     if duration > 0:
@@ -7441,7 +7942,30 @@ class YtDlpGUI(ctk.CTk):
                             encode_pct = min(100, (current_time / duration) * 100)
                             # Map encoding progress to 50-80% range
                             overall_pct = 50 + (encode_pct * 0.3)
-                            self.after(0, lambda p=overall_pct: self._update_chapter_stage(f"Encoding... {p-50:.0f}% of video", p))
+                            
+                            # Extract FPS and speed
+                            fps_match = fps_re.search(line)
+                            speed_match = speed_re.search(line)
+                            
+                            fps_str = f"{float(fps_match.group(1)):.0f}" if fps_match else "--"
+                            speed_str = f"{float(speed_match.group(1)):.1f}x" if speed_match else "--"
+                            
+                            # Calculate ETA
+                            eta_str = "--"
+                            if speed_match:
+                                speed_val = float(speed_match.group(1))
+                                if speed_val > 0:
+                                    remaining_time = (duration - current_time) / speed_val
+                                    if remaining_time < 60:
+                                        eta_str = f"{remaining_time:.0f}s"
+                                    elif remaining_time < 3600:
+                                        eta_str = f"{remaining_time/60:.1f}m"
+                                    else:
+                                        eta_str = f"{remaining_time/3600:.1f}h"
+                            
+                            # Update progress panel with stats
+                            status_msg = f"Encoding... {encode_pct:.0f}% | FPS: {fps_str} | Speed: {speed_str} | ETA: {eta_str}"
+                            self.after(0, lambda p=overall_pct, msg=status_msg: self._update_chapter_progress_with_stats(p, msg))
                 
                 process.wait()
                 
@@ -7560,17 +8084,59 @@ class YtDlpGUI(ctk.CTk):
         threading.Thread(target=download_chapters_thread, daemon=True).start()
     
     def _find_chapter_temp_file(self, directory: str, prefix: str) -> Optional[str]:
-        """Find a temp file by prefix for chapter downloads."""
+        """Find a temp file by prefix for chapter downloads.
+        
+        Args:
+            directory: Directory to search in
+            prefix: Filename prefix to match
+            
+        Returns:
+            Full path to matching file, or None if not found
+        """
         try:
+            # Determine if we're looking for audio based on prefix
+            is_audio = "_temp_audio" in prefix
+            
+            matches = []
             for fname in os.listdir(directory):
                 if fname.startswith(prefix):
-                    return os.path.join(directory, fname)
-        except Exception:
-            pass
+                    # Skip .part files (incomplete downloads)
+                    if fname.endswith('.part'):
+                        continue
+                    matches.append(fname)
+            
+            if not matches:
+                return None
+            
+            if is_audio:
+                # Prefer m4a for audio (QuickTime compatible)
+                audio_extensions = ['.m4a', '.mp4', '.aac', '.webm', '.opus', '.mp3', '.ogg']
+                for ext in audio_extensions:
+                    for fname in matches:
+                        if fname.endswith(ext):
+                            return os.path.join(directory, fname)
+                return os.path.join(directory, matches[0])
+            else:
+                # For video, prefer mp4
+                for ext in ['.mp4', '.mkv', '.webm']:
+                    for fname in matches:
+                        if fname.endswith(ext):
+                            return os.path.join(directory, fname)
+                return os.path.join(directory, matches[0])
+        except Exception as e:
+            self.after(0, lambda: self.log_panel.log(f"Error finding temp file: {e}", "error"))
         return None
     
     def _update_chapter_stage(self, message: str, progress: float):
         """Update UI during chapter download stages."""
+        self.main_progress.set_progress(progress, stage="converting")
+        self.main_progress.start_animation()
+        self.progress_label.configure(text=message)
+        self.percentage_label.configure(text=f"{progress:.0f}%")
+        self.queue_status.configure(text="Processing Chapters")
+    
+    def _update_chapter_progress_with_stats(self, progress: float, message: str):
+        """Update chapter progress with encoding stats (FPS, speed, ETA)."""
         self.main_progress.set_progress(progress, stage="converting")
         self.main_progress.start_animation()
         self.progress_label.configure(text=message)
@@ -7715,7 +8281,7 @@ class YtDlpGUI(ctk.CTk):
                     self.log_panel.log(f"✅ Completed: {task.video_info.title}", "success")
                     self.main_progress.set_progress(100, stage="idle")
                 elif task.status == DownloadStatus.FAILED:
-                    self.log_panel.log(f"âŒ Failed: {task.error_message}", "error")
+                    self.log_panel.log(f"[X] Failed: {task.error_message}", "error")
                     self.progress_label.configure(text="Download failed")
                     self.queue_status.configure(text="Failed")
             

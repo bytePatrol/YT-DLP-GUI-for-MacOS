@@ -26,12 +26,40 @@ A modern, fully self-contained YouTube video downloader with a beautiful dark mo
 - ⚡ **Fast Downloads** - Separate video+audio download with smart merging
 - 🎵 **Audio Only Mode** - Extract audio as M4A or MP3
 - 📋 **Playlist Support** - Download entire playlists
-- ✂️ **SponsorBlock Integration** - Automatically remove sponsor segments
-- 🔍 **Subtitles** - Download and embed subtitles
+- ✂️ **SponsorBlock Integration** - Automatically remove sponsor segments
+- 📝 **Subtitles** - Download and embed subtitles
 - 🎬 **QuickTime Compatible** - H.264 + AAC encoding for native macOS playback
 - 📊 **Progress Tracking** - Real-time speed, ETA, and progress display
 - 🔔 **Notifications** - macOS notifications when downloads complete
 - 📜 **Download History** - Browse and search past downloads
+
+## NEW in v18.1.3: Major Reliability Update
+
+### 🔄 Unified Retry System
+YouTube aggressively rate-limits download requests. v18.1.3 introduces a **unified retry system** that makes downloads much more reliable:
+
+- **6 total attempts** with progressive delays (5s, 10s, 15s, 20s, 25s)
+- **Silent retries** - First 2 retries are quiet; only logs if problem persists
+- **Visual feedback** - Shows "Waiting Xs for YouTube..." so app doesn't appear frozen
+- Applies to **all downloads**: main videos, chapters, and playlists
+
+### 🎬 True 4K Downloads Fixed
+**Important bug fix!** Previous versions were downloading 1080p H.264 and upscaling to "fake 4K":
+
+- Now correctly prioritizes **resolution over codec** for 4K content
+- YouTube only offers H.264 up to 1080p; 4K requires VP9/AV1
+- Resolution is verified after download to ensure true 4K quality
+
+### 📊 Better Progress Feedback
+- Chapter encoding shows **FPS, Speed, and ETA** during conversion
+- Cleaner Activity Log - no more alarming ERROR messages during normal retries
+- Filtered confusing yt-dlp warnings
+
+### 🍎 macOS Improvements
+- Fixed "Install ffmpeg" warning messages
+- Clear explanation of CPU usage during 4K encoding:
+  - VP9 decoding uses CPU (unavoidable - no hardware VP9 decoder on macOS)
+  - H.264 encoding uses Apple's Media Engine (VideoToolbox)
 
 ## NEW in v18.1.2: Playlist Reliability Improvements
 
@@ -45,14 +73,6 @@ The Activity Log now shows **specific reasons** for failed downloads:
 - Region-locked content  
 - Copyright-removed videos
 - Videos requiring login
-
-Example log output:
-```
-[1/11] Downloading: Video Title...
-  Retry attempt 2 for video 1...
-  ❌ Failed: Video Title
-     Reason: Video unavailable (deleted or region-locked)
-```
 
 ## NEW in v18.1.1: YouTube Mix Playlist Handling
 
@@ -101,20 +121,6 @@ Configure defaults in Settings → Playlist:
 - **Reverse order** - Download oldest first
 - **Max videos** - Limit number of videos
 
-## NEW in v18.0.8: Smart Error Detection
-
-The app now intelligently detects and explains why certain videos can't be downloaded:
-
-- **🔞 Age-Restricted Videos** - Clear instructions on how to use browser cookies
-- **🔒 Private Videos** - Explains the video is not publicly accessible  
-- **🚫 Unavailable Videos** - Handles deleted, region-blocked, and copyright-claimed content
-- **👤 Login Required** - Identifies members-only and subscription content
-
-When you try to analyze a problematic video, you'll see:
-- A helpful dialog explaining the issue
-- Detailed instructions in the Activity Log
-- Specific workaround commands you can use
-
 ## Auto-Update yt-dlp
 
 **No more re-downloading the entire app when yt-dlp updates!**
@@ -144,7 +150,7 @@ Download YouTube videos split by their chapters! Perfect for:
 
 ### How to use:
 1. Analyze a YouTube video that has chapters
-2. A purple **"📑 Chapters"** button will appear
+2. A purple **"🔖 Chapters"** button will appear
 3. Select which chapters to download (or download all)
 4. Choose **Audio Only** if you just want the audio
 5. Click Download - each chapter becomes a separate file!
@@ -174,7 +180,7 @@ Chapter downloads are **10-50x faster** than previous methods! The app downloads
 macOS blocks apps from unidentified developers. Follow these steps on first launch:
 
 1. **Double-click** the app to try opening it (it will be blocked - this is expected)
-2. Open **System Settings** →’ **Privacy & Security**
+2. Open **System Settings** → **Privacy & Security**
 3. Scroll down to find **"YouTube 4K Downloader" was blocked...**
 4. Click **"Open Anyway"**
 5. Enter your password if prompted
@@ -203,7 +209,7 @@ cd YT-DLP-GUI-for-MacOS
 pip install customtkinter pillow requests yt-dlp psutil
 
 # Run the app
-python yt_dlp_gui_v18_1_2.py
+python yt_dlp_gui_v18_1_3.py
 ```
 
 ## Usage
@@ -212,7 +218,7 @@ python yt_dlp_gui_v18_1_2.py
 2. **Click ⚡ Analyze** - View available formats and quality options
 3. **Select Quality** - Choose from 4K, 1080p, 720p, etc.
 4. **Click ⚡ Download** - Watch the progress with real-time stats
-5. **For Chapters** - Click the purple "📑 Chapters" button if available
+5. **For Chapters** - Click the purple "🔖 Chapters" button if available
 
 ### Keyboard Shortcuts
 
@@ -224,7 +230,7 @@ python yt_dlp_gui_v18_1_2.py
 
 ## Settings
 
-Access settings via the ⚙️ **Settings** button to configure:
+Access settings via the ⚙️ **Settings** button to configure:
 
 - **SponsorBlock** - Enable/disable, select categories to remove
 - **Subtitles** - Languages, auto-generated, embedding
@@ -283,7 +289,7 @@ xattr -cr /Applications/YouTube\ 4K\ Downloader.app
 ```
 
 ### "App can't be opened because it is from an unidentified developer"
-Right-click the app →’ Select "Open" →’ Click "Open" in the dialog.
+Right-click the app → Select "Open" → Click "Open" in the dialog.
 
 ### App launches but immediately crashes
 Run this in Terminal to see the error:
@@ -295,6 +301,15 @@ Run this in Terminal to see the error:
 The app will show you instructions. You need to:
 1. Export cookies from your browser while logged into YouTube
 2. Use yt-dlp from command line with: `yt-dlp --cookies-from-browser chrome URL`
+
+### Downloads fail repeatedly
+- **Try updating yt-dlp:** Click the 🔄 Update button in the header
+- YouTube frequently changes their API - an updated yt-dlp usually fixes issues
+- v18.1.3 has improved retry logic that handles most rate limiting automatically
+
+### 4K downloads look like 1080p upscaled
+- This was a bug in versions before v18.1.3 - please update!
+- v18.1.3 correctly downloads true 4K VP9/AV1 content
 
 ### Downloads fail or no formats shown
 - Make sure you have an internet connection
@@ -331,4 +346,4 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-⭐ If you find this useful, please star the repository!
+⭐ If you find this useful, please star the repository!
