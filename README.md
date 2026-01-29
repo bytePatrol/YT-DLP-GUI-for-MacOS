@@ -1,6 +1,6 @@
 # YouTube 4K Downloader for macOS
 
-A modern, fully self-contained YouTube video downloader with a beautiful dark mode interface. No dependencies required - just download and run!
+A modern, fully self-contained YouTube video downloader with a beautiful dark mode interface. No dependencies required, No Ads, No Telementry, No "Calling Home", No Donation Requests or Nags - just download and run! Our downloader is one of the only working MacOS applications that can download true 4K content directly from YouTube and convert it into MacOS compatible format so that no 3rd party video players are required to watch, plus our script can automatically remove sponsor segments within a video so you're truly getting an ad free experience.  Full source code is published for your review.
 
 ## Screenshots
 
@@ -34,11 +34,13 @@ A modern, fully self-contained YouTube video downloader with a beautiful dark mo
 - 🔔 **Notifications** - macOS notifications when downloads complete
 - 📜 **Download History** - Browse and search past downloads
 
-## Burner Account Cookie Management
+## NEW: Burner Account Cookie Management
 
-### Protect Your YouTube Account!
+### Improve success rate for downloading 4K content from YouTube
 
-YouTube may ban or restrict accounts used for downloading videos. The Burner Account Cookie Management system helps you:
+Recently YouTube started blocking downloads for 4K content without users being logged in. We developed a safe & secure way to help bypass these blocks by implementing a system that allows you to setup & use a burner (disposable) account cookie so that your personal YouTube account is never exposed or at risk. These cookies from the disposable account will greatly improve your download successs rate when hitting YouTube roadblocks. The system is completely optional and only needed if you encounter blocks while trying to download 4K content.
+
+The Burner Account Cookie Management system helps you:
 
 - **Create dedicated browser profiles** for downloading
 - **Select specific browser profiles** instead of just browsers
@@ -57,10 +59,9 @@ YouTube may ban or restrict accounts used for downloading videos. The Burner Acc
 
 ### Why Use a Burner Account?
 
-Using your personal YouTube account for downloading can result in:
+Using your personal YouTube account for excessive downloading can result in:
 - Account restrictions or suspension
 - Loss of YouTube Premium benefits
-- IP address blocking
 
 A burner account protects your main account while still giving you authenticated access for reliable downloads.
 
@@ -125,7 +126,7 @@ YouTube frequently changes their API, which requires yt-dlp updates. Update yt-d
 ### Option 1: Download the App (Recommended)
 
 1. Go to the [Releases](https://github.com/bytePatrol/YT-DLP-GUI-for-MacOS/releases) page
-2. Download `YouTube.4K.Downloader.app.zip`
+2. Download `YouTube_4K_Downloader_v18.x.x.dmg`
 3. Unzip and drag to your **Applications** folder
 
 ### First Launch
