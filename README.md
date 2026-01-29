@@ -33,6 +33,60 @@ A modern, fully self-contained YouTube video downloader with a beautiful dark mo
 - 🔔 **Notifications** - macOS notifications when downloads complete
 - 📜 **Download History** - Browse and search past downloads
 
+## ⚠️ IMPORTANT: v18.1.4 - YouTube Blocking Fix
+
+**YouTube is actively blocking video downloads.** If you're experiencing failed downloads, follow these steps:
+
+### Quick Fix: Enable Browser Cookies
+
+1. Open **Settings** → **Advanced** tab
+2. Check **"Use cookies from browser"**
+3. Select **Safari** or **Firefox**
+4. Make sure you're **logged into YouTube** in that browser
+5. **Close the browser** completely
+6. Try your download again
+
+This authenticates your downloads as a real YouTube user and dramatically improves success rates.
+
+### Also Recommended: Update yt-dlp to Nightly
+
+1. Click the **⬇️ Update** button in the header
+2. Choose **"Nightly Build"**
+3. Nightly builds have the latest YouTube fixes (updated daily)
+
+## NEW in v18.1.4: YouTube 403 Blocking Fix
+
+### 🚫 Browser Cookie Support
+YouTube has significantly increased their blocking of video downloads. v18.1.4 adds browser cookie authentication:
+
+- **New Settings → Advanced tab** with cookie configuration
+- **Supports Safari, Firefox, and Chrome** (Safari/Firefox recommended)
+- **Step-by-step setup instructions** built into the app
+- **Shows cookie status in logs** - "🍪 Using cookies from firefox browser"
+
+### 📢 Much Better Error Messages
+When downloads fail, you now get clear, actionable guidance:
+
+```
+🚫 YOUTUBE BLOCKED THIS DOWNLOAD
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+YouTube actively blocks video downloaders. Here's how to fix it:
+
+✅ FIX #1: Enable Browser Cookies (RECOMMENDED)
+✅ FIX #2: Update yt-dlp to Nightly Build  
+✅ FIX #3: Try Lower Resolution (for 4K)
+```
+
+### 🔧 yt-dlp Nightly Build Support
+- Update to **Nightly builds** for the latest YouTube fixes
+- Nightly builds are updated **daily** with new workarounds
+- Click ⬇️ → "Nightly Build" to install
+
+### 🎯 4K Format Selection Fixed
+- When you select 4K, you now actually get 4K (not 1080p upscaled)
+- Uses exact format ID for reliable quality selection
+- Automatic fallback if one format is blocked
+
 ## NEW in v18.1.3: Major Reliability Update
 
 ### 🔄 Unified Retry System
@@ -61,28 +115,6 @@ YouTube aggressively rate-limits download requests. v18.1.3 introduces a **unifi
   - VP9 decoding uses CPU (unavoidable - no hardware VP9 decoder on macOS)
   - H.264 encoding uses Apple's Media Engine (VideoToolbox)
 
-## NEW in v18.1.2: Playlist Reliability Improvements
-
-### Automatic Retry for Failed Videos
-When downloading playlists, failed videos are now automatically retried once before marking as failed. This handles transient network issues and temporary YouTube rate limits.
-
-### Detailed Error Reporting
-The Activity Log now shows **specific reasons** for failed downloads:
-- Age-restricted videos (requires authentication)
-- Private videos
-- Region-locked content  
-- Copyright-removed videos
-- Videos requiring login
-
-## NEW in v18.1.1: YouTube Mix Playlist Handling
-
-### Smart Mix Detection
-YouTube Mix playlists (auto-generated "Radio" playlists based on a video) cannot be downloaded as playlists since YouTube doesn't expose the full list. The app now:
-- Detects Mix playlists (URLs with `list=RD...`)
-- Shows a helpful explanation in the Activity Log
-- Automatically falls back to single-video mode
-- Downloads the seed video without errors
-
 ## NEW in v18.1.0: Full Playlist Support
 
 Download entire YouTube playlists with smart video selection!
@@ -108,19 +140,6 @@ Playlist Title/
 └── ...
 ```
 
-### How to use:
-1. Paste a YouTube playlist URL
-2. If it's a video-in-playlist URL, toggle "📋 Playlist" to enable playlist mode
-3. Click **Analyze** to load all videos
-4. Select which videos to download in the playlist dialog
-5. Choose quality and click **Download**
-
-### Playlist Settings
-Configure defaults in Settings → Playlist:
-- **Download all by default** - Pre-select all videos
-- **Reverse order** - Download oldest first
-- **Max videos** - Limit number of videos
-
 ## Auto-Update yt-dlp
 
 **No more re-downloading the entire app when yt-dlp updates!**
@@ -128,17 +147,17 @@ Configure defaults in Settings → Playlist:
 YouTube frequently changes their API, which requires yt-dlp updates to keep working. Now you can update yt-dlp directly from within the app!
 
 ### How it works:
-1. Click the 🔄 **Update** button in the header
-2. The app checks GitHub for the latest yt-dlp release
+1. Click the ⬇️ **Update** button in the header
+2. Choose **Stable** or **Nightly** build
 3. If an update is available, click to download and install
 4. The new version is active immediately - no restart required!
 
 ### Features:
 - **One-click updates** - Update yt-dlp with a single click
+- **Nightly builds** - Get the latest YouTube fixes before stable release
 - **Automatic check on launch** - Button turns orange when update available
 - **User-writable location** - Updates stored in `~/Library/Application Support/`
 - **No admin required** - No need to re-download or reinstall the app
-- **Instant activation** - New version works immediately
 
 ## Chapter Downloads
 
@@ -150,7 +169,7 @@ Download YouTube videos split by their chapters! Perfect for:
 
 ### How to use:
 1. Analyze a YouTube video that has chapters
-2. A purple **"🔖 Chapters"** button will appear
+2. A purple **"📖 Chapters"** button will appear
 3. Select which chapters to download (or download all)
 4. Choose **Audio Only** if you just want the audio
 5. Click Download - each chapter becomes a separate file!
@@ -209,7 +228,7 @@ cd YT-DLP-GUI-for-MacOS
 pip install customtkinter pillow requests yt-dlp psutil
 
 # Run the app
-python yt_dlp_gui_v18_1_3.py
+python yt_dlp_gui_v18_1_4.py
 ```
 
 ## Usage
@@ -218,7 +237,7 @@ python yt_dlp_gui_v18_1_3.py
 2. **Click ⚡ Analyze** - View available formats and quality options
 3. **Select Quality** - Choose from 4K, 1080p, 720p, etc.
 4. **Click ⚡ Download** - Watch the progress with real-time stats
-5. **For Chapters** - Click the purple "🔖 Chapters" button if available
+5. **For Chapters** - Click the purple "📖 Chapters" button if available
 
 ### Keyboard Shortcuts
 
@@ -237,6 +256,59 @@ Access settings via the ⚙️ **Settings** button to configure:
 - **Encoding** - GPU/CPU, preset, bitrate modes
 - **Trim** - Set start/end times
 - **Playlist** - Download options for playlists
+- **Advanced** - Browser cookies for bypassing YouTube blocks
+
+## Troubleshooting
+
+### Downloads keep failing with "YouTube blocked" errors
+This is the most common issue right now. **Enable browser cookies:**
+1. Go to **Settings** → **Advanced**
+2. Check **"Use cookies from browser"**
+3. Select **Safari** or **Firefox**
+4. Make sure you're logged into YouTube in that browser
+5. **Close the browser**, then try downloading again
+
+### "App is damaged and can't be opened"
+This is a Gatekeeper issue. Run in Terminal:
+```bash
+xattr -cr /Applications/YouTube\ 4K\ Downloader.app
+```
+
+### "App can't be opened because it is from an unidentified developer"
+Right-click the app → Select "Open" → Click "Open" in the dialog.
+
+### App launches but immediately crashes
+Run this in Terminal to see the error:
+```bash
+/Applications/YouTube\ 4K\ Downloader.app/Contents/MacOS/YouTube\ 4K\ Downloader
+```
+
+### "Age-restricted video" error
+The app will show you instructions. You need to:
+1. Enable browser cookies in Settings → Advanced
+2. Make sure you're logged into YouTube (age-verified account)
+
+### 4K downloads still getting blocked
+4K downloads are blocked more aggressively than lower resolutions. Try:
+1. Enable browser cookies (Settings → Advanced)
+2. Update yt-dlp to Nightly (⬇️ button → Nightly Build)
+3. If still failing, try 1440p or 1080p instead
+
+### Downloads fail or no formats shown
+- Make sure you have an internet connection
+- **Update yt-dlp:** Click the ⬇️ Update button → Nightly Build
+- Some videos may be region-locked or private
+- **Enable browser cookies** in Settings → Advanced
+
+### Chapter downloads not showing
+- Not all YouTube videos have chapters defined
+- Chapters must be set by the video creator
+- Try a video known to have chapters (like podcasts or music compilations)
+
+### yt-dlp update button not working
+- Check your internet connection
+- The app downloads from GitHub releases - ensure github.com is accessible
+- Updates are stored in `~/Library/Application Support/YouTube 4K Downloader/`
 
 ## System Requirements
 
@@ -279,52 +351,6 @@ source venv/bin/activate
 pip install py2app customtkinter pillow requests yt-dlp psutil
 ./build_app.sh
 ```
-
-## Troubleshooting
-
-### "App is damaged and can't be opened"
-This is a Gatekeeper issue. Run in Terminal:
-```bash
-xattr -cr /Applications/YouTube\ 4K\ Downloader.app
-```
-
-### "App can't be opened because it is from an unidentified developer"
-Right-click the app → Select "Open" → Click "Open" in the dialog.
-
-### App launches but immediately crashes
-Run this in Terminal to see the error:
-```bash
-/Applications/YouTube\ 4K\ Downloader.app/Contents/MacOS/YouTube\ 4K\ Downloader
-```
-
-### "Age-restricted video" error
-The app will show you instructions. You need to:
-1. Export cookies from your browser while logged into YouTube
-2. Use yt-dlp from command line with: `yt-dlp --cookies-from-browser chrome URL`
-
-### Downloads fail repeatedly
-- **Try updating yt-dlp:** Click the 🔄 Update button in the header
-- YouTube frequently changes their API - an updated yt-dlp usually fixes issues
-- v18.1.3 has improved retry logic that handles most rate limiting automatically
-
-### 4K downloads look like 1080p upscaled
-- This was a bug in versions before v18.1.3 - please update!
-- v18.1.3 correctly downloads true 4K VP9/AV1 content
-
-### Downloads fail or no formats shown
-- Make sure you have an internet connection
-- **Try updating yt-dlp:** Click the 🔄 Update button in the header
-- Some videos may be region-locked or private
-
-### Chapter downloads not showing
-- Not all YouTube videos have chapters defined
-- Chapters must be set by the video creator
-- Try a video known to have chapters (like podcasts or music compilations)
-
-### yt-dlp update button not working
-- Check your internet connection
-- The app downloads from GitHub releases - ensure github.com is accessible
-- Updates are stored in `~/Library/Application Support/YouTube 4K Downloader/`
 
 ## Contributing
 

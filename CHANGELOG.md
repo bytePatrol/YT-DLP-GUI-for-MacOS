@@ -2,6 +2,68 @@
 
 All notable changes to YouTube 4K Downloader will be documented in this file.
 
+## [18.1.4] - 2026-01-28
+
+### 🚫 YouTube 403 Blocking Fix
+YouTube has significantly increased their blocking of video downloads. This update adds multiple workarounds:
+
+- **Browser Cookie Support** - New Settings → Advanced tab lets you use cookies from Safari/Firefox to authenticate downloads
+- **Dramatically improves download success rate** - Cookies authenticate you as a real YouTube user
+- **Clear setup instructions** - Step-by-step guide in the Advanced settings tab
+- **Automatic detection** - App tells you when cookies would help
+
+### 🔧 yt-dlp Nightly Build Support
+- **Update to Nightly builds** - Click ⬇️ button → choose "Nightly Build" for latest YouTube fixes
+- **Nightly builds update daily** - Always have the latest workarounds for YouTube changes
+- **Stored separately from app** - Updates go to `~/Library/Application Support/YouTube 4K Downloader/`
+- **Increased verification timeout** - 30s timeout for macOS Gatekeeper checks on first run
+
+### 📢 Much Better Error Messages
+When downloads fail, the app now provides **clear, actionable guidance**:
+
+```
+🚫 YOUTUBE BLOCKED THIS DOWNLOAD
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+YouTube actively blocks video downloaders. Here's how to fix it:
+
+✅ FIX #1: Enable Browser Cookies (RECOMMENDED)
+   1. Go to Settings → Advanced tab
+   2. Check 'Use cookies from browser'
+   3. Select Safari or Firefox
+   4. Make sure you're logged into YouTube in that browser
+   5. Close the browser, then try downloading again
+
+✅ FIX #2: Update yt-dlp to Latest
+   Click the ⬇️ button → Update to Nightly Build
+
+✅ FIX #3: Try Lower Resolution (for 4K failures)
+   4K downloads are blocked more often than 1080p
+```
+
+### 🎯 4K Format Selection Fixed
+- **Fixed format selection bug** - When you select 4K, you now actually get 4K (not 1080p)
+- **Uses exact format ID** - Downloads the specific format you selected
+- **Fallback mechanism** - If one 4K format is blocked, automatically tries alternatives
+- **Removed problematic `--extractor-args`** - Was interfering with yt-dlp's client selection
+
+### 🔄 Improved Retry System
+- **Better retry messages** - Changed "YouTube rate limit" to "YouTube blocked this request"
+- **Helpful tips during retries** - Shows "💡 Tip: Enable browser cookies in Settings → Advanced"
+- **Increased retry delays** - 10s, 20s, 30s, 45s, 60s to handle aggressive blocking
+- **Partial file cleanup** - Removes `.part` files between retries to prevent stale data issues
+
+### 🐛 Bug Fixes
+- **Fixed encoding issues** - All emojis now display correctly (📥, ⬇️, ⚙️, etc.)
+- **Fixed settings not reloading** - Cookie settings now apply immediately without app restart
+- **Fixed update button icon** - Was showing corrupted character, now shows ⬇️
+- **Added `--force-overwrites`** - Prevents "format not available" errors from stale files
+
+### 📝 UI Improvements
+- **New Advanced settings tab** - Dedicated tab for troubleshooting options
+- **Green "Setup Steps" box** - Clear numbered instructions for enabling cookies
+- **Cookie status in logs** - Shows "🍪 Using cookies from firefox browser" when enabled
+- **Better status messages** - "YouTube blocked - retry in 30s..." instead of generic waiting message
+
 ## [18.1.3] - 2026-01-28
 
 ### 🔄 Unified Retry System
@@ -57,7 +119,7 @@ All notable changes to YouTube 4K Downloader will be documented in this file.
 - **Temp File Cleanup Before Retry** - Leftover temp files are cleaned up before each retry attempt
 
 ### Fixed
-- **Help Button Encoding** - Fixed broken â" emoji in the Help button
+- **Help Button Encoding** - Fixed broken emoji in the Help button
 - **Help Window Toggle** - Clicking Help twice now closes the window instead of opening duplicates
 - **Updated Help Content** - Help now reflects v18.1 features including playlist support, YouTube Mix handling, and troubleshooting tips
 
