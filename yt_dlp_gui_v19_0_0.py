@@ -1,17 +1,57 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-YouTube 4K Downloader v18 - 2026 Modern Design Edition
+YouTube 4K Downloader v19 - Professional Design System Edition
 
-Complete UI/UX overhaul with contemporary design standards:
-- Glass morphism design with backdrop blur effects
-- Purple-blue gradient accents throughout
-- Responsive flexbox layout (no cut-off sections)
-- Collapsible activity log panel (max 200px, scrollable)
-- Modern card-based interface with generous spacing
-- Smooth animations and micro-interactions
-- Larger touch targets (56-60px buttons)
-- Softer corners (16-20px border radius)
+Complete UI redesign following professional interface design principles:
+- Dark theme with single cyan accent color (no gradients)
+- Subtle surface layering with whisper-quiet borders
+- Four-level text hierarchy (primary/secondary/tertiary/muted)
+- 8px base spacing system throughout
+- Monospace fonts for data display (SF Mono)
+- Compact controls (40px buttons, 6px radius)
+- Borders-only depth strategy (no shadows)
+- Clean typography (SF Pro Display/Text)
+
+Design Philosophy: A professional media acquisition tool that feels like
+software a video editor would respect. Dark surfaces that don't fight for
+attention, whisper-quiet borders, a single accent color that means "action".
+
+v19.0.0 Changes - MAJOR UI REDESIGN (January 2026):
+- NEW: Professional color system with subtle surface layering
+- NEW: Single accent color (cyan) replacing purple/blue gradients
+- NEW: Four-level text hierarchy for clear information architecture
+- NEW: Monospace fonts for all data display
+- NEW: Compact, dense layout with 8px-based spacing
+- NEW: Ghost-style buttons for secondary actions
+- NEW: Linear resource gauges (replaced circular gauges)
+- NEW: Slim progress bar (6px) with smooth animations
+- NEW: Inset input fields with darker backgrounds
+- REMOVED: Glass morphism effects
+- REMOVED: Emoji icons throughout
+- REMOVED: Large rounded corners (now 6px max)
+
+v18.5.0 Changes - BURNER ACCOUNT COOKIE MANAGEMENT (January 2026):
+
+🍪 BURNER ACCOUNT COOKIE MANAGEMENT:
+- NEW: Browser profile detection for Chrome, Firefox, Edge, and Safari
+- NEW: Select specific browser profiles instead of just browsers
+- NEW: Visual warnings for "Default" profiles (likely personal accounts)
+- NEW: Cookie health monitoring with status indicators
+- NEW: "Test Cookies" button to validate authentication
+- NEW: Comprehensive Burner Account Setup Guide with step-by-step instructions
+- NEW: Safety guardrails with warning dialogs when using personal profiles
+- NEW: Cookie age tracking with 30-day refresh reminders
+- NEW: Dedicated "Cookies" tab in Settings for all cookie configuration
+- IMPROVED: Profile-specific cookie extraction using yt-dlp's BROWSER:PROFILE syntax
+- IMPROVED: Prevents accidental use of personal YouTube accounts
+
+ ACCOUNT SAFETY:
+- Color-coded profile selection (green=safe, orange=warning)
+- Clear warnings about risks of using default browser profiles
+- One-click burner profile creation guide
+- Recommendations for disposable email services
+- Tips for maintaining account separation
 
 v18.5.0 Changes - BURNER ACCOUNT COOKIE MANAGEMENT (January 2026):
 
@@ -449,7 +489,11 @@ except ImportError:
 # ============================================================================
 
 APP_NAME = "YouTube 4K Downloader"
+<<<<<<<< HEAD:yt_dlp_gui_v18_5_0.py
 APP_VERSION = "18.5.0"
+========
+APP_VERSION = "19.0.0"  # Major UI redesign with professional design system
+>>>>>>>> 585b8ef (v19.0.0: Complete UI redesign with responsive layout):yt_dlp_gui_v19_0_0.py
 
 # ============================================================================
 # RETRY CONFIGURATION
@@ -570,34 +614,71 @@ YTDLP_PATH = find_executable("yt-dlp")
 FFMPEG_PATH = find_executable("ffmpeg")
 DENO_PATH = find_executable("deno")  # JavaScript runtime for yt-dlp
 
-# Color Palette - 2026 Modern Design with Purple/Blue Gradients
+# ============================================================================
+# COLOR SYSTEM - Professional Media Tool Design
+# ============================================================================
+# Design Philosophy: A professional media acquisition tool that feels like
+# software a video editor would respect. Dark surfaces that don't fight for
+# attention, whisper-quiet borders, a single accent color that means "action".
+#
+# Principles applied:
+# - Subtle layering: surfaces barely different but distinguishable
+# - Single accent color (cyan-teal) for all interactive elements
+# - Four-level text hierarchy (primary → secondary → tertiary → muted)
+# - Borders-only depth strategy (no shadows, clean and technical)
+# - 8px base spacing unit throughout
+
 COLORS = {
-    "bg_primary": "#0a0a0f",
-    "bg_secondary": "#161618",
-    "bg_tertiary": "#1c1c1e",
-    "bg_elevated": "#2c2c2e",
-    "bg_hover": "#3a3a3c",
-    
-    "text_primary": "#f5f5f7",
-    "text_secondary": "#98989d",
-    "text_tertiary": "#636366",
-    
-    # Modern gradient accents - Purple to Blue
-    "accent_gradient_start": "#667eea",
-    "accent_gradient_end": "#764ba2",
-    "accent_blue": "#0a84ff",
-    "accent_blue_hover": "#409cff",
-    "accent_green": "#30d158",
-    "accent_orange": "#ff9f0a",
-    "accent_red": "#ff453a",
-    "accent_purple": "#bf5af2",
-    
-    "border": "#2c2c2e",
-    "border_light": "#3a3a3c",
-    "border_focus": "#667eea",
-    
-    # Glass morphism colors (with alpha)
-    "glass_overlay": "#1c1c1e",  # Used with transparency
+    # === BACKGROUND SURFACES ===
+    # Subtle progression: each level ~3-4% lighter
+    # Level 0: App canvas (deepest)
+    "bg_primary": "#0d1117",
+    # Level 1: Cards, panels (whisper above canvas)
+    "bg_secondary": "#161b22",
+    # Level 2: Elevated elements, inputs
+    "bg_tertiary": "#1c2128",
+    # Level 3: Hover states, active surfaces
+    "bg_elevated": "#21262d",
+    # Level 4: Maximum elevation (dropdowns, tooltips)
+    "bg_hover": "#282e36",
+
+    # === TEXT HIERARCHY ===
+    # Four distinct levels for clear information architecture
+    "text_primary": "#e6edf3",      # Headlines, important content
+    "text_secondary": "#9198a1",    # Body text, descriptions
+    "text_tertiary": "#656d76",     # Metadata, timestamps, hints
+    "text_muted": "#484f58",        # Disabled, placeholders
+
+    # === ACCENT COLOR ===
+    # Single accent (cyan-teal) - means "ready/action" in media tools
+    # Used for: primary buttons, active states, progress, links
+    "accent": "#22d3ee",            # Primary accent (cyan)
+    "accent_hover": "#67e8f9",      # Hover state (lighter)
+    "accent_muted": "#164e63",      # Subtle accent backgrounds
+
+    # Legacy mappings for compatibility
+    "accent_gradient_start": "#22d3ee",
+    "accent_gradient_end": "#06b6d4",
+    "accent_blue": "#22d3ee",
+    "accent_blue_hover": "#67e8f9",
+
+    # === SEMANTIC COLORS ===
+    # Functional colors with meaning
+    "accent_green": "#3fb950",      # Success, complete
+    "accent_orange": "#d29922",     # Warning, caution
+    "accent_red": "#f85149",        # Error, destructive
+    "accent_purple": "#a371f7",     # Info, special states
+
+    # === BORDERS ===
+    # Whisper-quiet separation - you feel it more than see it
+    "border": "#21262d",            # Default borders
+    "border_light": "#30363d",      # Subtle separation
+    "border_focus": "#22d3ee",      # Focus rings (accent)
+    "border_strong": "#484f58",     # Emphasized borders
+
+    # === SPECIAL SURFACES ===
+    "surface_inset": "#010409",     # Recessed areas (code blocks, inputs)
+    "glass_overlay": "#161b22",     # Modal overlays
 }
 
 # Resolution presets
@@ -903,153 +984,160 @@ class AppUpdateChecker:
 
 
 class UpdateNotificationDialog(ctk.CTkToplevel):
-    """Modern dialog to notify user about available app updates."""
-    
+    """
+    Update notification dialog.
+
+    Design principles:
+    - Clean, minimal layout
+    - Clear version info
+    - Changelog in monospace
+    """
+
     def __init__(self, parent, release_info: dict):
         super().__init__(parent)
-        
+
         self.release_info = release_info
-        
-        self.title("NEW Update Available")
-        self.geometry("620x550")
+
+        self.title("Update Available")
+        self.geometry("520x480")
         self.transient(parent)
         self.resizable(False, False)
-        
+
         # Center on screen
         self.update_idletasks()
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
-        x = (screen_width - 620) // 2
-        y = (screen_height - 550) // 2
+        x = (screen_width - 520) // 2
+        y = (screen_height - 480) // 2
         self.geometry(f"+{x}+{y}")
-        
+
         self.configure(fg_color=COLORS["bg_primary"])
-        
+
         self._create_ui()
-        
-        # Grab focus
+
         self.lift()
         self.focus_force()
-    
+
     def _create_ui(self):
         """Create the update notification UI."""
         main_frame = ctk.CTkFrame(self, fg_color="transparent")
-        main_frame.pack(fill="both", expand=True, padx=30, pady=30)
-        
-        # Header with gradient background
+        main_frame.pack(fill="both", expand=True, padx=24, pady=24)
+
+        # Header
         header_frame = ctk.CTkFrame(
             main_frame,
-            fg_color=COLORS["bg_elevated"],
-            corner_radius=16
+            fg_color=COLORS["bg_secondary"],
+            corner_radius=8
         )
-        header_frame.pack(fill="x", pady=(0, 20))
-        
+        header_frame.pack(fill="x", pady=(0, 16))
+
         header_content = ctk.CTkFrame(header_frame, fg_color="transparent")
-        header_content.pack(fill="x", padx=24, pady=24)
-        
-        # Large update icon
-        icon_label = ctk.CTkLabel(
-            header_content,
-            text="NEW",
-            font=ctk.CTkFont(size=56)
-        )
-        icon_label.pack(pady=(0, 12))
-        
+        header_content.pack(fill="x", padx=20, pady=20)
+
         # Title
         title_label = ctk.CTkLabel(
             header_content,
+<<<<<<<< HEAD:yt_dlp_gui_v18_5_0.py
             text=" New Version Available!",
             font=ctk.CTkFont(size=26, weight="bold"),
+========
+            text="New Version Available",
+            font=ctk.CTkFont(family="SF Pro Display", size=20, weight="bold"),
+>>>>>>>> 585b8ef (v19.0.0: Complete UI redesign with responsive layout):yt_dlp_gui_v19_0_0.py
             text_color=COLORS["text_primary"]
         )
-        title_label.pack()
-        
+        title_label.pack(anchor="w")
+
         # Version info
-        version_text = f"Version {self.release_info['version']} is now available"
+        version_text = f"v{self.release_info['version']}"
         if self.release_info.get('published_date'):
-            version_text += f" * Released {self.release_info['published_date']}"
-        
+            version_text += f"  |  {self.release_info['published_date']}"
+
         version_label = ctk.CTkLabel(
             header_content,
             text=version_text,
-            font=ctk.CTkFont(size=14),
-            text_color=COLORS["text_secondary"]
+            font=ctk.CTkFont(family="SF Mono", size=12),
+            text_color=COLORS["text_tertiary"]
         )
-        version_label.pack(pady=(8, 0))
-        
+        version_label.pack(anchor="w", pady=(8, 0))
+
         # Release name (if different from version)
         if self.release_info.get('name') and self.release_info['name'] != f"v{self.release_info['version']}":
             name_label = ctk.CTkLabel(
                 header_content,
                 text=self.release_info['name'],
-                font=ctk.CTkFont(size=13, weight="bold"),
-                text_color=COLORS["accent_purple"]
+                font=ctk.CTkFont(family="SF Pro Text", size=12),
+                text_color=COLORS["accent"]
             )
-            name_label.pack(pady=(4, 0))
-        
+            name_label.pack(anchor="w", pady=(4, 0))
+
         # Changelog section
         changelog_header = ctk.CTkLabel(
             main_frame,
-            text=" What's New:",
-            font=ctk.CTkFont(size=15, weight="bold"),
-            text_color=COLORS["text_primary"],
+            text="CHANGELOG",
+            font=ctk.CTkFont(family="SF Pro Text", size=10, weight="bold"),
+            text_color=COLORS["text_muted"],
             anchor="w"
         )
-        changelog_header.pack(fill="x", pady=(0, 12))
-        
-        # Scrollable changelog - FIXED HEIGHT to ensure buttons always visible
+        changelog_header.pack(fill="x", pady=(0, 8))
+
+        # Scrollable changelog
         changelog_frame = ctk.CTkFrame(
             main_frame,
-            fg_color=COLORS["bg_secondary"],
-            corner_radius=12,
+            fg_color=COLORS["surface_inset"],
+            corner_radius=6,
             border_width=1,
             border_color=COLORS["border_light"],
-            height=180  # Fixed height
+            height=200
         )
-        changelog_frame.pack(fill="x", pady=(0, 20))
-        changelog_frame.pack_propagate(False)  # Maintain fixed height
-        
+        changelog_frame.pack(fill="x", pady=(0, 16))
+        changelog_frame.pack_propagate(False)
+
         changelog_text = ctk.CTkTextbox(
             changelog_frame,
-            font=ctk.CTkFont(size=13),
+            font=ctk.CTkFont(family="SF Mono", size=11),
             fg_color="transparent",
             text_color=COLORS["text_secondary"],
             wrap="word",
             activate_scrollbars=True
         )
-        changelog_text.pack(fill="both", expand=True, padx=16, pady=16)
-        
+        changelog_text.pack(fill="both", expand=True, padx=12, pady=12)
+
         # Insert changelog
         changelog_content = self.release_info.get('changelog', 'No changelog available.')
         changelog_text.insert("1.0", changelog_content)
         changelog_text.configure(state="disabled")
-        
-        # Buttons - ensure always visible at bottom
-        button_frame = ctk.CTkFrame(main_frame, fg_color="transparent", height=60)
+
+        # Buttons
+        button_frame = ctk.CTkFrame(main_frame, fg_color="transparent", height=48)
         button_frame.pack(fill="x", side="bottom")
         button_frame.pack_propagate(False)
-        
-        # Download button (primary, prominent)
+
+        # Download button
         download_btn = ModernButton(
             button_frame,
+<<<<<<<< HEAD:yt_dlp_gui_v18_5_0.py
             text="⬇️ Download Update",
+========
+            text="Download Update",
+>>>>>>>> 585b8ef (v19.0.0: Complete UI redesign with responsive layout):yt_dlp_gui_v19_0_0.py
             style="primary",
-            width=220,
-            height=48,
+            width=140,
+            height=40,
             command=self._open_release_page
         )
-        download_btn.pack(side="right", pady=6)
-        
+        download_btn.pack(side="right")
+
         # Later button
         later_btn = ModernButton(
             button_frame,
-            text="Remind Me Later",
-            style="secondary",
-            width=160,
-            height=48,
+            text="Later",
+            style="ghost",
+            width=60,
+            height=40,
             command=self.destroy
         )
-        later_btn.pack(side="right", padx=(0, 12), pady=6)
+        later_btn.pack(side="right", padx=(0, 8))
     
     def _open_release_page(self):
         """Open the release page in browser."""
@@ -1754,6 +1842,9 @@ class DownloadTask:
     created_at: datetime = field(default_factory=datetime.now)
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
+    # v19.0.0: Per-video trim settings
+    trim_start: Optional[str] = None
+    trim_end: Optional[str] = None
 
 
 # ============================================================================
@@ -2169,23 +2260,31 @@ class YtDlpInterface:
         try:
             # Clean the URL to remove playlist parameters
             cleaned_url = clean_youtube_url(url)
-            
+
+            # v19.0.0: Increased timeout from 30s to 90s
+            # Cookie authentication and YouTube rate limiting can cause delays
             result = subprocess.run(
                 self._build_command(["-J", "--no-playlist", cleaned_url]),
-                capture_output=True, text=True, check=False, timeout=30,
+                capture_output=True, text=True, check=False, timeout=90,
                 encoding='utf-8', errors='replace'
             )
-            
+
             if result.returncode != 0:
                 raise RuntimeError(f"yt-dlp error: {result.stderr.strip()}")
-            
+
             data = json.loads(result.stdout)
             return self._parse_video_info(data, cleaned_url)
-            
+
         except json.JSONDecodeError as e:
             raise RuntimeError(f"Failed to parse yt-dlp output: {e}")
         except subprocess.TimeoutExpired:
-            raise RuntimeError("yt-dlp took too long to respond")
+            raise RuntimeError(
+                "yt-dlp took too long to respond (>90s). "
+                "This may be due to YouTube rate limiting. "
+                "Try: 1) Wait a few minutes and retry, "
+                "2) Update yt-dlp to the latest nightly build, "
+                "3) Check your internet connection."
+            )
     
     def fetch_full_info(self, url: str) -> VideoInfo:
         """Fetch full video info including all formats using --list-formats.
@@ -2205,9 +2304,10 @@ class YtDlpInterface:
             
             # First get basic metadata with -J
             # --no-playlist ensures we only get info for the single video
+            # v19.0.0: Increased timeout from 30s to 90s for slower connections
             result_info = subprocess.run(
                 self._build_command(["-J", "--no-playlist", cleaned_url]),
-                capture_output=True, text=True, check=False, timeout=30,
+                capture_output=True, text=True, check=False, timeout=90,
                 encoding='utf-8', errors='replace'
             )
             
@@ -2224,6 +2324,7 @@ class YtDlpInterface:
             
             # Now get formats using --list-formats (this shows ALL formats)
             # --no-playlist ensures we only get formats for the single video
+            # v19.0.0: Increased timeout from 30s to 90s
             result_formats = subprocess.run(
                 self._build_command([
                     "--list-formats",
@@ -2231,7 +2332,7 @@ class YtDlpInterface:
                     "--remote-components", "ejs:github",
                     cleaned_url
                 ]),
-                capture_output=True, text=True, check=False, timeout=30,
+                capture_output=True, text=True, check=False, timeout=90,
                 encoding='utf-8', errors='replace'
             )
             
@@ -2252,7 +2353,13 @@ class YtDlpInterface:
         except json.JSONDecodeError as e:
             raise RuntimeError(f"Failed to parse yt-dlp output: {e}")
         except subprocess.TimeoutExpired:
-            raise RuntimeError("yt-dlp took too long to respond")
+            raise RuntimeError(
+                "yt-dlp took too long to respond (>90s). "
+                "This may be due to YouTube rate limiting. "
+                "Try: 1) Wait a few minutes and retry, "
+                "2) Update yt-dlp to the latest nightly build, "
+                "3) Check your internet connection."
+            )
         except (AgeRestrictedError, PrivateVideoError, VideoUnavailableError, LoginRequiredError):
             # Re-raise our custom exceptions
             raise
@@ -2289,13 +2396,14 @@ class YtDlpInterface:
             
             # Use --flat-playlist to get playlist entries without downloading each video's info
             # This is MUCH faster than fetching full info for each video
+            # v19.0.0: Increased timeout from 60s to 120s for large playlists
             result = subprocess.run(
                 self._build_command([
                     "-J",
                     "--flat-playlist",
                     parsed.playlist_url
                 ]),
-                capture_output=True, text=True, check=False, timeout=60,  # Longer timeout for playlists
+                capture_output=True, text=True, check=False, timeout=120,
                 encoding='utf-8', errors='replace'
             )
             
@@ -3082,12 +3190,15 @@ class DownloadManager:
             except Exception as e:
                 print(f"Callback error: {e}")
     
-    def add_task(self, video_info: VideoInfo, selected_format: Optional[VideoFormat] = None) -> DownloadTask:
+    def add_task(self, video_info: VideoInfo, selected_format: Optional[VideoFormat] = None,
+                 trim_start: Optional[str] = None, trim_end: Optional[str] = None) -> DownloadTask:
         """Add a download task to the queue."""
         task = DownloadTask(
             id=f"{video_info.id}_{int(time.time())}",
             video_info=video_info,
             selected_format=selected_format,
+            trim_start=trim_start,
+            trim_end=trim_end,
         )
         
         with self._lock:
@@ -3223,12 +3334,22 @@ class DownloadManager:
             # v18.1.4: For nightly builds, don't restrict client selection as the nightly
             # handles YouTube's changes automatically
             cookie_args = self._get_cookie_args()
+
+            # v19.0.0: Build trim arguments if specified
+            trim_args = []
+            if task.trim_start or task.trim_end:
+                start_time = task.trim_start or "0"
+                end_time = task.trim_end or "inf"
+                # Use yt-dlp's download-sections format: *start-end
+                trim_args = ["--download-sections", f"*{start_time}-{end_time}"]
+                self._notify("log", ("info", f"Trimming video: {start_time} to {end_time}"))
+
             video_cmd_args = [
                 "--newline",
                 "--ffmpeg-location", FFMPEG_PATH.rsplit('/', 1)[0],  # Tell yt-dlp where ffmpeg is
                 "--no-continue",  # Start fresh on retry (avoids partial file issues)
                 "--force-overwrites",  # Overwrite partial files from previous attempts
-            ] + cookie_args + video_cmd_args_extra + [
+            ] + cookie_args + trim_args + video_cmd_args_extra + [
                 "-f", video_format,
                 "-o", temp_video,
                 video_info.url
@@ -3260,7 +3381,11 @@ class DownloadManager:
                             "--ffmpeg-location", FFMPEG_PATH.rsplit('/', 1)[0],
                             "--no-continue",
                             "--force-overwrites",
+<<<<<<<< HEAD:yt_dlp_gui_v18_5_0.py
                         ] + cookie_args + video_cmd_args_extra + [
+========
+                        ] + cookie_args + trim_args + video_cmd_args_extra + [
+>>>>>>>> 585b8ef (v19.0.0: Complete UI redesign with responsive layout):yt_dlp_gui_v19_0_0.py
                             "-f", self._4k_fallback_format,
                             "-o", temp_video,
                             video_info.url
@@ -3406,7 +3531,7 @@ class DownloadManager:
                 "--ffmpeg-location", FFMPEG_PATH.rsplit('/', 1)[0],  # Tell yt-dlp where ffmpeg is
                 "--no-continue",  # Start fresh on retry
                 "--force-overwrites",
-            ] + cookie_args + [
+            ] + cookie_args + trim_args + [
                 "-f", "bestaudio[acodec^=mp4a][ext=m4a]/bestaudio[ext=m4a]/bestaudio/best",
                 "-o", temp_audio,
                 video_info.url
@@ -4420,316 +4545,335 @@ class DownloadManager:
 # ============================================================================
 
 class EnhancedProgressBar(ctk.CTkFrame):
-    """Enhanced progress bar with segmented blocks and animation."""
-    
+    """
+    Pipeline-style progress bar showing download stages.
+
+    Design principles:
+    - Single accent color for progress (no rainbow stages)
+    - Smooth continuous bar (no blocks for cleaner look)
+    - Subtle background track
+    - Fast, smooth animations (150ms)
+
+    Signature element: Shows progress as "liquid filling" with smooth edges
+    """
+
     def __init__(self, parent, **kwargs):
         super().__init__(parent, fg_color="transparent", **kwargs)
-        
+
         self.progress = 0
         self.stage = "idle"
-        self.pulse_alpha = 1.0
-        self.pulse_direction = -1
         self.animating = False
-        
-        # Stage colors
+        self._animation_target = 0
+
+        # Stage colors (all use accent variants for consistency)
         self.stage_colors = {
-            "downloading_video": "#3B82F6",  # Blue
-            "downloading_audio": "#8B5CF6",  # Purple
-            "converting": "#10B981",         # Green
-            "idle": "#4B5563"                # Gray
+            "downloading_video": COLORS["accent"],
+            "downloading_audio": COLORS["accent"],
+            "converting": COLORS["accent_green"],
+            "complete": COLORS["accent_green"],
+            "error": COLORS["accent_red"],
+            "idle": COLORS["border_light"]
         }
-        
+
         # Canvas for custom drawing
         self.canvas = ctk.CTkCanvas(
             self,
-            height=12,
-            bg=COLORS["bg_elevated"],
+            height=6,  # Slim, refined bar
+            bg=COLORS["bg_tertiary"],
             highlightthickness=0
         )
         self.canvas.pack(fill="x")
-        
+
         # Bind resize
         self.canvas.bind("<Configure>", self._redraw)
-    
+
     def set_progress(self, percentage, stage="idle"):
-        """Update progress and stage."""
-        self.progress = max(0, min(100, percentage))
+        """Update progress with smooth animation."""
+        self._animation_target = max(0, min(100, percentage))
         self.stage = stage
-        self._redraw()
-    
-    def start_animation(self):
-        """Start pulse animation."""
+
+        # Animate toward target
         if not self.animating:
             self.animating = True
-            self._animate()
-    
+            self._animate_progress()
+
+    def start_animation(self):
+        """Start indeterminate animation."""
+        pass  # Not needed with smooth progress
+
     def stop_animation(self):
         """Stop animation."""
         self.animating = False
-    
-    def _animate(self):
-        """Pulse animation loop."""
+
+    def _animate_progress(self):
+        """Smooth progress animation (150ms feel)."""
         if not self.animating:
             return
-            
-        # Pulse between 0.7 and 1.0
-        self.pulse_alpha += 0.02 * self.pulse_direction
-        if self.pulse_alpha >= 1.0:
-            self.pulse_alpha = 1.0
-            self.pulse_direction = -1
-        elif self.pulse_alpha <= 0.7:
-            self.pulse_alpha = 0.7
-            self.pulse_direction = 1
-        
+
+        diff = self._animation_target - self.progress
+        if abs(diff) < 0.5:
+            self.progress = self._animation_target
+            self.animating = False
+            self._redraw()
+            return
+
+        # Ease toward target
+        self.progress += diff * 0.15
         self._redraw()
-        self.after(50, self._animate)  # 20 FPS animation
-    
+        self.after(16, self._animate_progress)  # ~60fps
+
     def _redraw(self, event=None):
         """Redraw the progress bar."""
         self.canvas.delete("all")
-        
+
         width = self.canvas.winfo_width()
-        height = 12
-        
+        height = 6
+
         if width <= 1:
             return
-        
-        # Number of blocks
-        num_blocks = 40
-        block_width = (width - (num_blocks + 1) * 2) / num_blocks
-        filled_blocks = int((self.progress / 100) * num_blocks)
-        
-        # Draw blocks
-        for i in range(num_blocks):
-            x = 2 + i * (block_width + 2)
-            y = 2
-            
-            if i < filled_blocks:
-                # Filled block
-                color = self.stage_colors.get(self.stage, self.stage_colors["idle"])
-                
-                # Apply pulse alpha
-                if self.animating:
-                    color = self._adjust_color_alpha(color, self.pulse_alpha)
-                
-                self.canvas.create_rectangle(
-                    x, y, x + block_width, y + height - 4,
-                    fill=color,
-                    outline=""
-                )
-            else:
-                # Empty block
-                self.canvas.create_rectangle(
-                    x, y, x + block_width, y + height - 4,
-                    fill="#2C2C2E",
-                    outline=""
-                )
-    
-    def _adjust_color_alpha(self, hex_color, alpha):
-        """Adjust color brightness based on alpha."""
-        # Convert hex to RGB
-        hex_color = hex_color.lstrip('#')
-        r, g, b = int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
-        
-        # Adjust brightness
-        r = int(r * alpha)
-        g = int(g * alpha)
-        b = int(b * alpha)
-        
-        # Convert back to hex
-        return f'#{r:02x}{g:02x}{b:02x}'
+
+        # Background track (full width, rounded)
+        self.canvas.create_rectangle(
+            0, 0, width, height,
+            fill=COLORS["border"],
+            outline=""
+        )
+
+        # Progress fill
+        if self.progress > 0:
+            fill_width = (self.progress / 100) * width
+            color = self.stage_colors.get(self.stage, self.stage_colors["idle"])
+
+            self.canvas.create_rectangle(
+                0, 0, fill_width, height,
+                fill=color,
+                outline=""
+            )
 
 
 class ToolTip:
-    """Simple tooltip that appears on hover."""
-    
+    """
+    Minimal tooltip that appears on hover.
+
+    Design principles:
+    - Quick delay (400ms)
+    - Subtle styling matching the app
+    - Positioned above the widget
+    """
+
     def __init__(self, widget, text):
         self.widget = widget
         self.text = text
         self.tooltip_window = None
-        
-        # Bind hover events
+
         self.widget.bind("<Enter>", self.show_tooltip)
         self.widget.bind("<Leave>", self.hide_tooltip)
-    
+
     def show_tooltip(self, event=None):
-        """Show the tooltip after a brief delay."""
-        # Cancel any existing tooltip
+        """Schedule tooltip display."""
         self.hide_tooltip()
-        
-        # Schedule tooltip to appear after 500ms
-        self.tooltip_window = self.widget.after(500, self._display_tooltip)
-    
+        self.tooltip_window = self.widget.after(400, self._display_tooltip)
+
     def _display_tooltip(self):
-        """Actually display the tooltip window."""
+        """Display the tooltip window."""
         if self.tooltip_window is None:
             return
-        
-        # Get widget position
+
         x = self.widget.winfo_rootx() + self.widget.winfo_width() // 2
-        y = self.widget.winfo_rooty() - 35
-        
-        # Create tooltip window
+        y = self.widget.winfo_rooty() - 32
+
         self.tip_window = tk.Toplevel(self.widget)
         self.tip_window.wm_overrideredirect(True)
         self.tip_window.wm_geometry(f"+{x}+{y}")
-        
-        # Create tooltip label with modern style
+
         label = tk.Label(
             self.tip_window,
             text=self.text,
-            background="#2c2c2e",
-            foreground="#f5f5f7",
-            relief="solid",
-            borderwidth=1,
+            background=COLORS["bg_elevated"],
+            foreground=COLORS["text_secondary"],
+            relief="flat",
+            borderwidth=0,
             font=("SF Pro Text", 11),
-            padx=12,
-            pady=6
+            padx=8,
+            pady=4
         )
         label.pack()
-        
-        # Make window slightly transparent
+
         try:
             self.tip_window.attributes('-alpha', 0.95)
-        except:
+        except Exception:
             pass
-    
+
     def hide_tooltip(self, event=None):
         """Hide the tooltip."""
-        # Cancel scheduled tooltip
         if self.tooltip_window:
             self.widget.after_cancel(self.tooltip_window)
             self.tooltip_window = None
-        
-        # Destroy tooltip window
+
         if hasattr(self, 'tip_window') and self.tip_window:
             self.tip_window.destroy()
             self.tip_window = None
 
 
 class ModernButton(ctk.CTkButton):
-    """Modern styled button with gradient effects and smooth animations."""
-    
+    """
+    Professional button component with consistent styling.
+
+    Design principles:
+    - Compact sizing (40px default height for density)
+    - Sharp corners (6px radius) for technical feel
+    - Single accent color for primary actions
+    - Subtle borders for secondary actions
+    """
+
     def __init__(self, master, text="", icon=None, style="primary", **kwargs):
+        # Button style definitions
         styles = {
             "primary": {
-                "fg_color": COLORS["accent_gradient_start"],
-                "hover_color": COLORS["accent_gradient_end"],
-                "text_color": "white",
+                "fg_color": COLORS["accent"],
+                "hover_color": COLORS["accent_hover"],
+                "text_color": COLORS["bg_primary"],  # Dark text on bright accent
             },
             "secondary": {
-                "fg_color": COLORS["bg_elevated"],
-                "hover_color": COLORS["bg_hover"],
+                "fg_color": COLORS["bg_tertiary"],
+                "hover_color": COLORS["bg_elevated"],
                 "text_color": COLORS["text_primary"],
                 "border_width": 1,
                 "border_color": COLORS["border_light"],
             },
+            "ghost": {
+                "fg_color": "transparent",
+                "hover_color": COLORS["bg_tertiary"],
+                "text_color": COLORS["text_secondary"],
+                "border_width": 0,
+            },
             "danger": {
                 "fg_color": COLORS["accent_red"],
-                "hover_color": "#ff6961",
+                "hover_color": "#da3633",
                 "text_color": "white",
             },
             "success": {
                 "fg_color": COLORS["accent_green"],
-                "hover_color": "#4ade80",
+                "hover_color": "#2ea043",
                 "text_color": "white",
             },
             "icon": {
-                "fg_color": COLORS["bg_elevated"],
-                "hover_color": COLORS["bg_hover"],
-                "text_color": COLORS["text_primary"],
+                "fg_color": COLORS["bg_tertiary"],
+                "hover_color": COLORS["bg_elevated"],
+                "text_color": COLORS["text_secondary"],
                 "border_width": 1,
                 "border_color": COLORS["border_light"],
-                "width": 44,
-                "height": 44,
+                "width": 36,
+                "height": 36,
             },
         }
-        
+
         style_config = styles.get(style, styles["primary"]).copy()
-        
-        # FIXED: Remove any style_config keys that are also in kwargs to avoid conflicts
-        # This allows user-provided values to override style defaults
+
+        # Allow kwargs to override style defaults
         for key in list(style_config.keys()):
             if key in kwargs:
                 del style_config[key]
-        
-        # Set default height if not in style_config AND not in kwargs
+
+        # Default height: 40px (compact but touchable)
         if "height" not in style_config and "height" not in kwargs:
-            kwargs["height"] = 56
-        
+            kwargs["height"] = 40
+
+        # Sharper corners for technical feel (6px default, 4px for icons)
+        corner_radius = 6 if style != "icon" else 4
+
         super().__init__(
             master,
             text=text,
-            corner_radius=16 if style != "icon" else 12,
-            font=ctk.CTkFont(size=14, weight="bold"),
+            corner_radius=corner_radius,
+            font=ctk.CTkFont(family="SF Pro Text", size=13, weight="bold"),
             **style_config,
             **kwargs
         )
 
 
 class ModernEntry(ctk.CTkEntry):
-    """Modern styled entry with glass effect and larger size."""
-    
+    """
+    Professional input field with inset styling.
+
+    Design principles:
+    - Inset background (darker than surface) signals "type here"
+    - Subtle border that strengthens on focus
+    - Compact height (40px) for density
+    """
+
     def __init__(self, master, placeholder="", **kwargs):
         super().__init__(
             master,
             placeholder_text=placeholder,
-            corner_radius=16,
-            height=56,
-            font=ctk.CTkFont(size=14),
-            fg_color=COLORS["bg_tertiary"],
+            corner_radius=6,
+            height=40,
+            font=ctk.CTkFont(family="SF Pro Text", size=13),
+            fg_color=COLORS["surface_inset"],
             border_color=COLORS["border_light"],
             text_color=COLORS["text_primary"],
-            placeholder_text_color=COLORS["text_tertiary"],
+            placeholder_text_color=COLORS["text_muted"],
             border_width=1,
             **kwargs
         )
 
 
 class OptionChip(ctk.CTkButton):
-    """Selectable option chip/pill."""
-    
+    """
+    Selectable option chip for multi-choice selections.
+
+    Design principles:
+    - Clear active/inactive visual distinction
+    - Uses accent color only when selected
+    - Compact sizing for inline use
+    """
+
     def __init__(self, master, text="", active=False, **kwargs):
         self.active = active
-        
+
         super().__init__(
             master,
             text=text,
-            corner_radius=20,
-            height=36,
-            font=ctk.CTkFont(size=13),
-            fg_color=COLORS["accent_blue"] if active else COLORS["bg_tertiary"],
-            hover_color=COLORS["accent_blue_hover"] if active else COLORS["bg_elevated"],
-            text_color="white" if active else COLORS["text_secondary"],
-            border_width=1 if active else 0,
-            border_color=COLORS["accent_blue"] if active else COLORS["bg_tertiary"],
+            corner_radius=4,
+            height=32,
+            font=ctk.CTkFont(family="SF Pro Text", size=12, weight="bold"),
+            fg_color=COLORS["accent_muted"] if active else COLORS["bg_tertiary"],
+            hover_color=COLORS["accent"] if active else COLORS["bg_elevated"],
+            text_color=COLORS["accent"] if active else COLORS["text_secondary"],
+            border_width=1,
+            border_color=COLORS["accent"] if active else COLORS["border_light"],
             **kwargs
         )
-    
+
     def set_active(self, active: bool):
-        """Update active state."""
+        """Update active state with proper visual feedback."""
         self.active = active
         if active:
             self.configure(
-                fg_color=COLORS["accent_blue"],
-                hover_color=COLORS["accent_blue_hover"],
-                text_color="white",
-                border_width=1,
-                border_color=COLORS["accent_blue"]
+                fg_color=COLORS["accent_muted"],
+                hover_color=COLORS["accent"],
+                text_color=COLORS["accent"],
+                border_color=COLORS["accent"]
             )
         else:
             self.configure(
                 fg_color=COLORS["bg_tertiary"],
                 hover_color=COLORS["bg_elevated"],
                 text_color=COLORS["text_secondary"],
-                border_width=0,
-                border_color=COLORS["bg_tertiary"]
+                border_color=COLORS["border_light"]
             )
 
 
 class FormatCard(ctk.CTkFrame):
-    """Modern card for displaying format options with hover effects."""
-    
+    """
+    Compact quality card for grid layout.
+
+    Design principles:
+    - Resolution prominent, codec/size as secondary info
+    - Compact vertical layout (fits 2 rows of 3)
+    - Clear selected state with accent color
+    """
+
     # Codec display names
     CODEC_NAMES = {
         "avc1": "H.264",
@@ -4747,194 +4891,190 @@ class FormatCard(ctk.CTkFrame):
         "opus": "Opus",
         "vorbis": "Vorbis",
     }
-    
+
     def __init__(self, master, format_info: VideoFormat, selected=False,
                  recommended=False, on_select=None, **kwargs):
-        # Use orange border for recommended, purple for selected
-        if recommended:
+        # Visual states: selected > recommended > default
+        if selected:
+            border_color = COLORS["accent"]
+            bg_color = COLORS["accent_muted"]
+        elif recommended:
             border_color = COLORS["accent_orange"]
-            bg_color = COLORS["bg_elevated"]
-        elif selected:
-            border_color = COLORS["accent_gradient_start"]
-            bg_color = COLORS["bg_elevated"]
+            bg_color = COLORS["bg_tertiary"]
         else:
             border_color = COLORS["border_light"]
-            bg_color = COLORS["bg_secondary"]
-        
+            bg_color = COLORS["bg_tertiary"]
+
         super().__init__(
             master,
-            corner_radius=10,
+            corner_radius=6,
             fg_color=bg_color,
-            border_width=2,
+            border_width=1,
             border_color=border_color,
             **kwargs
         )
-        
+
         self.format_info = format_info
         self.selected = selected
         self.recommended = recommended
         self.on_select = on_select
         self._default_bg = bg_color
-        
-        # Main container with compact padding
+
+        # Content with compact padding
         content = ctk.CTkFrame(self, fg_color="transparent")
-        content.pack(fill="both", expand=True, padx=8, pady=6)
-        
-        # Resolution label - with star prefix if recommended
+        content.pack(fill="both", expand=True, padx=10, pady=8)
+
+        # Resolution - primary (large, bold)
         res_text = f"{format_info.height}p" if format_info.height else "Audio"
+<<<<<<<< HEAD:yt_dlp_gui_v18_5_0.py
         if recommended:
             res_text = f" {res_text}"
         
+========
+        text_color = COLORS["accent"] if selected else (
+            COLORS["accent_orange"] if recommended else COLORS["text_primary"]
+        )
+
+>>>>>>>> 585b8ef (v19.0.0: Complete UI redesign with responsive layout):yt_dlp_gui_v19_0_0.py
         self.res_label = ctk.CTkLabel(
             content,
             text=res_text,
-            font=ctk.CTkFont(size=15, weight="bold"),
-            text_color=COLORS["accent_orange"] if recommended else COLORS["text_primary"]
+            font=ctk.CTkFont(family="SF Pro Display", size=15, weight="bold"),
+            text_color=text_color
         )
-        self.res_label.pack(pady=(0, 2))
-        
-        # Codec
+        self.res_label.pack()
+
+        # Codec + Size - secondary (smaller, muted, single line)
         codec_raw = format_info.vcodec or format_info.acodec or ""
         codec_base = codec_raw.split('.')[0].lower() if codec_raw else ""
-        codec_display = self.CODEC_NAMES.get(codec_base, codec_base.upper() if codec_base else "N/A")
-        
-        self.codec_label = ctk.CTkLabel(
+        codec_display = self.CODEC_NAMES.get(codec_base, codec_base.upper() if codec_base else "")
+
+        detail_text = f"{codec_display} · {format_info.size_str}" if codec_display else format_info.size_str
+
+        self.detail_label = ctk.CTkLabel(
             content,
-            text=codec_display,
-            font=ctk.CTkFont(size=10),
-            text_color=COLORS["text_secondary"]
-        )
-        self.codec_label.pack()
-        
-        # File size
-        self.size_label = ctk.CTkLabel(
-            content,
-            text=format_info.size_str,
-            font=ctk.CTkFont(size=10),
+            text=detail_text,
+            font=ctk.CTkFont(family="SF Mono", size=10),
             text_color=COLORS["text_tertiary"]
         )
-        self.size_label.pack()
-        
-        # Bind click events to all elements
-        self.bind("<Button-1>", self._on_click)
-        content.bind("<Button-1>", self._on_click)
-        self.res_label.bind("<Button-1>", self._on_click)
-        self.codec_label.bind("<Button-1>", self._on_click)
-        self.size_label.bind("<Button-1>", self._on_click)
-        
+        self.detail_label.pack(pady=(2, 0))
+
+        # Bind click events
+        for widget in [self, content, self.res_label, self.detail_label]:
+            widget.bind("<Button-1>", self._on_click)
+
         # Hover effects
-        self.bind("<Enter>", self._on_enter)
-        self.bind("<Leave>", self._on_leave)
-        content.bind("<Enter>", self._on_enter)
-        content.bind("<Leave>", self._on_leave)
-    
+        for widget in [self, content]:
+            widget.bind("<Enter>", self._on_enter)
+            widget.bind("<Leave>", self._on_leave)
+
     def _on_click(self, event):
         if self.on_select:
             self.on_select(self.format_info)
-    
+
     def _on_enter(self, event):
-        """Handle mouse enter - subtle highlight."""
-        if not self.selected and not self.recommended:
+        """Subtle hover highlight."""
+        if not self.selected:
             self.configure(fg_color=COLORS["bg_elevated"])
-    
+
     def _on_leave(self, event):
-        """Handle mouse leave - restore original color."""
-        if not self.selected and not self.recommended:
+        """Restore original background."""
+        if not self.selected:
             self.configure(fg_color=self._default_bg)
-    
+
     def set_selected(self, selected: bool):
         self.selected = selected
-        # When a card is selected, it becomes the "active" one
-        # When another card is selected, this card loses its special status
         if selected:
-            # This card is now selected - use purple border
-            border_color = COLORS["accent_gradient_start"]
-            bg_color = COLORS["bg_elevated"]
-            # Clear recommended status since user made a different choice
+            border_color = COLORS["accent"]
+            bg_color = COLORS["accent_muted"]
+            text_color = COLORS["accent"]
             self.recommended = False
-            # Update the resolution label to remove star if it had one
-            res_text = f"{self.format_info.height}p" if self.format_info.height else "Audio"
-            self.res_label.configure(text=res_text, text_color=COLORS["text_primary"])
         else:
-            # This card is not selected - use default styling
             border_color = COLORS["border_light"]
-            bg_color = COLORS["bg_secondary"]
+            bg_color = COLORS["bg_tertiary"]
+            text_color = COLORS["text_primary"]
         self._default_bg = bg_color
-        self.configure(
-            fg_color=bg_color,
-            border_color=border_color
-        )
+        self.configure(fg_color=bg_color, border_color=border_color)
+        self.res_label.configure(text_color=text_color)
 
 
 class ProgressCard(ctk.CTkFrame):
-    """Card showing download progress."""
-    
+    """
+    Card showing download progress for queue items.
+
+    Design principles:
+    - Compact card layout
+    - Status color indicates state
+    - Monospace percentage display
+    """
+
     def __init__(self, master, task: DownloadTask, **kwargs):
         super().__init__(
             master,
-            corner_radius=12,
-            fg_color=COLORS["bg_tertiary"],
+            corner_radius=6,
+            fg_color=COLORS["bg_secondary"],
             border_width=1,
-            border_color=COLORS["border"],
+            border_color=COLORS["border_light"],
             **kwargs
         )
-        
+
         self.task = task
-        
+
         # Title
+        title_text = task.video_info.title[:50] + "..." if len(task.video_info.title) > 50 else task.video_info.title
         self.title_label = ctk.CTkLabel(
             self,
-            text=task.video_info.title[:50] + "..." if len(task.video_info.title) > 50 else task.video_info.title,
-            font=ctk.CTkFont(size=14, weight="bold"),
+            text=title_text,
+            font=ctk.CTkFont(family="SF Pro Text", size=13, weight="bold"),
             text_color=COLORS["text_primary"],
             anchor="w"
         )
-        self.title_label.pack(fill="x", padx=16, pady=(12, 4))
-        
+        self.title_label.pack(fill="x", padx=12, pady=(12, 4))
+
         # Status row
         status_frame = ctk.CTkFrame(self, fg_color="transparent")
-        status_frame.pack(fill="x", padx=16, pady=(0, 8))
-        
+        status_frame.pack(fill="x", padx=12, pady=(0, 8))
+
         self.status_label = ctk.CTkLabel(
             status_frame,
             text=task.status.name.title(),
-            font=ctk.CTkFont(size=12),
+            font=ctk.CTkFont(family="SF Pro Text", size=11),
             text_color=self._status_color()
         )
         self.status_label.pack(side="left")
-        
+
         self.stats_label = ctk.CTkLabel(
             status_frame,
             text="",
-            font=ctk.CTkFont(size=12),
-            text_color=COLORS["text_secondary"]
+            font=ctk.CTkFont(family="SF Mono", size=11),
+            text_color=COLORS["text_tertiary"]
         )
         self.stats_label.pack(side="right")
-        
+
         # Progress bar
         self.progress_bar = ctk.CTkProgressBar(
             self,
-            height=6,
-            corner_radius=3,
-            fg_color=COLORS["bg_elevated"],
-            progress_color=COLORS["accent_blue"]
+            height=4,
+            corner_radius=2,
+            fg_color=COLORS["border"],
+            progress_color=COLORS["accent"]
         )
-        self.progress_bar.pack(fill="x", padx=16, pady=(0, 12))
+        self.progress_bar.pack(fill="x", padx=12, pady=(0, 12))
         self.progress_bar.set(task.progress / 100)
-    
+
     def _status_color(self) -> str:
         colors = {
-            DownloadStatus.QUEUED: COLORS["text_secondary"],
+            DownloadStatus.QUEUED: COLORS["text_tertiary"],
             DownloadStatus.ANALYZING: COLORS["accent_purple"],
-            DownloadStatus.DOWNLOADING: COLORS["accent_blue"],
+            DownloadStatus.DOWNLOADING: COLORS["accent"],
             DownloadStatus.CONVERTING: COLORS["accent_orange"],
             DownloadStatus.PAUSED: COLORS["accent_orange"],
             DownloadStatus.COMPLETED: COLORS["accent_green"],
             DownloadStatus.FAILED: COLORS["accent_red"],
-            DownloadStatus.CANCELLED: COLORS["text_tertiary"],
+            DownloadStatus.CANCELLED: COLORS["text_muted"],
         }
-        return colors.get(self.task.status, COLORS["text_secondary"])
-    
+        return colors.get(self.task.status, COLORS["text_tertiary"])
+
     def update_progress(self, task: DownloadTask):
         """Update the progress display."""
         self.task = task
@@ -4943,96 +5083,108 @@ class ProgressCard(ctk.CTkFrame):
             text=task.status.name.title(),
             text_color=self._status_color()
         )
-        
+
         stats_parts = []
         if task.speed:
             stats_parts.append(task.speed)
         if task.eta:
             stats_parts.append(f"ETA: {task.eta}")
         stats_parts.append(f"{task.progress:.1f}%")
-        
-        self.stats_label.configure(text=" - ".join(stats_parts))
+
+        self.stats_label.configure(text=" | ".join(stats_parts))
 
 
 class LogPanel(ctk.CTkFrame):
-    """Scrollable log panel with modern design."""
-    
+    """
+    Activity log panel with monospace output.
+
+    Design principles:
+    - Monospace font for log entries (feels like terminal output)
+    - Subtle header with minimal controls
+    - Color-coded log levels (info=muted, success=green, error=red)
+    - Inset background for log area (recessed feel)
+    """
+
     def __init__(self, master, show_export=True, **kwargs):
         super().__init__(
             master,
-            corner_radius=20,
-            fg_color=COLORS["bg_tertiary"],
+            corner_radius=8,
+            fg_color=COLORS["bg_secondary"],
             border_width=1,
             border_color=COLORS["border_light"],
             **kwargs
         )
-        
+
         self.show_export = show_export
-        
-        # Header (no collapse in two-column layout)
-        self.header = ctk.CTkFrame(self, fg_color=COLORS["bg_elevated"], corner_radius=0, height=52)
-        self.header.pack(fill="x")
+
+        # Header - minimal and clean
+        self.header = ctk.CTkFrame(self, fg_color="transparent", height=40)
+        self.header.pack(fill="x", padx=12, pady=(8, 0))
         self.header.pack_propagate(False)
-        
+
         # Title
         title_label = ctk.CTkLabel(
             self.header,
-            text=" Activity Log",
-            font=ctk.CTkFont(size=14, weight="bold"),
-            text_color=COLORS["text_primary"]
+            text="Activity",
+            font=ctk.CTkFont(family="SF Pro Text", size=12, weight="bold"),
+            text_color=COLORS["text_secondary"]
         )
-        title_label.pack(side="left", padx=20)
-        
-        # Buttons
+        title_label.pack(side="left")
+
+        # Buttons - ghost style
         button_frame = ctk.CTkFrame(self.header, fg_color="transparent")
-        button_frame.pack(side="right", padx=16)
-        
+        button_frame.pack(side="right")
+
         clear_btn = ctk.CTkButton(
             button_frame,
             text="Clear",
-            width=70,
-            height=32,
-            corner_radius=10,
-            font=ctk.CTkFont(size=12),
-            fg_color=COLORS["bg_hover"],
-            hover_color=COLORS["bg_elevated"],
-            text_color=COLORS["text_secondary"],
+            width=50,
+            height=28,
+            corner_radius=4,
+            font=ctk.CTkFont(family="SF Pro Text", size=11),
+            fg_color="transparent",
+            hover_color=COLORS["bg_tertiary"],
+            text_color=COLORS["text_tertiary"],
             command=self.clear
         )
-        clear_btn.pack(side="left", padx=4)
-        
+        clear_btn.pack(side="left", padx=2)
+
         if self.show_export:
             export_btn = ctk.CTkButton(
                 button_frame,
                 text="Export",
-                width=70,
-                height=32,
-                corner_radius=10,
-                font=ctk.CTkFont(size=12),
-                fg_color=COLORS["bg_hover"],
-                hover_color=COLORS["bg_elevated"],
-                text_color=COLORS["text_secondary"],
+                width=50,
+                height=28,
+                corner_radius=4,
+                font=ctk.CTkFont(family="SF Pro Text", size=11),
+                fg_color="transparent",
+                hover_color=COLORS["bg_tertiary"],
+                text_color=COLORS["text_tertiary"],
                 command=self.export_log
             )
-            export_btn.pack(side="left", padx=4)
+            export_btn.pack(side="left", padx=2)
         
-        # Content frame with scroll
-        self.content_frame = ctk.CTkFrame(self, fg_color="transparent")
-        self.content_frame.pack(fill="both", expand=True)
-        
-        # Log text with custom scrollbar - fills available space
+        # Content frame with inset background
+        self.content_frame = ctk.CTkFrame(
+            self,
+            fg_color=COLORS["surface_inset"],
+            corner_radius=4
+        )
+        self.content_frame.pack(fill="both", expand=True, padx=8, pady=(4, 8))
+
+        # Log text with monospace font
         self.log_text = ctk.CTkTextbox(
             self.content_frame,
-            font=ctk.CTkFont(family="Menlo", size=11),
+            font=ctk.CTkFont(family="SF Mono", size=11),
             fg_color="transparent",
-            text_color=COLORS["text_secondary"],
+            text_color=COLORS["text_tertiary"],
             wrap="word",
             state="disabled"
         )
-        self.log_text.pack(fill="both", expand=True, padx=20, pady=(16, 20))
-        
+        self.log_text.pack(fill="both", expand=True, padx=8, pady=8)
+
         # Configure tags for colored log messages
-        self.log_text.tag_config("info", foreground=COLORS["text_secondary"])
+        self.log_text.tag_config("info", foreground=COLORS["text_tertiary"])
         self.log_text.tag_config("success", foreground=COLORS["accent_green"])
         self.log_text.tag_config("warning", foreground=COLORS["accent_orange"])
         self.log_text.tag_config("error", foreground=COLORS["accent_red"])
@@ -5631,15 +5783,17 @@ class SettingsWindow(ctk.CTkToplevel):
         self.tabview.add("SponsorBlock")
         self.tabview.add("Subtitles")
         self.tabview.add("Encoding")
-        self.tabview.add("Trim")
         self.tabview.add("Playlist")
         self.tabview.add("Advanced")
+<<<<<<<< HEAD:yt_dlp_gui_v18_5_0.py
         
+========
+
+>>>>>>>> 585b8ef (v19.0.0: Complete UI redesign with responsive layout):yt_dlp_gui_v19_0_0.py
         self._create_cookies_tab()  # NEW: Create cookies tab
         self._create_sponsorblock_tab()
         self._create_subtitles_tab()
         self._create_encoding_tab()
-        self._create_trim_tab()
         self._create_playlist_tab()
         self._create_advanced_tab()
         
@@ -6327,27 +6481,6 @@ class SettingsWindow(ctk.CTkToplevel):
         elif mode == "Custom":
             self.custom_frame.pack(fill="x", padx=10, pady=(0, 10))
     
-    def _create_trim_tab(self):
-        """Trim settings."""
-        tab = self.tabview.tab("Trim")
-        
-        self.trim_enabled = ctk.CTkSwitch(tab, text="Enable Trimming")
-        self.trim_enabled.pack(anchor="w", padx=20, pady=(20, 10))
-        if self.settings_mgr.get("trim_enabled"):
-            self.trim_enabled.select()
-        
-        ctk.CTkLabel(tab, text="Start Time:", font=ctk.CTkFont(weight="bold")).pack(anchor="w", padx=20, pady=(10, 5))
-        
-        self.trim_start = ctk.CTkEntry(tab, width=200, placeholder_text="HH:MM:SS or seconds")
-        self.trim_start.pack(anchor="w", padx=20)
-        self.trim_start.insert(0, self.settings_mgr.get("trim_start", ""))
-        
-        ctk.CTkLabel(tab, text="End Time:", font=ctk.CTkFont(weight="bold")).pack(anchor="w", padx=20, pady=(15, 5))
-        
-        self.trim_end = ctk.CTkEntry(tab, width=200, placeholder_text="HH:MM:SS or seconds")
-        self.trim_end.pack(anchor="w", padx=20)
-        self.trim_end.insert(0, self.settings_mgr.get("trim_end", ""))
-    
     def _create_playlist_tab(self):
         """Playlist settings."""
         tab = self.tabview.tab("Playlist")
@@ -6497,12 +6630,7 @@ class SettingsWindow(ctk.CTkToplevel):
             self.settings_mgr.set("audio_bitrate", int(self.aud_bitrate.get()))
         except:
             self.settings_mgr.set("audio_bitrate", 192)
-        
-        # Trim
-        self.settings_mgr.set("trim_enabled", self.trim_enabled.get() == 1)
-        self.settings_mgr.set("trim_start", self.trim_start.get().strip())
-        self.settings_mgr.set("trim_end", self.trim_end.get().strip())
-        
+
         # Playlist
         self.settings_mgr.set("playlist_download_all", self.pl_all.get() == 1)
         self.settings_mgr.set("playlist_reverse", self.pl_reverse.get() == 1)
@@ -7506,73 +7634,76 @@ class SystemMonitor:
 
 
 class ResourceGauge(ctk.CTkCanvas):
-    """RPM-style gauge for displaying resource usage - compact design."""
-    
-    def __init__(self, master, label="CPU", max_value=100, color="#667eea", **kwargs):
+    """
+    Minimal resource gauge with linear bar design.
+
+    Design principles:
+    - Horizontal bar instead of circular gauge (more compact)
+    - Monospace percentage display
+    - Single accent color with subtle track
+    """
+
+    def __init__(self, master, label="CPU", max_value=100, color=None, **kwargs):
         super().__init__(
             master,
-            width=60,  # FIXED: Reduced from 70 to 60
-            height=60,  # FIXED: Reduced from 70 to 60
-            bg=COLORS["bg_tertiary"],
+            width=80,
+            height=32,
+            bg=COLORS["bg_primary"],
             highlightthickness=0,
             **kwargs
         )
-        
+
         self.label = label
         self.max_value = max_value
-        self.color = color
+        self.color = color or COLORS["accent"]
         self.current_value = 0
-        
+
         self._draw_gauge()
-    
+
     def _draw_gauge(self):
-        """Draw the gauge background."""
+        """Draw the linear gauge."""
         self.delete("all")
-        
-        # Center and radius - even smaller
-        cx, cy = 30, 30  # FIXED: Reduced from 35 to 30
-        radius = 22  # FIXED: Reduced from 26 to 22
-        
-        # Draw background arc (gray)
-        self.create_arc(
-            cx - radius, cy - radius,
-            cx + radius, cy + radius,
-            start=135, extent=270,
-            outline=COLORS["border_light"],
-            width=4,  # FIXED: Reduced from 5 to 4
-            style="arc"
-        )
-        
-        # Draw value arc (colored)
-        extent = (self.current_value / self.max_value) * 270
-        self.create_arc(
-            cx - radius, cy - radius,
-            cx + radius, cy + radius,
-            start=135, extent=extent,
-            outline=self.color,
-            width=4,  # FIXED: Reduced from 5 to 4
-            style="arc",
-            tags="value_arc"
-        )
-        
-        # Draw center label - smaller font
+
+        # Dimensions
+        bar_x = 0
+        bar_y = 20
+        bar_width = 80
+        bar_height = 4
+
+        # Label
         self.create_text(
-            cx, cy - 3,  # FIXED: Adjusted from cy - 4
-            text=f"{self.current_value:.0f}%",
-            fill=COLORS["text_primary"],
-            font=("SF Pro Display", 10, "bold"),  # FIXED: Reduced from 11 to 10
-            tags="value_text"
-        )
-        
-        # Draw gauge label - smaller font
-        self.create_text(
-            cx, cy + 10,  # FIXED: Adjusted from cy + 11
+            0, 6,
             text=self.label,
             fill=COLORS["text_tertiary"],
-            font=("SF Pro Text", 7),  # FIXED: Reduced from 8 to 7
-            tags="label_text"
+            font=("SF Mono", 9),
+            anchor="w"
         )
-    
+
+        # Value (right-aligned)
+        self.create_text(
+            80, 6,
+            text=f"{self.current_value:.0f}%",
+            fill=COLORS["text_secondary"],
+            font=("SF Mono", 9, "bold"),
+            anchor="e"
+        )
+
+        # Background track
+        self.create_rectangle(
+            bar_x, bar_y, bar_x + bar_width, bar_y + bar_height,
+            fill=COLORS["border"],
+            outline=""
+        )
+
+        # Value fill
+        if self.current_value > 0:
+            fill_width = (self.current_value / self.max_value) * bar_width
+            self.create_rectangle(
+                bar_x, bar_y, bar_x + fill_width, bar_y + bar_height,
+                fill=self.color,
+                outline=""
+            )
+
     def set_value(self, value: float):
         """Update the gauge value."""
         self.current_value = min(max(0, value), self.max_value)
@@ -7682,60 +7813,88 @@ class YtDlpGUI(ctk.CTk):
         self.after(5000, self._check_app_update_on_startup)
     
     def _create_ui(self):
-        """Create the modern two-column responsive UI layout - NO SCROLLING."""
-        # Main container with reduced padding
+        """
+        Create the two-column UI layout.
+
+        Design principles:
+        - 24px outer padding (8px * 3)
+        - Two-column layout (60/40 split)
+        - No scrolling - everything fits
+        - Consistent 8px-based spacing throughout
+        """
+        # Main container with 24px padding
         self.main_container = ctk.CTkFrame(self, fg_color="transparent")
-        self.main_container.pack(fill="both", expand=True, padx=16, pady=12)
-        
+        self.main_container.pack(fill="both", expand=True, padx=24, pady=24)
+
         # Configure grid for two-column layout
         self.main_container.grid_rowconfigure(0, weight=0)  # Header - fixed
         self.main_container.grid_rowconfigure(1, weight=0)  # URL - fixed
         self.main_container.grid_rowconfigure(2, weight=1)  # Content row expands
         self.main_container.grid_rowconfigure(3, weight=0)  # Footer - fixed
-        self.main_container.grid_columnconfigure(0, weight=3)  # Left column - 3/5 width
-        self.main_container.grid_columnconfigure(1, weight=2, minsize=320)  # Right column - 2/5 width
-        
-        # === HEADER (row 0, spans both columns) ===
+        self.main_container.grid_columnconfigure(0, weight=3)  # Left column - 60%
+        self.main_container.grid_columnconfigure(1, weight=2, minsize=300)  # Right column - 40%
+
+        # === HEADER ===
         self._create_header()
-        
-        # === URL INPUT (row 1, spans both columns) ===
+
+        # === URL INPUT ===
         self._create_url_section()
-        
-        # === LEFT COLUMN (row 2, col 0): Non-scrollable content ===
+
+        # === LEFT COLUMN: Video + Progress ===
         self.content_frame = ctk.CTkFrame(
             self.main_container,
             fg_color="transparent"
         )
-        self.content_frame.grid(row=2, column=0, sticky="nsew", padx=(0, 8))
-        
-        # Use grid inside content_frame for proper sizing
+        self.content_frame.grid(row=2, column=0, sticky="nsew")
+
         self.content_frame.grid_rowconfigure(0, weight=1)  # Video expands
         self.content_frame.grid_rowconfigure(1, weight=0)  # Progress fixed
         self.content_frame.grid_columnconfigure(0, weight=1)
-        
-        # Main content in left column
+
         self._create_video_section()
         self._create_progress_section()
-        
-        # === RIGHT COLUMN (row 2, col 1): Activity log ===
+
+        # === RIGHT COLUMN: Activity log ===
         self._create_log_section()
-        
-        # === FOOTER (row 3, spans both columns) ===
+
+        # === FOOTER ===
         self._create_footer()
     
     def _create_header(self):
-        """Create compact header with app icon and icon buttons."""
-        header = ctk.CTkFrame(self.main_container, fg_color="transparent", height=56)
-        header.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 10))
+        """
+        Create minimal header with logo, app branding and controls.
+
+        Design principles:
+        - App logo scales with header height
+        - Version info in tertiary text (not highlighted)
+        - Controls as ghost buttons (minimal chrome)
+        """
+        header = ctk.CTkFrame(self.main_container, fg_color="transparent", height=48)
+        header.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 16))
         header.grid_propagate(False)
-        
-        # Left side - App branding
+
+        # Left side - App branding with logo
         left_frame = ctk.CTkFrame(header, fg_color="transparent")
         left_frame.pack(side="left", fill="y")
-        
-        # App icon - smaller
-        icon_frame = ctk.CTkFrame(
+
+        # App logo
+        logo_size = 32  # Height in pixels (matches header aesthetic)
+        self.logo_image = self._load_logo(logo_size)
+        if self.logo_image:
+            logo_label = ctk.CTkLabel(
+                left_frame,
+                image=self.logo_image,
+                text="",
+                cursor="hand2"
+            )
+            logo_label.pack(side="left", padx=(0, 12))
+            logo_label.bind("<Button-1>", lambda e: self._open_github())
+            ToolTip(logo_label, "Click to visit GitHub")
+
+        # App title
+        title_label = ctk.CTkLabel(
             left_frame,
+<<<<<<<< HEAD:yt_dlp_gui_v18_5_0.py
             width=44,
             height=44,
             corner_radius=12,
@@ -7749,148 +7908,150 @@ class YtDlpGUI(ctk.CTk):
             icon_frame,
             text="▶️",
             font=ctk.CTkFont(size=22),
+========
+            text=APP_NAME,
+            font=ctk.CTkFont(family="SF Pro Display", size=16, weight="bold"),
+            text_color=COLORS["text_primary"],
+>>>>>>>> 585b8ef (v19.0.0: Complete UI redesign with responsive layout):yt_dlp_gui_v19_0_0.py
             cursor="hand2"
         )
-        icon_label.place(relx=0.5, rely=0.5, anchor="center")
-        
-        # Make icon clickable
-        icon_frame.bind("<Button-1>", lambda e: self._open_github())
-        icon_label.bind("<Button-1>", lambda e: self._open_github())
-        ToolTip(icon_frame, "Click to visit GitHub")
-        
-        # App title and version inline
-        title_frame = ctk.CTkFrame(left_frame, fg_color="transparent")
-        title_frame.pack(side="left")
-        
-        title_label = ctk.CTkLabel(
-            title_frame,
-            text=APP_NAME,
-            font=ctk.CTkFont(size=18, weight="bold"),
-            text_color=COLORS["text_primary"]
-        )
-        title_label.pack(side="left", padx=(0, 8))
-        
-        version_badge = ctk.CTkLabel(
-            title_frame,
+        title_label.pack(side="left", padx=(0, 12))
+        title_label.bind("<Button-1>", lambda e: self._open_github())
+        ToolTip(title_label, "Click to visit GitHub")
+
+        # Version badge - subtle
+        version_label = ctk.CTkLabel(
+            left_frame,
             text=f"v{APP_VERSION}",
-            font=ctk.CTkFont(size=10, weight="bold"),
-            text_color=COLORS["accent_gradient_start"],
-            fg_color=COLORS["bg_elevated"],
-            corner_radius=6,
-            padx=6,
-            pady=2
-        )
-        version_badge.pack(side="left", padx=(0, 8))
-        
-        self.ytdlp_version_label = ctk.CTkLabel(
-            title_frame,
-            text=f"yt-dlp: {self.ytdlp.get_version()}",
-            font=ctk.CTkFont(size=10),
+            font=ctk.CTkFont(family="SF Mono", size=11),
             text_color=COLORS["text_tertiary"]
         )
+        version_label.pack(side="left", padx=(0, 16))
+
+        # yt-dlp version - even more subtle
+        self.ytdlp_version_label = ctk.CTkLabel(
+            left_frame,
+            text=f"yt-dlp {self.ytdlp.get_version()}",
+            font=ctk.CTkFont(family="SF Mono", size=10),
+            text_color=COLORS["text_muted"]
+        )
         self.ytdlp_version_label.pack(side="left")
-        
-        # Right side - Icon buttons
+
+        # Right side - Ghost buttons
         button_frame = ctk.CTkFrame(header, fg_color="transparent")
         button_frame.pack(side="right", fill="y")
-        
+
         # Update button
         self.update_btn = ModernButton(
             button_frame,
-            text="⬇️",
-            style="icon",
-            width=36,
-            height=36,
+            text="Update",
+            style="ghost",
+            width=60,
+            height=32,
             command=self._check_ytdlp_update
         )
-        self.update_btn.pack(side="left", padx=2)
+        self.update_btn.pack(side="left", padx=4)
         ToolTip(self.update_btn, "Update yt-dlp")
-        
+
         # Settings button
         settings_btn = ModernButton(
             button_frame,
-            text="⚙️",
-            style="icon",
-            width=36,
-            height=36,
+            text="Settings",
+            style="ghost",
+            width=60,
+            height=32,
             command=self._show_settings
         )
-        settings_btn.pack(side="left", padx=2)
+        settings_btn.pack(side="left", padx=4)
         ToolTip(settings_btn, "Settings")
-        
+
         # History button
         history_btn = ModernButton(
             button_frame,
-            text="📚",
-            style="icon",
-            width=36,
-            height=36,
+            text="History",
+            style="ghost",
+            width=60,
+            height=32,
             command=self._show_history
         )
-        history_btn.pack(side="left", padx=2)
+        history_btn.pack(side="left", padx=4)
         ToolTip(history_btn, "History")
-        
+
         # Help button
         help_btn = ModernButton(
             button_frame,
-            text="❓",
-            style="icon",
-            width=36,
-            height=36,
+            text="Help",
+            style="ghost",
+            width=50,
+            height=32,
             command=self._show_help
         )
-        help_btn.pack(side="left", padx=2)
+        help_btn.pack(side="left", padx=4)
         ToolTip(help_btn, "Help")
     
     def _create_url_section(self):
-        """Create compact URL input section with playlist toggle."""
-        url_frame = ctk.CTkFrame(self.main_container, fg_color="transparent", height=48)
-        url_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(0, 10))
+        """
+        Create URL input section with inline controls.
+
+        Design principles:
+        - Inset input field (darker background)
+        - Minimal controls, inline layout
+        - Primary action button with accent color
+        """
+        url_frame = ctk.CTkFrame(self.main_container, fg_color="transparent", height=40)
+        url_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(0, 16))
         url_frame.grid_propagate(False)
-        
-        # URL entry - smaller height
+
+        # URL entry with inset styling
         self.url_entry = ctk.CTkEntry(
             url_frame,
             placeholder_text="Paste YouTube URL...",
-            corner_radius=10,
+            corner_radius=6,
             height=40,
-            font=ctk.CTkFont(size=13),
-            fg_color=COLORS["bg_tertiary"],
+            font=ctk.CTkFont(family="SF Pro Text", size=13),
+            fg_color=COLORS["surface_inset"],
             border_color=COLORS["border_light"],
             text_color=COLORS["text_primary"],
-            placeholder_text_color=COLORS["text_tertiary"],
+            placeholder_text_color=COLORS["text_muted"],
             border_width=1
         )
         self.url_entry.pack(side="left", fill="x", expand=True, padx=(0, 8))
         self.url_entry.bind("<Return>", lambda e: self._analyze())
         self.url_entry.bind("<KeyRelease>", self._on_url_changed)
-        
-        # Playlist toggle (hidden by default, shown when URL has playlist)
+
+        # Playlist toggle (hidden by default)
         self.playlist_toggle_frame = ctk.CTkFrame(url_frame, fg_color="transparent")
-        # Don't pack yet - will be shown when URL contains playlist
-        
+
         self.playlist_mode_var = ctk.BooleanVar(value=False)
         self.playlist_toggle = ctk.CTkSwitch(
             self.playlist_toggle_frame,
+<<<<<<<< HEAD:yt_dlp_gui_v18_5_0.py
             text=" Playlist",
+========
+            text="Playlist",
+>>>>>>>> 585b8ef (v19.0.0: Complete UI redesign with responsive layout):yt_dlp_gui_v19_0_0.py
             variable=self.playlist_mode_var,
-            font=ctk.CTkFont(size=12),
-            width=40,
-            height=20,
-            switch_width=36,
-            switch_height=18,
+            font=ctk.CTkFont(family="SF Pro Text", size=11),
+            width=36,
+            height=18,
+            switch_width=32,
+            switch_height=16,
+            progress_color=COLORS["accent"],
+            button_color=COLORS["text_primary"],
+            button_hover_color=COLORS["text_primary"],
+            fg_color=COLORS["border_light"],
             onvalue=True,
             offvalue=False,
             command=self._on_playlist_toggle
         )
         self.playlist_toggle.pack(side="left", padx=(0, 8))
-        
-        # Analyze button
+
+        # Analyze button - primary action
         ModernButton(
             url_frame,
-            text="⚡ Analyze",
+            text="Analyze",
             style="primary",
-            width=100,
+            width=90,
             height=40,
             command=self._analyze
         ).pack(side="left")
@@ -7926,370 +8087,624 @@ class YtDlpGUI(ctk.CTk):
             self.log_panel.log("🎬 Single video mode - will download only this video", "info")
     
     def _create_video_section(self):
-        """Create a compact video preview card that always shows download button."""
+        """
+        Create video preview card with quality selection.
+
+        Design principles:
+        - Responsive thumbnail that scales with window size
+        - Compact 3-column quality grid
+        - Download button always visible at bottom right
+        - Efficient vertical spacing
+        """
         self.video_frame = ctk.CTkFrame(
             self.content_frame,
-            fg_color=COLORS["bg_tertiary"],
-            corner_radius=16,
+            fg_color=COLORS["bg_secondary"],
+            corner_radius=8,
             border_width=1,
             border_color=COLORS["border_light"]
         )
         # Initially hidden - shown when video is analyzed
-        # Will use grid row 0
-        
-        # Use grid layout inside video_frame for better control
-        self.video_frame.grid_rowconfigure(0, weight=0)  # Top row (thumbnail + info) - fixed
-        self.video_frame.grid_rowconfigure(1, weight=0)  # Divider - fixed
-        self.video_frame.grid_rowconfigure(2, weight=1)  # Format cards - can expand
-        self.video_frame.grid_rowconfigure(3, weight=0)  # Download button - fixed at bottom
-        self.video_frame.grid_columnconfigure(0, weight=1)
-        
-        # === TOP ROW: Thumbnail + Video Info ===
-        top_row = ctk.CTkFrame(self.video_frame, fg_color="transparent")
-        top_row.grid(row=0, column=0, sticky="ew", padx=16, pady=(12, 8))
-        
-        # Thumbnail container (left side) - smaller
+
+        # Track current thumbnail size for responsive updates
+        self._current_thumb_size = (240, 135)
+        self._resize_scheduled = False
+
+        # === TOP SECTION: Thumbnail + Video Info (side by side) ===
+        self.top_section = ctk.CTkFrame(self.video_frame, fg_color="transparent")
+        self.top_section.pack(fill="x", padx=16, pady=(16, 12))
+
+        # Thumbnail - initial size, will be updated on resize
         self.thumb_frame = ctk.CTkFrame(
-            top_row,
-            fg_color=COLORS["bg_elevated"],
-            corner_radius=10,
-            width=160,
-            height=90  # 16:9 ratio, smaller
+            self.top_section,
+            fg_color=COLORS["surface_inset"],
+            corner_radius=6,
+            width=240,
+            height=135
         )
-        self.thumb_frame.pack(side="left", padx=(0, 12))
+        self.thumb_frame.pack(side="left", padx=(0, 16))
         self.thumb_frame.pack_propagate(False)
-        
+
         self.thumb_label = ctk.CTkLabel(
             self.thumb_frame,
             text="",
             font=ctk.CTkFont(size=32),
-            text_color=COLORS["text_tertiary"]
+            text_color=COLORS["text_muted"]
         )
         self.thumb_label.place(relx=0.5, rely=0.5, anchor="center")
-        
-        # Duration badge on thumbnail
+
+        # Duration badge
         self.duration_badge = ctk.CTkLabel(
             self.thumb_frame,
             text="0:00",
-            font=ctk.CTkFont(size=9, weight="bold"),
+            font=ctk.CTkFont(family="SF Mono", size=10, weight="bold"),
             text_color="white",
-            fg_color="black",
-            corner_radius=4,
-            padx=4,
-            pady=1
+            fg_color=COLORS["bg_primary"],
+            corner_radius=3,
+            padx=6,
+            pady=2
         )
-        self.duration_badge.place(relx=0.95, rely=0.95, anchor="se")
-        
-        # Video info (right side of thumbnail)
-        info_container = ctk.CTkFrame(top_row, fg_color="transparent")
-        info_container.pack(side="left", fill="both", expand=True)
-        
-        # Title - single line with ellipsis
+        self.duration_badge.place(relx=0.97, rely=0.95, anchor="se")
+
+        # Video info container
+        self.info_container = ctk.CTkFrame(self.top_section, fg_color="transparent")
+        self.info_container.pack(side="left", fill="both", expand=True)
+
+        # Title
         self.title_label = ctk.CTkLabel(
-            info_container,
-            text="🎬 Video Title",
-            font=ctk.CTkFont(size=14, weight="bold"),
+            self.info_container,
+            text="Video Title",
+            font=ctk.CTkFont(family="SF Pro Display", size=15, weight="bold"),
             text_color=COLORS["text_primary"],
-            anchor="w"
+            anchor="w",
+            wraplength=350
         )
         self.title_label.pack(fill="x", anchor="w")
-        
-        # Meta info row (channel, views, chapters) - compact
-        meta_frame = ctk.CTkFrame(info_container, fg_color="transparent")
-        meta_frame.pack(fill="x", pady=(4, 0), anchor="w")
-        
+
+        # Metadata row
+        meta_frame = ctk.CTkFrame(self.info_container, fg_color="transparent")
+        meta_frame.pack(fill="x", pady=(6, 0), anchor="w")
+
         self.channel_label = ctk.CTkLabel(
             meta_frame,
-            text=" Channel",
-            font=ctk.CTkFont(size=11),
+            text="Channel",
+            font=ctk.CTkFont(family="SF Pro Text", size=11),
             text_color=COLORS["text_secondary"]
         )
         self.channel_label.pack(side="left", padx=(0, 12))
-        
+
         self.views_label = ctk.CTkLabel(
             meta_frame,
-            text=" Views",
-            font=ctk.CTkFont(size=11),
-            text_color=COLORS["text_secondary"]
+            text="Views",
+            font=ctk.CTkFont(family="SF Mono", size=11),
+            text_color=COLORS["text_tertiary"]
         )
         self.views_label.pack(side="left", padx=(0, 12))
-        
+
         self.chapters_label = ctk.CTkLabel(
             meta_frame,
             text="",
-            font=ctk.CTkFont(size=11),
-            text_color=COLORS["accent_purple"]
+            font=ctk.CTkFont(family="SF Pro Text", size=11),
+            text_color=COLORS["accent"]
         )
         self.chapters_label.pack(side="left", padx=(0, 6))
-        
+
         # Chapters button (hidden initially)
         self.chapters_button = ModernButton(
             meta_frame,
-            text=" Chapters",
-            style="secondary",
-            width=90,
+            text="Chapters",
+            style="ghost",
+            width=70,
             height=24,
             command=self._show_chapters_dialog
         )
-        
-        # === DIVIDER with quality header ===
-        quality_row = ctk.CTkFrame(self.video_frame, fg_color="transparent")
-        quality_row.grid(row=1, column=0, sticky="ew", padx=16, pady=(0, 6))
-        
+
+        # Bind resize event to video frame
+        self.video_frame.bind("<Configure>", self._on_video_frame_resize)
+
+        # === QUALITY SECTION WITH DOWNLOAD BUTTON ===
+        quality_header = ctk.CTkFrame(self.video_frame, fg_color="transparent")
+        quality_header.pack(fill="x", padx=16, pady=(0, 8))
+
+        # Left side: QUALITY label
         ctk.CTkLabel(
+<<<<<<<< HEAD:yt_dlp_gui_v18_5_0.py
             quality_row,
             text="¯ SELECT QUALITY",
             font=ctk.CTkFont(size=10, weight="bold"),
             text_color=COLORS["text_tertiary"]
+========
+            quality_header,
+            text="QUALITY",
+            font=ctk.CTkFont(family="SF Pro Text", size=10, weight="bold"),
+            text_color=COLORS["text_muted"]
+>>>>>>>> 585b8ef (v19.0.0: Complete UI redesign with responsive layout):yt_dlp_gui_v19_0_0.py
         ).pack(side="left")
-        
-        # Selected format indicator (right side)
-        self.selected_format_label = ctk.CTkLabel(
-            quality_row,
-            text="",
-            font=ctk.CTkFont(size=10),
-            text_color=COLORS["accent_gradient_start"]
-        )
-        self.selected_format_label.pack(side="right")
-        
-        # === FORMAT CARDS SECTION - scrollable if needed ===
-        formats_frame = ctk.CTkFrame(self.video_frame, fg_color="transparent")
-        formats_frame.grid(row=2, column=0, sticky="nsew", padx=16, pady=(0, 8))
-        
-        # Format cards container - will be a responsive grid
-        self.formats_container = ctk.CTkFrame(formats_frame, fg_color="transparent")
-        self.formats_container.pack(fill="both", expand=True)
-        
-        # === BOTTOM ROW: Download Button - ALWAYS VISIBLE ===
-        bottom_row = ctk.CTkFrame(self.video_frame, fg_color="transparent")
-        bottom_row.grid(row=3, column=0, sticky="ew", padx=16, pady=(0, 12))
-        
-        # Download button (right aligned)
+
+        # Right side: Download button (always visible in header)
         self.download_btn = ModernButton(
-            bottom_row,
-            text="⚡ Download",
+            quality_header,
+            text="Download",
             style="primary",
-            width=140,
-            height=40,
+            width=110,
+            height=32,
             command=self._download
         )
         self.download_btn.pack(side="right")
-    
+
+        # Selected format indicator (between label and button)
+        self.selected_format_label = ctk.CTkLabel(
+            quality_header,
+            text="",
+            font=ctk.CTkFont(family="SF Mono", size=10),
+            text_color=COLORS["accent"]
+        )
+        self.selected_format_label.pack(side="right", padx=(0, 12))
+
+        # Format cards grid container
+        self.formats_container = ctk.CTkFrame(self.video_frame, fg_color="transparent")
+        self.formats_container.pack(fill="x", padx=16, pady=(0, 8))
+
+        # === TRIM SECTION (collapsible) ===
+        self.trim_section = ctk.CTkFrame(self.video_frame, fg_color="transparent")
+        self.trim_section.pack(fill="x", padx=16, pady=(0, 12))
+
+        # Trim toggle row
+        trim_toggle_row = ctk.CTkFrame(self.trim_section, fg_color="transparent")
+        trim_toggle_row.pack(fill="x")
+
+        self.trim_enabled_var = ctk.BooleanVar(value=False)
+        self.trim_checkbox = ctk.CTkCheckBox(
+            trim_toggle_row,
+            text="Trim video",
+            variable=self.trim_enabled_var,
+            font=ctk.CTkFont(family="SF Pro Text", size=11),
+            text_color=COLORS["text_secondary"],
+            fg_color=COLORS["accent"],
+            hover_color=COLORS["accent_hover"],
+            border_color=COLORS["border_light"],
+            command=self._toggle_trim_inputs,
+            width=20,
+            height=20,
+            checkbox_width=16,
+            checkbox_height=16
+        )
+        self.trim_checkbox.pack(side="left")
+
+        # Trim inputs container (hidden by default)
+        self.trim_inputs = ctk.CTkFrame(self.trim_section, fg_color="transparent")
+        # Don't pack yet - will be shown when checkbox is checked
+
+        # Start time
+        start_frame = ctk.CTkFrame(self.trim_inputs, fg_color="transparent")
+        start_frame.pack(side="left", padx=(0, 16))
+
+        ctk.CTkLabel(
+            start_frame,
+            text="Start",
+            font=ctk.CTkFont(family="SF Pro Text", size=10),
+            text_color=COLORS["text_muted"]
+        ).pack(side="left", padx=(0, 6))
+
+        self.trim_start_entry = ctk.CTkEntry(
+            start_frame,
+            width=90,
+            height=28,
+            placeholder_text="0:00",
+            font=ctk.CTkFont(family="SF Mono", size=11),
+            fg_color=COLORS["surface_inset"],
+            border_color=COLORS["border_light"],
+            text_color=COLORS["text_primary"]
+        )
+        self.trim_start_entry.pack(side="left")
+
+        # End time
+        end_frame = ctk.CTkFrame(self.trim_inputs, fg_color="transparent")
+        end_frame.pack(side="left", padx=(0, 16))
+
+        ctk.CTkLabel(
+            end_frame,
+            text="End",
+            font=ctk.CTkFont(family="SF Pro Text", size=10),
+            text_color=COLORS["text_muted"]
+        ).pack(side="left", padx=(0, 6))
+
+        self.trim_end_entry = ctk.CTkEntry(
+            end_frame,
+            width=90,
+            height=28,
+            placeholder_text="0:00",
+            font=ctk.CTkFont(family="SF Mono", size=11),
+            fg_color=COLORS["surface_inset"],
+            border_color=COLORS["border_light"],
+            text_color=COLORS["text_primary"]
+        )
+        self.trim_end_entry.pack(side="left")
+
+        # Format hint
+        ctk.CTkLabel(
+            self.trim_inputs,
+            text="(MM:SS or HH:MM:SS)",
+            font=ctk.CTkFont(family="SF Pro Text", size=9),
+            text_color=COLORS["text_muted"]
+        ).pack(side="left")
+
+    def _toggle_trim_inputs(self):
+        """Show or hide trim input fields based on checkbox state."""
+        if self.trim_enabled_var.get():
+            self.trim_inputs.pack(fill="x", pady=(6, 0))
+        else:
+            self.trim_inputs.pack_forget()
+            # Clear the entries when disabled
+            self.trim_start_entry.delete(0, "end")
+            self.trim_end_entry.delete(0, "end")
+
+    def _on_video_frame_resize(self, event):
+        """Handle video frame resize to scale thumbnail dynamically."""
+        # Debounce resize events
+        if self._resize_scheduled:
+            return
+        self._resize_scheduled = True
+        self.after(100, self._do_responsive_resize)
+
+    def _do_responsive_resize(self):
+        """Perform the actual responsive resize."""
+        self._resize_scheduled = False
+
+        # Only resize if we have a video loaded
+        if not hasattr(self, 'current_video') or not self.current_video:
+            return
+
+        # Get available width of the video frame
+        frame_width = self.video_frame.winfo_width()
+        if frame_width < 100:  # Not yet rendered
+            return
+
+        # Calculate thumbnail size based on frame width
+        # Thumbnail should be ~35% of frame width, with min/max constraints
+        # 16:9 aspect ratio
+        target_width = int(frame_width * 0.35)
+        target_width = max(200, min(target_width, 480))  # Min 200, max 480
+        target_height = int(target_width * 9 / 16)
+
+        new_size = (target_width, target_height)
+
+        # Only update if size changed significantly (>10px difference)
+        if abs(new_size[0] - self._current_thumb_size[0]) < 10:
+            return
+
+        self._current_thumb_size = new_size
+
+        # Update thumbnail frame size
+        self.thumb_frame.configure(width=target_width, height=target_height)
+
+        # Update title wraplength based on remaining space
+        remaining_width = frame_width - target_width - 64  # padding and margins
+        self.title_label.configure(wraplength=max(200, remaining_width))
+
+        # Reload thumbnail at new size
+        if self.current_video and self.current_video.thumbnail:
+            def reload_thumb():
+                thumb = self.thumbnail_manager.get_thumbnail(
+                    self.current_video.thumbnail,
+                    self.current_video.id,
+                    new_size
+                )
+                if thumb:
+                    self.after(0, lambda: self.thumb_label.configure(image=thumb, text=""))
+
+            threading.Thread(target=reload_thumb, daemon=True).start()
+
+    def _get_responsive_thumb_size(self):
+        """Calculate responsive thumbnail size based on current video frame width."""
+        try:
+            frame_width = self.video_frame.winfo_width()
+            if frame_width < 100:
+                # Use default if frame not yet rendered
+                return (240, 135)
+
+            # 35% of frame width, constrained between 200-480px
+            target_width = int(frame_width * 0.35)
+            target_width = max(200, min(target_width, 480))
+            target_height = int(target_width * 9 / 16)
+            return (target_width, target_height)
+        except Exception:
+            return (240, 135)
+
+    def _apply_initial_responsive_size(self):
+        """Apply responsive sizing after the video frame is rendered."""
+        if not hasattr(self, 'current_video') or not self.current_video:
+            return
+
+        # Get responsive size
+        thumb_size = self._get_responsive_thumb_size()
+        self._current_thumb_size = thumb_size
+
+        # Update thumbnail frame size
+        self.thumb_frame.configure(width=thumb_size[0], height=thumb_size[1])
+
+        # Update title wraplength
+        frame_width = self.video_frame.winfo_width()
+        if frame_width > 100:
+            remaining_width = frame_width - thumb_size[0] - 64
+            self.title_label.configure(wraplength=max(200, remaining_width))
+
+        # Reload thumbnail at correct size
+        if self.current_video.thumbnail:
+            def reload_thumb():
+                thumb = self.thumbnail_manager.get_thumbnail(
+                    self.current_video.thumbnail,
+                    self.current_video.id,
+                    thumb_size
+                )
+                if thumb:
+                    self.after(0, lambda: self.thumb_label.configure(image=thumb, text=""))
+
+            threading.Thread(target=reload_thumb, daemon=True).start()
+
     def _create_progress_section(self):
-        """Create compact progress section with inline metrics."""
+        """
+        Create progress section with pipeline visualization.
+
+        Design principles:
+        - Slim progress bar (6px height)
+        - Monospace metrics display
+        - Clean status text without emojis
+        - Inset metrics area
+        """
         self.progress_frame = ctk.CTkFrame(
             self.content_frame,
-            fg_color=COLORS["bg_tertiary"],
-            corner_radius=12,
+            fg_color=COLORS["bg_secondary"],
+            corner_radius=8,
             border_width=1,
             border_color=COLORS["border_light"]
         )
-        # Use grid row 1 (fixed height)
-        self.progress_frame.grid(row=1, column=0, sticky="ew", pady=(8, 0))
-        
+        self.progress_frame.grid(row=1, column=0, sticky="ew", pady=(12, 0))
+
         # Header row
         prog_header = ctk.CTkFrame(self.progress_frame, fg_color="transparent")
-        prog_header.pack(fill="x", padx=12, pady=(8, 4))
-        
+        prog_header.pack(fill="x", padx=12, pady=(12, 8))
+
         ctk.CTkLabel(
             prog_header,
-            text="📥 Download Progress",
-            font=ctk.CTkFont(size=12, weight="bold"),
-            text_color=COLORS["text_primary"]
+            text="Progress",
+            font=ctk.CTkFont(family="SF Pro Text", size=12, weight="bold"),
+            text_color=COLORS["text_secondary"]
         ).pack(side="left")
-        
+
         # Status indicator
         status_frame = ctk.CTkFrame(prog_header, fg_color="transparent")
         status_frame.pack(side="right")
-        
+
         self.status_dot = ctk.CTkLabel(
             status_frame,
-            text="*",
-            font=ctk.CTkFont(size=12),
-            text_color=COLORS["text_tertiary"]
+            text="",
+            font=ctk.CTkFont(size=10),
+            text_color=COLORS["text_muted"]
         )
         self.status_dot.pack(side="left", padx=(0, 4))
-        
+
         self.queue_status = ctk.CTkLabel(
             status_frame,
             text="Idle",
-            font=ctk.CTkFont(size=10),
-            text_color=COLORS["text_secondary"]
+            font=ctk.CTkFont(family="SF Mono", size=10),
+            text_color=COLORS["text_tertiary"]
         )
         self.queue_status.pack(side="left")
-        
+
         # Progress bar
         self.main_progress = EnhancedProgressBar(self.progress_frame)
-        self.main_progress.pack(fill="x", padx=12, pady=(0, 6))
-        
+        self.main_progress.pack(fill="x", padx=12, pady=(0, 8))
+
         # Stage and percentage row
         stage_row = ctk.CTkFrame(self.progress_frame, fg_color="transparent")
-        stage_row.pack(fill="x", padx=12, pady=(0, 6))
-        
+        stage_row.pack(fill="x", padx=12, pady=(0, 8))
+
         self.progress_label = ctk.CTkLabel(
             stage_row,
-            text="⏳ Ready to download",
-            font=ctk.CTkFont(size=11),
-            text_color=COLORS["text_secondary"]
+            text="Ready",
+            font=ctk.CTkFont(family="SF Pro Text", size=11),
+            text_color=COLORS["text_tertiary"]
         )
         self.progress_label.pack(side="left")
-        
+
         self.percentage_label = ctk.CTkLabel(
             stage_row,
             text="",
-            font=ctk.CTkFont(size=11, weight="bold"),
+            font=ctk.CTkFont(family="SF Mono", size=11, weight="bold"),
             text_color=COLORS["text_primary"]
         )
         self.percentage_label.pack(side="right")
-        
-        # Metrics row - very compact inline layout
-        metrics_row = ctk.CTkFrame(self.progress_frame, fg_color=COLORS["bg_elevated"], corner_radius=8)
-        metrics_row.pack(fill="x", padx=12, pady=(0, 8))
-        
+
+        # Metrics row - inset background
+        metrics_row = ctk.CTkFrame(
+            self.progress_frame,
+            fg_color=COLORS["surface_inset"],
+            corner_radius=4
+        )
+        metrics_row.pack(fill="x", padx=12, pady=(0, 12))
+
         metrics_inner = ctk.CTkFrame(metrics_row, fg_color="transparent")
-        metrics_inner.pack(fill="x", padx=10, pady=6)
-        
+        metrics_inner.pack(fill="x", padx=12, pady=8)
+
         # Speed
         speed_frame = ctk.CTkFrame(metrics_inner, fg_color="transparent")
-        speed_frame.pack(side="left", padx=(0, 16))
-        ctk.CTkLabel(speed_frame, text="SPEED", font=ctk.CTkFont(size=8, weight="bold"),
-                    text_color=COLORS["text_tertiary"]).pack(side="left", padx=(0, 4))
-        self.speed_label = ctk.CTkLabel(speed_frame, text="--", font=ctk.CTkFont(size=11, weight="bold"),
-                    text_color=COLORS["accent_gradient_start"])
+        speed_frame.pack(side="left", padx=(0, 24))
+        ctk.CTkLabel(
+            speed_frame, text="SPEED",
+            font=ctk.CTkFont(family="SF Pro Text", size=9, weight="bold"),
+            text_color=COLORS["text_muted"]
+        ).pack(side="left", padx=(0, 6))
+        self.speed_label = ctk.CTkLabel(
+            speed_frame, text="--",
+            font=ctk.CTkFont(family="SF Mono", size=11, weight="bold"),
+            text_color=COLORS["accent"]
+        )
         self.speed_label.pack(side="left")
-        
+
         # FPS
         fps_frame = ctk.CTkFrame(metrics_inner, fg_color="transparent")
-        fps_frame.pack(side="left", padx=(0, 16))
-        ctk.CTkLabel(fps_frame, text="FPS", font=ctk.CTkFont(size=8, weight="bold"),
-                    text_color=COLORS["text_tertiary"]).pack(side="left", padx=(0, 4))
-        self.fps_label = ctk.CTkLabel(fps_frame, text="--", font=ctk.CTkFont(size=11, weight="bold"),
-                    text_color=COLORS["accent_green"])
+        fps_frame.pack(side="left", padx=(0, 24))
+        ctk.CTkLabel(
+            fps_frame, text="FPS",
+            font=ctk.CTkFont(family="SF Pro Text", size=9, weight="bold"),
+            text_color=COLORS["text_muted"]
+        ).pack(side="left", padx=(0, 6))
+        self.fps_label = ctk.CTkLabel(
+            fps_frame, text="--",
+            font=ctk.CTkFont(family="SF Mono", size=11, weight="bold"),
+            text_color=COLORS["accent_green"]
+        )
         self.fps_label.pack(side="left")
-        
+
         # ETA
         eta_frame = ctk.CTkFrame(metrics_inner, fg_color="transparent")
-        eta_frame.pack(side="left", padx=(0, 16))
-        ctk.CTkLabel(eta_frame, text="ETA", font=ctk.CTkFont(size=8, weight="bold"),
-                    text_color=COLORS["text_tertiary"]).pack(side="left", padx=(0, 4))
-        self.eta_label = ctk.CTkLabel(eta_frame, text="--", font=ctk.CTkFont(size=11, weight="bold"),
-                    text_color=COLORS["text_secondary"])
+        eta_frame.pack(side="left", padx=(0, 24))
+        ctk.CTkLabel(
+            eta_frame, text="ETA",
+            font=ctk.CTkFont(family="SF Pro Text", size=9, weight="bold"),
+            text_color=COLORS["text_muted"]
+        ).pack(side="left", padx=(0, 6))
+        self.eta_label = ctk.CTkLabel(
+            eta_frame, text="--",
+            font=ctk.CTkFont(family="SF Mono", size=11, weight="bold"),
+            text_color=COLORS["text_secondary"]
+        )
         self.eta_label.pack(side="left")
-        
+
         # Size
         size_frame = ctk.CTkFrame(metrics_inner, fg_color="transparent")
         size_frame.pack(side="left")
-        ctk.CTkLabel(size_frame, text="SIZE", font=ctk.CTkFont(size=8, weight="bold"),
-                    text_color=COLORS["text_tertiary"]).pack(side="left", padx=(0, 4))
-        self.size_label = ctk.CTkLabel(size_frame, text="--", font=ctk.CTkFont(size=11, weight="bold"),
-                    text_color=COLORS["text_secondary"])
+        ctk.CTkLabel(
+            size_frame, text="SIZE",
+            font=ctk.CTkFont(family="SF Pro Text", size=9, weight="bold"),
+            text_color=COLORS["text_muted"]
+        ).pack(side="left", padx=(0, 6))
+        self.size_label = ctk.CTkLabel(
+            size_frame, text="--",
+            font=ctk.CTkFont(family="SF Mono", size=11, weight="bold"),
+            text_color=COLORS["text_secondary"]
+        )
         self.size_label.pack(side="left")
     
     def _create_log_section(self):
-        """Create modern activity log in right column (always visible)."""
-        # Log panel in right column - fills entire height
+        """
+        Create activity log in right column.
+
+        Design principles:
+        - Fills available space
+        - Monospace output
+        - Subtle header
+        """
         log_container = ctk.CTkFrame(self.main_container, fg_color="transparent")
-        log_container.grid(row=2, column=1, sticky="nsew")
-        
-        # Create log panel that fills the container
+        log_container.grid(row=2, column=1, sticky="nsew", padx=(8, 0))
+
         self.log_panel = LogPanel(log_container, show_export=False)
         self.log_panel.pack(fill="both", expand=True)
+<<<<<<<< HEAD:yt_dlp_gui_v18_5_0.py
         
         # Welcome messages
         self.log_panel.log(f"Welcome to {APP_NAME} v{APP_VERSION}", "info")
         self.log_panel.log(f" yt-dlp version: {self.ytdlp.get_version()}", "info")
+========
+
+        # Welcome messages (clean, no emojis)
+        self.log_panel.log(f"{APP_NAME} v{APP_VERSION}", "info")
+        self.log_panel.log(f"yt-dlp {self.ytdlp.get_version()}", "info")
+>>>>>>>> 585b8ef (v19.0.0: Complete UI redesign with responsive layout):yt_dlp_gui_v19_0_0.py
     
     def _create_footer(self):
-        """Create modern footer with resource gauges, output path and action buttons."""
-        # v18.0.1: Increased height to accommodate gauges
-        footer_frame = ctk.CTkFrame(self.main_container, fg_color="transparent", height=70)
-        footer_frame.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(12, 0))
+        """
+        Create footer with resource gauges and output path.
+
+        Design principles:
+        - Horizontal linear gauges (compact)
+        - Output path as monospace text
+        - Ghost-style action buttons
+        """
+        footer_frame = ctk.CTkFrame(self.main_container, fg_color="transparent", height=56)
+        footer_frame.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(16, 0))
         footer_frame.grid_propagate(False)
-        
+
         # Separator line
-        separator = ctk.CTkFrame(footer_frame, fg_color=COLORS["border_light"], height=1)
-        separator.pack(fill="x", pady=(0, 10))
-        
+        separator = ctk.CTkFrame(footer_frame, fg_color=COLORS["border"], height=1)
+        separator.pack(fill="x", pady=(0, 12))
+
         # Content frame
         content = ctk.CTkFrame(footer_frame, fg_color="transparent")
         content.pack(fill="both", expand=True)
-        
-        # Left side - Resource gauges (always visible)
+
+        # Left side - Resource gauges
         gauges_frame = ctk.CTkFrame(content, fg_color="transparent")
-        gauges_frame.pack(side="left", padx=(0, 20))
-        
-        # CPU Gauge - compact inline style
+        gauges_frame.pack(side="left", padx=(0, 24))
+
         self.cpu_gauge = ResourceGauge(
             gauges_frame,
             label="CPU",
-            color=COLORS["accent_gradient_start"]
+            color=COLORS["accent"]
         )
-        self.cpu_gauge.pack(side="left", padx=(0, 8))
-        
-        # Memory Gauge
+        self.cpu_gauge.pack(side="left", padx=(0, 16))
+
         self.memory_gauge = ResourceGauge(
             gauges_frame,
             label="MEM",
             color=COLORS["accent_purple"]
         )
-        self.memory_gauge.pack(side="left", padx=(0, 8))
-        
-        # GPU Gauge
+        self.memory_gauge.pack(side="left", padx=(0, 16))
+
         self.gpu_gauge = ResourceGauge(
             gauges_frame,
             label="GPU",
             color=COLORS["accent_green"]
         )
-        self.gpu_gauge.pack(side="left", padx=(0, 16))
-        
+        self.gpu_gauge.pack(side="left")
+
         # Start updating gauges
         self._update_resource_gauges()
-        
-        # Center - Output path with vertical centering
+
+        # Center - Output path
         path_frame = ctk.CTkFrame(content, fg_color="transparent")
-        path_frame.pack(side="left", fill="y")
-        
-        # Vertical centering container
+        path_frame.pack(side="left", fill="y", expand=True)
+
         path_inner = ctk.CTkFrame(path_frame, fg_color="transparent")
         path_inner.pack(expand=True)
-        
+
         path_row = ctk.CTkFrame(path_inner, fg_color="transparent")
         path_row.pack()
-        
+
         ctk.CTkLabel(
             path_row,
-            text=" Output:",
-            font=ctk.CTkFont(size=12),
-            text_color=COLORS["text_tertiary"]
+            text="Output:",
+            font=ctk.CTkFont(family="SF Pro Text", size=11),
+            text_color=COLORS["text_muted"]
         ).pack(side="left")
-        
+
         self.output_path_label = ctk.CTkLabel(
             path_row,
             text=self.config.get("output_dir", "~/Desktop"),
-            font=ctk.CTkFont(size=12),
-            text_color=COLORS["text_primary"]
+            font=ctk.CTkFont(family="SF Mono", size=11),
+            text_color=COLORS["text_secondary"]
         )
         self.output_path_label.pack(side="left", padx=(8, 0))
-        
+
         # Right side - Action buttons
         btn_frame = ctk.CTkFrame(content, fg_color="transparent")
         btn_frame.pack(side="right")
-        
+
         ModernButton(
             btn_frame,
-            text=" Open Folder",
-            style="secondary",
-            width=130,
-            height=36,
+            text="Open Folder",
+            style="ghost",
+            width=90,
+            height=32,
             command=self._open_output_folder
         ).pack(side="left", padx=(0, 8))
-        
+
         ModernButton(
             btn_frame,
-            text="Change...",
-            style="secondary",
-            width=90,
-            height=36,
+            text="Change",
+            style="ghost",
+            width=60,
+            height=32,
             command=self._choose_output_dir
         ).pack(side="left")
     
@@ -8957,16 +9372,25 @@ class YtDlpGUI(ctk.CTk):
     def _display_video_info(self, info: VideoInfo):
         """Display video information in the modern UI."""
         self.current_video = info
-        
+
         # Show video frame using grid (row 0)
         self.video_frame.grid(row=0, column=0, sticky="nsew", pady=(0, 8))
-        
+
+        # Update after a brief delay to let the frame render, then apply responsive sizing
+        self.after(50, self._apply_initial_responsive_size)
+
+        # Reset trim settings for new video
+        self.trim_enabled_var.set(False)
+        self.trim_start_entry.delete(0, "end")
+        self.trim_end_entry.delete(0, "end")
+        self.trim_inputs.pack_forget()
+
         # Update labels
         self.title_label.configure(text=info.title)
         self.channel_label.configure(text=f" {info.channel or 'Unknown'}")
         self.views_label.configure(text=f" {info.views_str}")
         self.duration_badge.configure(text=info.duration_str)
-        
+
         # Update chapters info
         if info.has_chapters:
             self.chapters_label.configure(text=f" {len(info.chapters)}")
@@ -8975,16 +9399,19 @@ class YtDlpGUI(ctk.CTk):
         else:
             self.chapters_label.configure(text="")
             self.chapters_button.pack_forget()
-        
-        # Load thumbnail (compact size for new layout)
+
+        # Load thumbnail with responsive size
         if info.thumbnail:
             def load_thumb():
+                # Get responsive size (will use default if frame not rendered yet)
+                thumb_size = self._get_responsive_thumb_size()
+                self._current_thumb_size = thumb_size
                 thumb = self.thumbnail_manager.get_thumbnail(
-                    info.thumbnail, info.id, (160, 90)
+                    info.thumbnail, info.id, thumb_size
                 )
                 if thumb:
                     self.after(0, lambda: self.thumb_label.configure(image=thumb, text=""))
-            
+
             threading.Thread(target=load_thumb, daemon=True).start()
         
         # Clear old format cards
@@ -9026,20 +9453,15 @@ class YtDlpGUI(ctk.CTk):
         if recommended:
             self._update_selected_format_label(recommended)
         
-        # Calculate number of columns based on number of formats
-        num_formats = len(unique_formats)
-        if num_formats <= 3:
-            max_cols = num_formats
-        elif num_formats <= 6:
-            max_cols = 3
-        else:
-            max_cols = 4
-        
-        # Layout format cards in a responsive grid
-        row = 0
-        col = 0
-        
-        for fmt in unique_formats:
+        # Configure grid columns for formats container (3 columns)
+        for col in range(3):
+            self.formats_container.grid_columnconfigure(col, weight=1, uniform="format")
+
+        # Layout format cards in 3-column grid
+        for idx, fmt in enumerate(unique_formats):
+            row = idx // 3
+            col = idx % 3
+
             card = FormatCard(
                 self.formats_container,
                 fmt,
@@ -9047,17 +9469,8 @@ class YtDlpGUI(ctk.CTk):
                 recommended=(fmt == recommended),
                 on_select=self._select_format
             )
-            card.grid(row=row, column=col, padx=6, pady=6, sticky="nsew")
+            card.grid(row=row, column=col, padx=(0, 8), pady=(0, 8), sticky="ew")
             self.format_cards.append(card)
-            
-            col += 1
-            if col >= max_cols:
-                col = 0
-                row += 1
-        
-        # Configure column weights for even distribution
-        for i in range(max_cols):
-            self.formats_container.grid_columnconfigure(i, weight=1, uniform="format")
         
         self.log_panel.log(f"Found {len(info.formats)} formats, showing {len(unique_formats)} quality options", "success")
     
@@ -9644,20 +10057,31 @@ class YtDlpGUI(ctk.CTk):
         if not url:
             messagebox.showwarning("No URL", "Please enter a YouTube URL")
             return
-        
+
         # If no video analyzed, analyze first
         if not self.current_video:
             self._analyze()
             return
-        
+
+        # Get trim values if enabled
+        trim_start = None
+        trim_end = None
+        if self.trim_enabled_var.get():
+            trim_start = self.trim_start_entry.get().strip() or None
+            trim_end = self.trim_end_entry.get().strip() or None
+            if trim_start or trim_end:
+                self.log_panel.log(f"Trim enabled: {trim_start or '0:00'} to {trim_end or 'end'}", "info")
+
         # Add to queue
         task = self.download_manager.add_task(
             self.current_video,
-            self.selected_format
+            self.selected_format,
+            trim_start=trim_start,
+            trim_end=trim_end
         )
-        
+
         self.log_panel.log(f"Added to queue: {self.current_video.title}", "info")
-        
+
         # Start download manager
         self.download_manager.start()
     
@@ -10033,7 +10457,46 @@ https://github.com/bytePatrol/YT-DLP-GUI-for-MacOS
         """Open GitHub repository in browser."""
         import webbrowser
         webbrowser.open("https://github.com/bytePatrol/YT-DLP-GUI-for-MacOS")
-    
+
+    def _load_logo(self, size: int = 32):
+        """
+        Load the app logo from assets folder.
+
+        Args:
+            size: Target height in pixels (width scales proportionally)
+
+        Returns:
+            CTkImage or None if logo not found
+        """
+        if not HAS_PIL:
+            return None
+
+        # Possible logo locations
+        logo_paths = [
+            Path(__file__).parent / "assets" / "logo.png",  # Development
+            Path(sys.executable).parent.parent / "Resources" / "assets" / "logo.png",  # Bundled app
+            Path.cwd() / "assets" / "logo.png",  # Current directory
+        ]
+
+        for logo_path in logo_paths:
+            if logo_path.exists():
+                try:
+                    img = Image.open(logo_path)
+                    # Scale proportionally based on height
+                    aspect = img.width / img.height
+                    new_width = int(size * aspect)
+                    # CTkImage handles high-DPI scaling automatically
+                    return ctk.CTkImage(
+                        light_image=img,
+                        dark_image=img,
+                        size=(new_width, size)
+                    )
+                except Exception as e:
+                    print(f"Error loading logo: {e}")
+                    return None
+
+        return None
+
     def _update_resource_gauges(self):
         """Update system resource gauges periodically."""
         try:

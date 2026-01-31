@@ -2,6 +2,48 @@
 
 All notable changes to YouTube 4K Downloader will be documented in this file.
 
+## [19.0.0] - 2026-01-30
+
+### 🎨 Complete UI Redesign
+
+A ground-up redesign following professional interface design principles for a cleaner, more polished experience.
+
+**Visual Design**
+- Single cyan accent color (#22d3ee) for focused visual hierarchy
+- Borders-only depth strategy (no shadows) for a clean, modern look
+- 8px spacing system throughout for consistent rhythm
+- Four-level text hierarchy (primary/secondary/tertiary/muted)
+- SF Pro Display and SF Mono fonts for professional typography
+
+**Responsive Layout**
+- Thumbnail dynamically scales with window size (200px to 480px)
+- Title text wraps intelligently based on available space
+- Quality cards in organized 3-column grid
+- Efficient use of space on both small and large screens
+
+**Streamlined Controls**
+- Download button moved inline with quality header (saves vertical space)
+- Trim controls moved from Settings to main screen for per-video trimming
+- Collapsible trim inputs appear only when needed
+
+### 🔧 Reliability Improvements
+
+**Increased Timeouts**
+- Analysis timeout increased from 30s to 90s (helps with slow connections and rate limiting)
+- Playlist timeout increased from 60s to 120s (supports larger playlists)
+- Better error messages with actionable troubleshooting steps
+
+**Per-Video Trimming**
+- Trim checkbox on main screen (no need to go to Settings)
+- Start/End time fields appear when trim is enabled
+- Settings automatically reset when analyzing a new video
+- Supports MM:SS and HH:MM:SS formats
+
+### Removed
+- Trim tab removed from Settings (now on main screen)
+
+---
+
 ## [18.5.0] - 2026-01-29
 
 ### 🍪 Burner Account Cookie Management

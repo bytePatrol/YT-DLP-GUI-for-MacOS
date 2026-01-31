@@ -1,6 +1,6 @@
 # YouTube 4K Downloader for macOS
 
-A modern, fully self-contained YouTube video downloader with a beautiful dark mode interface. No dependencies required, No Ads, No Telementry, No "Calling Home", No Donation Requests or Nags - just download and run! Our downloader is one of the only working MacOS applications that can download true 4K content directly from YouTube and convert it into MacOS compatible format so that no 3rd party video players are required to watch, plus our script can automatically remove sponsor segments within a video so you're truly getting an ad free experience.  Full source code is published for your review.
+A modern, fully self-contained YouTube video downloader with a beautiful dark mode interface. No dependencies required, No Ads, No Telemetry, No "Calling Home", No Donation Requests or Nags - just download and run! Our downloader is one of the only working MacOS applications that can download true 4K content directly from YouTube and convert it into MacOS compatible format so that no 3rd party video players are required to watch, plus our script can automatically remove sponsor segments within a video so you're truly getting an ad free experience. Full source code is published for your review.
 
 ## Screenshots
 
@@ -22,25 +22,24 @@ A modern, fully self-contained YouTube video downloader with a beautiful dark mo
 - 📺 **4K/1080p/720p Downloads** - Select your preferred quality
 - 🍪 **Burner Account Cookies** - Protect your personal YouTube account with browser profile support
 - 📁 **Chapter Downloads** - Split videos into separate files per chapter
-- 🎨 **Modern Dark Mode UI** - Beautiful iOS-inspired interface
+- 🎨 **Modern Dark Mode UI** - Professional redesign with responsive layout
+- ✂️ **Per-Video Trimming** - Set start/end times directly on the main screen
 - 📦 **100% Self-Contained** - No Homebrew, no Python, no dependencies
 - ⚡ **Fast Downloads** - Separate video+audio download with smart merging
 - 🎵 **Audio Only Mode** - Extract audio as M4A or MP3
 - 📋 **Playlist Support** - Download entire playlists with video selection
-- ✂️ **SponsorBlock Integration** - Automatically remove sponsor segments
+- 🛡️ **SponsorBlock Integration** - Automatically remove sponsor segments
 - 💬 **Subtitles** - Download and embed subtitles in multiple languages
 - 🎬 **QuickTime Compatible** - H.264 + AAC encoding for native macOS playback
 - 📊 **Progress Tracking** - Real-time speed, ETA, and progress display
 - 🔔 **Notifications** - macOS notifications when downloads complete
 - 📜 **Download History** - Browse and search past downloads
 
-## NEW: Burner Account Cookie Management
+## Burner Account Cookie Management
 
-### Improve success rate for downloading 4K content from YouTube
+### Protect Your YouTube Account!
 
-Recently YouTube started blocking downloads for 4K content without users being logged in. We developed a safe & secure way to help bypass these blocks by implementing a system that allows you to setup & use a burner (disposable) account cookie so that your personal YouTube account is never exposed or at risk. These cookies from the disposable account will greatly improve your download successs rate when hitting YouTube roadblocks. The system is completely optional and only needed if you encounter blocks while trying to download 4K content.
-
-The Burner Account Cookie Management system helps you:
+YouTube may ban or restrict accounts used for downloading videos. The Burner Account Cookie Management system helps you:
 
 - **Create dedicated browser profiles** for downloading
 - **Select specific browser profiles** instead of just browsers
@@ -59,9 +58,10 @@ The Burner Account Cookie Management system helps you:
 
 ### Why Use a Burner Account?
 
-Using your personal YouTube account for excessive downloading can result in:
+Using your personal YouTube account for downloading can result in:
 - Account restrictions or suspension
 - Loss of YouTube Premium benefits
+- IP address blocking
 
 A burner account protects your main account while still giving you authenticated access for reliable downloads.
 
@@ -126,7 +126,7 @@ YouTube frequently changes their API, which requires yt-dlp updates. Update yt-d
 ### Option 1: Download the App (Recommended)
 
 1. Go to the [Releases](https://github.com/bytePatrol/YT-DLP-GUI-for-MacOS/releases) page
-2. Download `YouTube_4K_Downloader_v18.x.x.dmg`
+2. Download `YouTube.4K.Downloader.app.zip`
 3. Unzip and drag to your **Applications** folder
 
 ### First Launch
@@ -146,7 +146,7 @@ macOS blocks apps from unidentified developers:
 git clone https://github.com/bytePatrol/YT-DLP-GUI-for-MacOS.git
 cd YT-DLP-GUI-for-MacOS
 pip install customtkinter pillow requests yt-dlp psutil
-python yt_dlp_gui_v18_5_0.py
+python yt_dlp_gui_v19_0_0.py
 ```
 
 ## Usage
@@ -154,7 +154,18 @@ python yt_dlp_gui_v18_5_0.py
 1. **Paste a YouTube URL** - Copy a link and paste it (or drag & drop)
 2. **Click Analyze** - View available formats and quality options
 3. **Select Quality** - Choose from 4K, 1080p, 720p, etc.
-4. **Click Download** - Watch the progress with real-time stats
+4. **Optional: Enable Trim** - Check "Trim video" and set start/end times
+5. **Click Download** - Watch the progress with real-time stats
+
+### Trimming Videos
+
+Trim videos directly from the main screen - no need to dig through settings!
+
+1. After analyzing a video, check **"Trim video"**
+2. Enter **Start** and **End** times (formats: `1:30`, `0:45`, `1:30:00`)
+3. Click **Download** - only the specified portion will be downloaded
+
+Trim settings reset automatically when you analyze a new video.
 
 ### Keyboard Shortcuts
 
@@ -166,7 +177,7 @@ python yt_dlp_gui_v18_5_0.py
 
 ## Settings
 
-Access settings via the ⚙️ button:
+Access settings via the **Settings** button in the header:
 
 | Tab | Options |
 |-----|---------|
@@ -174,9 +185,10 @@ Access settings via the ⚙️ button:
 | **SponsorBlock** | Enable/disable, select categories to remove |
 | **Subtitles** | Languages, auto-generated, embedding |
 | **Encoding** | GPU/CPU, preset, bitrate modes |
-| **Trim** | Set start/end times for partial downloads |
 | **Playlist** | Default selection, order, max videos |
 | **Advanced** | Troubleshooting tips, debug info |
+
+**Note:** Trim controls are now on the main screen (next to quality selection) for convenient per-video trimming.
 
 ## System Requirements
 
@@ -190,8 +202,15 @@ Access settings via the ⚙️ button:
 
 1. **Enable browser cookies** in Settings > Cookies
 2. **Use a burner account** (follow the built-in guide!)
-3. **Update yt-dlp** to nightly build via the ⬇️ button
+3. **Update yt-dlp** to nightly build via the **Update** button
 4. **Close your browser** completely before downloading
+
+### "Analysis timed out" error
+
+1. **Wait a few minutes** - YouTube may be rate limiting your IP
+2. **Update yt-dlp** to the latest nightly build
+3. **Check your internet connection**
+4. Try a different network or VPN if issues persist
 
 ### "Age-restricted video" error
 

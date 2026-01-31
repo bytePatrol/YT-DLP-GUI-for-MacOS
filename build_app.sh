@@ -609,7 +609,18 @@ SETUP_EOF
     cat >> "$PROJECT_DIR/setup.py" << SETUP_EOF
 
 APP = ['$PY_FILE']
-DATA_FILES = []
+
+# Include assets folder (logo, etc.)
+ASSETS_DIR = os.path.join(SCRIPT_DIR, 'assets')
+if os.path.isdir(ASSETS_DIR):
+    # Get all files in assets folder
+    asset_files = [os.path.join(ASSETS_DIR, f) for f in os.listdir(ASSETS_DIR)
+                   if os.path.isfile(os.path.join(ASSETS_DIR, f)) and not f.startswith('.')]
+    DATA_FILES = [('assets', asset_files)]
+    print(f"[OK] Including {len(asset_files)} asset files")
+else:
+    DATA_FILES = []
+    print("[WARN] Assets folder not found")
 
 # Build frameworks list for Tcl/Tk
 frameworks_to_include = []
@@ -1047,7 +1058,7 @@ bundle_dependencies() {
     echo "Downloading static ffmpeg..."
     if curl -L --progress-bar "https://evermeet.cx/ffmpeg/getrelease/ffmpeg/zip" -o ffmpeg.zip; then
         unzip -q ffmpeg.zip
-        
+
         if [ -f "ffmpeg" ]; then
             cp ffmpeg "$RESOURCES_DIR/ffmpeg"
             chmod +x "$RESOURCES_DIR/ffmpeg"
@@ -1063,6 +1074,23 @@ bundle_dependencies() {
         cd /
         rm -rf "$TEMP_DIR"
         return 1
+    fi
+
+    # --- Install FFprobe ---
+    echo ""
+    echo "Downloading static ffprobe..."
+    if curl -L --progress-bar "https://evermeet.cx/ffmpeg/getrelease/ffprobe/zip" -o ffprobe.zip; then
+        unzip -q ffprobe.zip
+
+        if [ -f "ffprobe" ]; then
+            cp ffprobe "$RESOURCES_DIR/ffprobe"
+            chmod +x "$RESOURCES_DIR/ffprobe"
+            print_success "FFprobe installed ($(ls -lh "$RESOURCES_DIR/ffprobe" | awk '{print $5}'))"
+        else
+            print_warning "FFprobe not found in zip (non-critical)"
+        fi
+    else
+        print_warning "FFprobe download failed (non-critical)"
     fi
     
     # --- Install Deno ---
@@ -1129,6 +1157,12 @@ verify_app() {
     else
         print_error "ffmpeg missing!"
         ERRORS=$((ERRORS + 1))
+    fi
+
+    if [ -f "$RESOURCES_DIR/ffprobe" ]; then
+        print_success "ffprobe present"
+    else
+        print_warning "ffprobe missing (metadata extraction may show warnings)"
     fi
     
     if [ -f "$RESOURCES_DIR/deno" ]; then
@@ -1939,20 +1973,20 @@ main() {
         VERSION="1.0.0"
     fi
     
+    # Ask to install (do this first so app is available even if DMG fails)
+    echo ""
+    read -p "Install to $INSTALL_DIR? (y/n) " -n 1 -r
+    echo ""
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        install_app "$BUILT_APP_PATH"
+    fi
+
     # Ask to create DMG
     echo ""
     read -p "Create DMG installer? (y/n) " -n 1 -r
     echo ""
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         create_dmg "$BUILT_APP_PATH" "$VERSION"
-    fi
-    
-    # Ask to install
-    echo ""
-    read -p "Install to $INSTALL_DIR? (y/n) " -n 1 -r
-    echo ""
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        install_app "$BUILT_APP_PATH"
     fi
     
     # Done!
