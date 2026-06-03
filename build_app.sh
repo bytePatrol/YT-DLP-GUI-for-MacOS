@@ -1767,13 +1767,13 @@ _create_default_dmg_background() {
 from PIL import Image, ImageDraw, ImageFont
 
 width, height = 600, 400
-img = Image.new('RGB', (width, height), color='#4a4a4a')
+img = Image.new('RGB', (width, height), color='#f5f5f7')
 draw = ImageDraw.Draw(img)
 
 # Arrow at y=130 (between icons)
 arrow_y = 130
-draw.line([(230, arrow_y), (350, arrow_y)], fill='#2a2a2a', width=5)
-draw.polygon([(350, arrow_y - 14), (370, arrow_y), (350, arrow_y + 14)], fill='#2a2a2a')
+draw.line([(230, arrow_y), (350, arrow_y)], fill='#8e8e93', width=5)
+draw.polygon([(350, arrow_y - 14), (370, arrow_y), (350, arrow_y + 14)], fill='#8e8e93')
 
 # Text below arrow
 try:
@@ -1784,7 +1784,7 @@ except:
 text = "Drag to Install"
 bbox = draw.textbbox((0, 0), text, font=font)
 text_x = (width - (bbox[2] - bbox[0])) // 2
-draw.text((text_x, arrow_y + 35), text, fill='#1a1a1a', font=font)
+draw.text((text_x, arrow_y + 35), text, fill='#3a3a3c', font=font)
 
 img.save("$OUTPUT_PATH", 'PNG')
 print("Created background with PIL")
@@ -1798,10 +1798,10 @@ PYEOF
     # Method 2: Try ImageMagick (if installed)
     if command -v convert &> /dev/null; then
         print_info "Creating background with ImageMagick..."
-        convert -size 600x400 xc:'#4a4a4a' \
-            -fill '#2a2a2a' -draw "line 230,130 350,130" \
-            -fill '#2a2a2a' -draw "polygon 350,116 370,130 350,144" \
-            -font Helvetica -pointsize 16 -fill '#1a1a1a' \
+        convert -size 600x400 xc:'#f5f5f7' \
+            -fill '#8e8e93' -draw "line 230,130 350,130" \
+            -fill '#8e8e93' -draw "polygon 350,116 370,130 350,144" \
+            -font Helvetica -pointsize 16 -fill '#3a3a3c' \
             -gravity center -annotate +0+35 "Drag to Install" \
             "$OUTPUT_PATH" 2>/dev/null
         if [ -f "$OUTPUT_PATH" ]; then
@@ -1811,7 +1811,7 @@ PYEOF
     fi
     
     # Method 3: Create a minimal solid color PNG using base64
-    # This is a 600x400 gray (#4a4a4a) PNG encoded in base64
+    # This is a 600x400 light gray (#f5f5f7) PNG encoded in base64
     print_info "Creating minimal background (no PIL/ImageMagick)..."
     python3 << PYEOF
 import zlib
@@ -1846,9 +1846,9 @@ def create_png(width, height, r, g, b, filename):
     with open(filename, 'wb') as f:
         f.write(signature + ihdr + idat + iend)
 
-# Create 600x400 gray background (#4a4a4a = 74, 74, 74)
-create_png(600, 400, 74, 74, 74, "$OUTPUT_PATH")
-print("Created minimal gray background")
+# Create 600x400 light gray background (#f5f5f7 = 245, 245, 247)
+create_png(600, 400, 245, 245, 247, "$OUTPUT_PATH")
+print("Created minimal light background")
 PYEOF
     
     if [ -f "$OUTPUT_PATH" ]; then
