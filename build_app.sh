@@ -1054,9 +1054,16 @@ bundle_dependencies() {
     fi
     
     # --- Install FFmpeg ---
+    ARCH=$(uname -m)
+    if [ "$ARCH" = "arm64" ]; then
+        FFMPEG_ARCH="arm64"
+    else
+        FFMPEG_ARCH="amd64"
+    fi
+
     echo ""
-    echo "Downloading static ffmpeg..."
-    if curl -L --progress-bar "https://evermeet.cx/ffmpeg/getrelease/ffmpeg/zip" -o ffmpeg.zip; then
+    echo "Downloading static ffmpeg for $FFMPEG_ARCH..."
+    if curl -L --progress-bar "https://ffmpeg.martin-riedl.de/redirect/latest/macos/${FFMPEG_ARCH}/release/ffmpeg.zip" -o ffmpeg.zip; then
         unzip -q ffmpeg.zip
 
         if [ -f "ffmpeg" ]; then
@@ -1078,8 +1085,8 @@ bundle_dependencies() {
 
     # --- Install FFprobe ---
     echo ""
-    echo "Downloading static ffprobe..."
-    if curl -L --progress-bar "https://evermeet.cx/ffmpeg/getrelease/ffprobe/zip" -o ffprobe.zip; then
+    echo "Downloading static ffprobe for $FFMPEG_ARCH..."
+    if curl -L --progress-bar "https://ffmpeg.martin-riedl.de/redirect/latest/macos/${FFMPEG_ARCH}/release/ffprobe.zip" -o ffprobe.zip; then
         unzip -q ffprobe.zip
 
         if [ -f "ffprobe" ]; then
@@ -1956,8 +1963,13 @@ main() {
     echo ""
     if check_ytdlp_updates; then
         echo ""
-        read -p "Update yt-dlp before building? (y/n) " -n 1 -r
-        echo ""
+        if [ -t 0 ]; then
+            read -p "Update yt-dlp before building? (y/n) " -n 1 -r
+            echo ""
+        else
+            print_info "Non-interactive mode: skipping yt-dlp update"
+            REPLY="n"
+        fi
         if [[ $REPLY =~ ^[Yy]$ ]]; then
             update_ytdlp
         fi
@@ -1975,16 +1987,26 @@ main() {
     
     # Ask to install (do this first so app is available even if DMG fails)
     echo ""
-    read -p "Install to $INSTALL_DIR? (y/n) " -n 1 -r
-    echo ""
+    if [ -t 0 ]; then
+        read -p "Install to $INSTALL_DIR? (y/n) " -n 1 -r
+        echo ""
+    else
+        print_info "Non-interactive mode: skipping installation to /Applications"
+        REPLY="n"
+    fi
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         install_app "$BUILT_APP_PATH"
     fi
 
     # Ask to create DMG
     echo ""
-    read -p "Create DMG installer? (y/n) " -n 1 -r
-    echo ""
+    if [ -t 0 ]; then
+        read -p "Create DMG installer? (y/n) " -n 1 -r
+        echo ""
+    else
+        print_info "Non-interactive mode: auto-creating DMG installer"
+        REPLY="y"
+    fi
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         create_dmg "$BUILT_APP_PATH" "$VERSION"
     fi

@@ -17,6 +17,10 @@ Design Philosophy: A professional media acquisition tool that feels like
 software a video editor would respect. Dark surfaces that don't fight for
 attention, whisper-quiet borders, a single accent color that means "action".
 
+v19.0.1 Changes - PERFORMANCE & COMPATIBILITY (June 2026):
+- NEW: Dynamic CPU architecture detection (Apple Silicon arm64 vs Intel amd64) to fetch native FFmpeg/FFprobe binaries (resolves Rosetta emulation requirement on Apple Silicon)
+- FIX: Resolved merge conflicts in Python source file
+
 v19.0.0 Changes - MAJOR UI REDESIGN (January 2026):
 - NEW: Professional color system with subtle surface layering
 - NEW: Single accent color (cyan) replacing purple/blue gradients
@@ -489,11 +493,7 @@ except ImportError:
 # ============================================================================
 
 APP_NAME = "YouTube 4K Downloader"
-<<<<<<<< HEAD:yt_dlp_gui_v18_5_0.py
-APP_VERSION = "18.5.0"
-========
-APP_VERSION = "19.0.0"  # Major UI redesign with professional design system
->>>>>>>> 585b8ef (v19.0.0: Complete UI redesign with responsive layout):yt_dlp_gui_v19_0_0.py
+APP_VERSION = "19.0.1"  # Dynamic architecture detection for native FFmpeg/FFprobe support
 
 # ============================================================================
 # RETRY CONFIGURATION
@@ -1037,13 +1037,8 @@ class UpdateNotificationDialog(ctk.CTkToplevel):
         # Title
         title_label = ctk.CTkLabel(
             header_content,
-<<<<<<<< HEAD:yt_dlp_gui_v18_5_0.py
-            text=" New Version Available!",
-            font=ctk.CTkFont(size=26, weight="bold"),
-========
             text="New Version Available",
             font=ctk.CTkFont(family="SF Pro Display", size=20, weight="bold"),
->>>>>>>> 585b8ef (v19.0.0: Complete UI redesign with responsive layout):yt_dlp_gui_v19_0_0.py
             text_color=COLORS["text_primary"]
         )
         title_label.pack(anchor="w")
@@ -1116,11 +1111,7 @@ class UpdateNotificationDialog(ctk.CTkToplevel):
         # Download button
         download_btn = ModernButton(
             button_frame,
-<<<<<<<< HEAD:yt_dlp_gui_v18_5_0.py
-            text="⬇️ Download Update",
-========
             text="Download Update",
->>>>>>>> 585b8ef (v19.0.0: Complete UI redesign with responsive layout):yt_dlp_gui_v19_0_0.py
             style="primary",
             width=140,
             height=40,
@@ -3381,11 +3372,7 @@ class DownloadManager:
                             "--ffmpeg-location", FFMPEG_PATH.rsplit('/', 1)[0],
                             "--no-continue",
                             "--force-overwrites",
-<<<<<<<< HEAD:yt_dlp_gui_v18_5_0.py
-                        ] + cookie_args + video_cmd_args_extra + [
-========
-                        ] + cookie_args + trim_args + video_cmd_args_extra + [
->>>>>>>> 585b8ef (v19.0.0: Complete UI redesign with responsive layout):yt_dlp_gui_v19_0_0.py
+                            ] + cookie_args + trim_args + video_cmd_args_extra + [
                             "-f", self._4k_fallback_format,
                             "-o", temp_video,
                             video_info.url
@@ -4926,16 +4913,10 @@ class FormatCard(ctk.CTkFrame):
 
         # Resolution - primary (large, bold)
         res_text = f"{format_info.height}p" if format_info.height else "Audio"
-<<<<<<<< HEAD:yt_dlp_gui_v18_5_0.py
-        if recommended:
-            res_text = f" {res_text}"
-        
-========
         text_color = COLORS["accent"] if selected else (
             COLORS["accent_orange"] if recommended else COLORS["text_primary"]
         )
 
->>>>>>>> 585b8ef (v19.0.0: Complete UI redesign with responsive layout):yt_dlp_gui_v19_0_0.py
         self.res_label = ctk.CTkLabel(
             content,
             text=res_text,
@@ -5785,11 +5766,6 @@ class SettingsWindow(ctk.CTkToplevel):
         self.tabview.add("Encoding")
         self.tabview.add("Playlist")
         self.tabview.add("Advanced")
-<<<<<<<< HEAD:yt_dlp_gui_v18_5_0.py
-        
-========
-
->>>>>>>> 585b8ef (v19.0.0: Complete UI redesign with responsive layout):yt_dlp_gui_v19_0_0.py
         self._create_cookies_tab()  # NEW: Create cookies tab
         self._create_sponsorblock_tab()
         self._create_subtitles_tab()
@@ -7894,25 +7870,9 @@ class YtDlpGUI(ctk.CTk):
         # App title
         title_label = ctk.CTkLabel(
             left_frame,
-<<<<<<<< HEAD:yt_dlp_gui_v18_5_0.py
-            width=44,
-            height=44,
-            corner_radius=12,
-            fg_color=COLORS["accent_gradient_start"],
-            border_width=0
-        )
-        icon_frame.pack(side="left", padx=(0, 12))
-        icon_frame.pack_propagate(False)
-        
-        icon_label = ctk.CTkLabel(
-            icon_frame,
-            text="▶️",
-            font=ctk.CTkFont(size=22),
-========
             text=APP_NAME,
             font=ctk.CTkFont(family="SF Pro Display", size=16, weight="bold"),
             text_color=COLORS["text_primary"],
->>>>>>>> 585b8ef (v19.0.0: Complete UI redesign with responsive layout):yt_dlp_gui_v19_0_0.py
             cursor="hand2"
         )
         title_label.pack(side="left", padx=(0, 12))
@@ -8025,11 +7985,7 @@ class YtDlpGUI(ctk.CTk):
         self.playlist_mode_var = ctk.BooleanVar(value=False)
         self.playlist_toggle = ctk.CTkSwitch(
             self.playlist_toggle_frame,
-<<<<<<<< HEAD:yt_dlp_gui_v18_5_0.py
-            text=" Playlist",
-========
             text="Playlist",
->>>>>>>> 585b8ef (v19.0.0: Complete UI redesign with responsive layout):yt_dlp_gui_v19_0_0.py
             variable=self.playlist_mode_var,
             font=ctk.CTkFont(family="SF Pro Text", size=11),
             width=36,
@@ -8207,17 +8163,10 @@ class YtDlpGUI(ctk.CTk):
 
         # Left side: QUALITY label
         ctk.CTkLabel(
-<<<<<<<< HEAD:yt_dlp_gui_v18_5_0.py
-            quality_row,
-            text="¯ SELECT QUALITY",
-            font=ctk.CTkFont(size=10, weight="bold"),
-            text_color=COLORS["text_tertiary"]
-========
             quality_header,
             text="QUALITY",
             font=ctk.CTkFont(family="SF Pro Text", size=10, weight="bold"),
             text_color=COLORS["text_muted"]
->>>>>>>> 585b8ef (v19.0.0: Complete UI redesign with responsive layout):yt_dlp_gui_v19_0_0.py
         ).pack(side="left")
 
         # Right side: Download button (always visible in header)
@@ -8600,17 +8549,10 @@ class YtDlpGUI(ctk.CTk):
 
         self.log_panel = LogPanel(log_container, show_export=False)
         self.log_panel.pack(fill="both", expand=True)
-<<<<<<<< HEAD:yt_dlp_gui_v18_5_0.py
-        
-        # Welcome messages
-        self.log_panel.log(f"Welcome to {APP_NAME} v{APP_VERSION}", "info")
-        self.log_panel.log(f" yt-dlp version: {self.ytdlp.get_version()}", "info")
-========
 
         # Welcome messages (clean, no emojis)
         self.log_panel.log(f"{APP_NAME} v{APP_VERSION}", "info")
         self.log_panel.log(f"yt-dlp {self.ytdlp.get_version()}", "info")
->>>>>>>> 585b8ef (v19.0.0: Complete UI redesign with responsive layout):yt_dlp_gui_v19_0_0.py
     
     def _create_footer(self):
         """

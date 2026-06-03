@@ -2,6 +2,12 @@
 
 All notable changes to YouTube 4K Downloader will be documented in this file.
 
+## [19.0.1] - 2026-06-03
+
+### ⚡ Performance & Compatibility
+- **Native Apple Silicon Support**: Detects CPU architecture during build and downloads native `arm64` FFmpeg/FFprobe binaries (or `amd64` for Intel Macs). This prevents Rosetta emulation requirement on Apple Silicon Macs.
+- **Source Cleanup**: Removed leftover git conflict markers from the Python main script.
+
 ## [19.0.0] - 2026-01-30
 
 ### 🎨 Complete UI Redesign
